@@ -200,40 +200,66 @@ function BudgetLine({budget,spent}:{budget:Budget,spent:number}){const fraction=
 function Empty({text,action,label='Añadir movimiento'}:{text:string,action:()=>void,label?:string}){return <div className="empty"><div className="empty-symbol">✳</div><p>{text}</p><button onClick={action}>{label} <ArrowRight size={14}/></button></div>}
 function TransactionList({items,onEdit,onDelete,onAdd}:{items:Transaction[],onEdit:(t:Transaction)=>void,onDelete:(t:Transaction)=>void,onAdd:()=>void}){if(!items.length)return <Empty text="Todavía no hay movimientos aquí. Empieza con el primero." action={onAdd}/>;return <div className="transaction-list">{items.map(t=><div className="transaction" key={t.id}><div className="category-icon" style={{background:t.kind==='income'?'#e0eee5':`${colorFor(t.category)}25`,color:t.kind==='income'?'#4b9172':colorFor(t.category)}}>{t.kind==='income'?<ArrowDownLeft size={19}/>:t.kind==='transfer'?<ArrowRight size={19}/>:symbolFor(t.category)}</div><div className="transaction-info"><strong>{t.description}</strong><span>{t.kind==='transfer'?'Traspaso':t.category} <b>·</b> {t.account==='cash'?'Efectivo':'Banco'}{t.to_account?` → ${t.to_account==='cash'?'Efectivo':'Banco'}`:''} <b>·</b> {formatDate(t.occurred_on)}</span></div><strong className={`transaction-amount ${t.kind==='income'?'positive':''}`}>{t.kind==='income'?'+':t.kind==='transfer'?'↔':'−'}{money(Number(t.amount))}</strong><div className="transaction-actions"><button className="icon-button" title="Editar" aria-label={`Editar ${t.description}`} onClick={()=>onEdit(t)}><Settings2 size={16}/></button><button className="icon-button" title="Eliminar" aria-label={`Eliminar ${t.description}`} onClick={()=>onDelete(t)}><Trash2 size={16}/></button></div></div>)}</div>}
 function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
-  const [register,setRegister]=useState(false);
   const [email,setEmail]=useState('');
-  const [password,setPassword]=useState('');
+  const [sentEmail,setSentEmail]=useState('');
+  const [code,setCode]=useState('');
   const [error,setError]=useState('');
-  const [confirmationEmail,setConfirmationEmail]=useState('');
   const [loading,setLoading]=useState(false);
-  async function submit(e:FormEvent){
-    e.preventDefault();
+  const [retryAt,setRetryAt]=useState(0);
+  const [now,setNow]=useState(Date.now());
+  useEffect(()=>{
+    if(!retryAt)return;
+    const timer=window.setInterval(()=>setNow(Date.now()),1000);
+    return ()=>window.clearInterval(timer);
+  },[retryAt]);
+  const seconds=Math.max(0,Math.ceil((retryAt-now)/1000));
+  async function sendCode(address:string){
     if(loading)return;
-    setLoading(true);setError('');setConfirmationEmail('');
-    const address=email.trim().toLowerCase();
+    const clean=address.trim().toLowerCase();
+    setLoading(true);setError('');
     try{
-      if(register&&password.length<8){setError('La contraseña debe tener al menos 8 caracteres.');return}
-      const result=register
-        ?await supabase!.auth.signUp({email:address,password,options:{emailRedirectTo:window.location.origin}})
-        :await supabase!.auth.signInWithPassword({email:address,password});
-      if(result.error){setError(authMessage(result.error));return}
-      if(register&&!result.data.session){setConfirmationEmail(address);setPassword('');return}
-      onReady();
+      const {error:sendError}=await supabase!.auth.signInWithOtp({
+        email:clean,
+        options:{shouldCreateUser:true,emailRedirectTo:window.location.origin}
+      });
+      if(sendError){setError(authMessage(sendError));return}
+      setSentEmail(clean);setCode('');
+      setNow(Date.now());setRetryAt(Date.now()+60000);
     }catch{
-      setError('No se pudo conectar. Tus datos locales siguen disponibles; vuelve a intentarlo cuando tengas conexión.');
+      setError('No se pudo enviar el código. Comprueba la conexión y vuelve a intentarlo.');
+    }finally{setLoading(false)}
+  }
+  async function verifyCode(e:FormEvent){
+    e.preventDefault();
+    if(loading||!/^\d{6}$/.test(code))return;
+    setLoading(true);setError('');
+    try{
+      const {data,error:verifyError}=await supabase!.auth.verifyOtp({email:sentEmail,token:code,type:'email'});
+      if(verifyError){setError(authMessage(verifyError));return}
+      if(!data.session){setError('No se pudo iniciar sesión con ese código. Solicita otro y prueba de nuevo.');return}
+      setCode('');onReady();
+    }catch{
+      setError('No se pudo verificar el código. Comprueba la conexión e inténtalo otra vez.');
     }finally{setLoading(false)}
   }
   return <div className="auth-overlay"><div className="auth-page">
     <button className="auth-close icon-button" onClick={onClose} aria-label="Cerrar"><X size={20}/></button>
     <div className="auth-decor"><div className="brand"><div className="brand-symbol">✳</div><div className="brand-name">brújula<span>.</span><small>FINANZAS PERSONALES</small></div></div><div className="auth-message"><span>UN POCO MÁS DE CLARIDAD, CADA DÍA</span><h1>Tu dinero tiene una historia.<br/><em>Entiéndela mejor.</em></h1><p>Organiza tus gastos, pon límites que puedas cumplir y descubre lo que de verdad importa.</p></div><div className="auth-bottom">✳ &nbsp; Un lugar tranquilo para tus finanzas.</div></div>
-    <div className="auth-panel"><div className="auth-box"><div className="auth-mobile-brand">✳ brújula.</div><span className="section-kicker">BIENVENIDO A BRÚJULA</span><h2>{register?'Crea tu espacio':'Qué bien verte de nuevo.'}</h2>
-      {confirmationEmail?<><p>Si la dirección es válida, recibirás un enlace de confirmación en <strong>{confirmationEmail}</strong>. Revisa también el correo no deseado.</p><div className="auth-toggle"><button type="button" onClick={()=>{setConfirmationEmail('');setEmail('');setError('')}}>Me equivoqué de correo: escribir otro</button></div><div className="auth-toggle"><button type="button" onClick={()=>{setRegister(false);setConfirmationEmail('');setError('')}}>Ya confirmé mi cuenta: iniciar sesión</button></div></>:
-      <><p>{register?'Empieza a ver tus finanzas con otros ojos.':'Entra y descubre cómo va tu mes.'}</p><form onSubmit={submit}>
-        <label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>
-        <label>Contraseña<input type="password" required minLength={register?8:1} autoComplete={register?'new-password':'current-password'} placeholder={register?'Mínimo 8 caracteres':'Tu contraseña'} value={password} onChange={e=>setPassword(e.target.value)}/></label>
-        {error&&<div className="notice" role="alert">{error}</div>}
-        <button className="primary-button form-submit" disabled={loading}>{loading?'Un momento…':register?'Crear cuenta':'Entrar en mi espacio'} <ArrowRight size={18}/></button>
-      </form><div className="auth-toggle">{register?'¿Ya tienes cuenta?':'¿Todavía no tienes cuenta?'} <button type="button" onClick={()=>{setRegister(!register);setError('');setPassword('')}}>{register?'Inicia sesión':'Crear una cuenta'}</button></div></>}
+    <div className="auth-panel"><div className="auth-box"><div className="auth-mobile-brand">✳ brújula.</div><span className="section-kicker">BIENVENIDO A BRÚJULA</span><h2>{sentEmail?'Revisa tu correo.':'Entra en tu espacio.'}</h2>
+      {sentEmail?<><p>Hemos solicitado un código de seis cifras para <strong>{sentEmail}</strong>. Revisa también el correo no deseado.</p>
+        <form onSubmit={verifyCode}><label>Código de verificación<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required autoFocus placeholder="000000" value={code} onChange={e=>{setCode(e.target.value.replace(/\D/g,'').slice(0,6));setError('')}}/></label>
+          {error&&<div className="notice" role="alert">{error}</div>}
+          <button className="primary-button form-submit" disabled={loading||code.length!==6}>{loading?'Comprobando…':'Verificar y entrar'} <ArrowRight size={18}/></button>
+        </form>
+        <div className="auth-toggle"><button type="button" disabled={loading||seconds>0} onClick={()=>void sendCode(sentEmail)}>{seconds>0?`Pedir otro código en ${seconds} s`:'Reenviar código'}</button></div>
+        <div className="auth-toggle"><button type="button" onClick={()=>{setSentEmail('');setCode('');setError('')}}>Cambiar dirección de correo</button></div>
+      </>:<><p>Escribe tu correo y te enviaremos un código. Si todavía no tienes cuenta, se creará al verificarlo.</p>
+        <form onSubmit={e=>{e.preventDefault();void sendCode(email)}}>
+          <label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>
+          {error&&<div className="notice" role="alert">{error}</div>}
+          <button className="primary-button form-submit" disabled={loading}>{loading?'Enviando…':'Enviar código'} <ArrowRight size={18}/></button>
+        </form>
+      </>}
     </div></div>
   </div></div>;
 }

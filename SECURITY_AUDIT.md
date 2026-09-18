@@ -33,3 +33,7 @@ No se realizó una prueba real con dos cuentas autenticadas: la conexión dispon
 ## Decisión sobre límites de intentos
 
 No se desactivaron los límites de intentos ni de correos. Protegen las cuentas contra fuerza bruta y abuso del servicio de envío. Se hizo posible editar el correo en el formulario y reconocer los errores de cuota; una nueva dirección todavía necesita un correo de confirmación y por tanto estará sujeta al cupo global del proveedor. Documentación oficial: [límites de Auth](https://supabase.com/docs/guides/auth/rate-limits) y [SMTP propio](https://supabase.com/docs/guides/auth/auth-smtp).
+
+## Actualización: acceso por código
+
+La interfaz posterior a esta auditoría cambia el acceso por contraseña por OTP de seis cifras enviado al correo. Solo llama a `verifyOtp` después de introducir el código; solicitar el envío no abre una sesión. La creación de nuevas cuentas por OTP se mantiene activada. El nuevo flujo no se ha probado con un correo real: depende del envío SMTP, de las plantillas de **Confirm sign up** y **Magic link / OTP**, y del despliegue del frontend. Ver `supabase/OTP_SETUP.md`. El código por email sustituye a la contraseña en la interfaz; **no es un segundo factor añadido a una contraseña**. Quien controle el buzón puede iniciar sesión y debe protegerlo adecuadamente.
