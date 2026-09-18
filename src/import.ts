@@ -28,8 +28,8 @@ const amountNumber=(value:Cell):number|null=>{
   else if(dot>=0&&/^\d{1,3}(\.\d{3})+$/.test(text))text=text.replaceAll('.','');
   const amount=Number(text)*(negative?-1:1);return Number.isFinite(amount)?amount:null;
 };
-async function keyFor(row:Pick<ImportRow,'kind'|'occurred_on'|'amount'|'description'|'category'>,occurrence:number){
-  const value=[row.kind,row.occurred_on,row.amount.toFixed(2),normal(row.description),normal(row.category),occurrence].join('|');
+async function keyFor(row:Pick<ImportRow,'kind'|'occurred_on'|'amount'|'description'|'category'>,occurrence:number,account:'bank'|'cash'){
+  const value=[account,row.kind,row.occurred_on,row.amount.toFixed(2),normal(row.description),normal(row.category),occurrence].join('|');
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
@@ -42,7 +42,7 @@ export async function parseSheets(sheets:Sheet[],fileName:string,existing:Transa
     const isTemplate=normal(sheet.sheet)==='transacciones'&&rows.some(row=>normal(row[1])==='fecha'&&normal(row[2])==='importe'&&normal(row[6])==='fecha');
     if(isTemplate){
       const header=rows.findIndex(row=>normal(row[1])==='fecha'&&normal(row[2])==='importe');
-      for(let i=header+1;i<rows.length;i++)for(const [dateCol,kind] of [[1,'expense'],[6,'income']] as const){const row=rows[i];const date=row[dateCol],amount=row[dateCol+1],description=row[dateCol+2],category=row[dateCol+3];if(date==null&&amount==null&&description==null)continue;const parsedDate=dateString(date??null),parsedAmount=amountNumber(amount??null);const reasons=[];if(!parsedDate)reasons.push('Fecha no válida');if(parsedAmount===null||parsedAmount===0)reasons.push('Importe vacío o cero');if(!tidy(description))reasons.push('Sin descripción');found.push({sheet:sheet.sheet,line:i+1,kind,occurred_on:parsedDate??'',amount:Math.abs(parsedAmount??0),description:tidy(description).slice(0,120),category:tidy(category).slice(0,60)||'Otros',valid:!reasons.length,reason:reasons.join(' · ')})}
+      for(let i=header+1;i<rows.length;i++)for(const [dateCol,kind] of [[1,'expense'],[6,'income']] as const){const row=rows[i];const date=row[dateCol],amount=row[dateCol+1],description=row[dateCol+2],category=row[dateCol+3];if(date==null&&amount==null&&description==null)continue;const parsedDate=dateString(date??null),parsedAmount=amountNumber(amount??null);const rounded=Math.round(Math.abs(parsedAmount??0)*100)/100;const reasons=[];if(!parsedDate)reasons.push('Fecha no válida');if(parsedAmount===null||rounded===0||rounded>9999999999.99)reasons.push('Importe no válido');if(!tidy(description))reasons.push('Sin descripción');found.push({sheet:sheet.sheet,line:i+1,kind,occurred_on:parsedDate??'',amount:rounded,description:tidy(description).slice(0,120),category:tidy(category).slice(0,60)||'Otros',valid:!reasons.length,reason:reasons.join(' · ')})}
       continue;
     }
     const headerIndex=rows.findIndex(row=>{const labels=row.map(normal);return labels.some(c=>['fecha','date','dia','día'].includes(c))&&labels.some(c=>['importe','monto','cantidad','amount'].includes(c))});
@@ -54,13 +54,14 @@ export async function parseSheets(sheets:Sheet[],fileName:string,existing:Transa
       const row=rows[i];if(row.every(v=>v==null||tidy(v)===''))continue;
       const date=dateString(row[d]??null),amount=amountNumber(row[a]??null),label=tidy(desc<0?'':row[desc]);const rawType=normal(type<0?'':row[type]);
       const kind:ImportRow['kind']=/ingreso|entrada|ganancia|income|abono/.test(rawType)?'income':/gasto|salida|expense|cargo/.test(rawType)?'expense':amount!==null&&amount>0?'income':'expense';
-      const reasons=[];if(!date)reasons.push('Fecha no válida');if(amount===null||amount===0)reasons.push('Importe vacío o cero');if(!label)reasons.push('Sin descripción');
-      found.push({sheet:sheet.sheet,line:i+1,kind,occurred_on:date??'',amount:Math.abs(amount??0),description:label.slice(0,120),category:tidy(cat<0?'':row[cat]).slice(0,60)||'Otros',valid:!reasons.length,reason:reasons.join(' · ')})
+      const rounded=Math.round(Math.abs(amount??0)*100)/100;
+      const reasons=[];if(!date)reasons.push('Fecha no válida');if(amount===null||rounded===0||rounded>9999999999.99)reasons.push('Importe no válido');if(!label)reasons.push('Sin descripción');
+      found.push({sheet:sheet.sheet,line:i+1,kind,occurred_on:date??'',amount:rounded,description:label.slice(0,120),category:tidy(cat<0?'':row[cat]).slice(0,60)||'Otros',valid:!reasons.length,reason:reasons.join(' · ')})
     }
   }
   const counts=new Map<string,number>();const existingKeys=new Set(existing.map(t=>t.import_key).filter(Boolean));
   const rows:ImportRow[]=[];
-  for(const row of found){const fingerprint=[row.kind,row.occurred_on,row.amount.toFixed(2),normal(row.description),normal(row.category)].join('|');const n=(counts.get(fingerprint)??0)+1;counts.set(fingerprint,n);const import_key=await keyFor(row,n);const duplicate=existingKeys.has(import_key)||existing.some(t=>t.kind===row.kind&&t.occurred_on===row.occurred_on&&Math.abs(Number(t.amount)-row.amount)<.005&&normal(t.description)===normal(row.description)&&normal(t.category)===normal(row.category)&&((t.account??'bank')===account));rows.push({...row,id:crypto.randomUUID(),import_key,duplicate,selected:row.valid&&!duplicate})}
+  for(const row of found){const fingerprint=[row.kind,row.occurred_on,row.amount.toFixed(2),normal(row.description),normal(row.category)].join('|');const n=(counts.get(fingerprint)??0)+1;counts.set(fingerprint,n);const import_key=await keyFor(row,n,account);const duplicate=existingKeys.has(import_key)||existing.some(t=>t.kind===row.kind&&t.occurred_on===row.occurred_on&&Math.abs(Number(t.amount)-row.amount)<.005&&normal(t.description)===normal(row.description)&&normal(t.category)===normal(row.category)&&((t.account??'bank')===account));rows.push({...row,id:crypto.randomUUID(),import_key,duplicate,selected:row.valid&&!duplicate})}
   return {rows,openingBalance:getOpeningBalance(sheets),fileName};
 }
 export async function parseFile(file:File,existing:Transaction[],account:'bank'|'cash'){

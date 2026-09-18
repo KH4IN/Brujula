@@ -14,8 +14,9 @@ Si no hay variables de Supabase, muestra datos de ejemplo en el almacenamiento l
 ## Activar cuentas y sincronización
 
 1. Crear un proyecto propio en Supabase.
-2. Ejecutar en orden `supabase/schema.sql`, `supabase/002_tracking.sql` y `supabase/004_transfers.sql` en el editor SQL. Si se creó una base con una revisión antigua de `002_tracking.sql` que usaba un índice parcial para `import_key`, ejecutar también `supabase/003_import_key.sql` después de `002_tracking.sql`. Todas las tablas llevan RLS y políticas por usuario. El proyecto Brújula ya tiene estas migraciones aplicadas.
-3. Configurar Auth por correo y contraseña. En **Authentication → URL Configuration**, establecer la URL publicada como Site URL y añadirla a Redirect URLs (también la URL de desarrollo, si corresponde). Sin ese ajuste, el enlace de confirmación enviado por correo puede apuntar a localhost. La confirmación por email se gestiona en el panel de Supabase.
+2. Ejecutar en orden `supabase/schema.sql`, `supabase/002_tracking.sql`, `supabase/003_import_key.sql`, `supabase/004_transfers.sql` y `supabase/005_security.sql` en el editor SQL. Todas las tablas llevan RLS y políticas por usuario; la última migración retira además los permisos anónimos. El proyecto Brújula ya tiene estas migraciones aplicadas.
+3. Configurar Auth por correo y contraseña. En **Authentication → URL Configuration**, establecer la URL publicada como Site URL y añadirla a Redirect URLs (también la URL de desarrollo, si corresponde). Sin ese ajuste, el enlace de confirmación enviado por correo puede apuntar a localhost. Mantener la confirmación por email activada. La aplicación permite corregir el correo y repetir el registro; cambiar de dirección crea una nueva solicitud y no traslada automáticamente la cuenta pendiente anterior.
+   **Para abrir el registro a cualquier correo** se necesita configurar un proveedor SMTP propio en **Authentication → SMTP Settings**. El servicio integrado de Supabase solo envía a direcciones autorizadas y limita actualmente el proyecto a 2 correos por hora. No es posible subir ese cupo del servicio integrado desde la app. Una vez configurado SMTP, ajustar un límite razonable en **Authentication → Rate Limits** y activar protección contra bots si el registro es público. Mantener la confirmación y los límites de intentos.
 4. Copiar `.env.example` a `.env.local` y rellenar `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY`. Son credenciales publicables de navegador. No colocar claves secretas ni `service_role` en variables `VITE_`.
 5. Ejecutar `npm run build` y publicar el repositorio en Vercel con el framework Vite. Añadir las mismas dos variables a la configuración del proyecto de Vercel, para Production y Preview, y volver a desplegar.
 
@@ -23,7 +24,7 @@ Los datos se actualizan inmediatamente después de cada cambio local. Si hay una
 
 ### Importación
 
-La hoja de ejemplo «Presupuesto mensual.xlsx» utiliza dos bloques en `Transacciones`: columnas B–E para gastos y G–J para ganancias. La app los reconoce y preserva fecha, importe, descripción y categoría. Omite filas con fecha inválida o importe cero, muestra posibles duplicados, y pide confirmar la selección. La hoja `Resumen` puede indicar un saldo inicial, pero nunca se importa automáticamente como ingreso. En CSV/TSV admite encabezados como Fecha, Importe, Descripción, Categoría y Tipo; si falta Tipo, infiere ingreso/gasto del signo y conviene revisar la vista previa. Límite de 8 MB y 5.000 filas. El archivo original no se sube: solo se guardan los movimientos confirmados.
+La hoja de ejemplo «Presupuesto mensual.xlsx» utiliza dos bloques en `Transacciones`: columnas B–E para gastos y G–J para ganancias. La app los reconoce y preserva fecha, importe, descripción y categoría. Omite filas con fecha inválida o importe cero después de redondear a céntimos, muestra posibles duplicados, y pide confirmar la selección. La hoja `Resumen` puede indicar un saldo inicial, pero nunca se importa automáticamente como ingreso. En CSV/TSV admite encabezados como Fecha, Importe, Descripción, Categoría y Tipo; si falta Tipo, infiere ingreso/gasto del signo y conviene revisar la vista previa. Límite de 8 MB y 5.000 filas. El archivo original no se sube: solo se guardan los movimientos confirmados. Las claves de importación distinguen banco de efectivo.
 
 ### Contabilidad
 
@@ -46,3 +47,5 @@ Tras abrirla online, el icono y los archivos de la app se almacenan para poder a
 - `supabase/*.sql`: esquema, ampliaciones y políticas de acceso.
 
 Las cantidades se guardan en EUR. Los presupuestos pertenecen a un mes concreto. Los cambios de mes permiten consultar históricos y añadir presupuestos para otro mes.
+
+La revisión de seguridad y sus límites se describen en `SECURITY_AUDIT.md`.

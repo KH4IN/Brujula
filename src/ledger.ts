@@ -7,12 +7,21 @@ export type LocalStore={transactions:Transaction[];budgets:Budget[];goals:Goal[]
 const prefix='brujula.local.v2.';
 const defaults=():AccountSetting[]=>[{account:'bank',opening_balance:0},{account:'cash',opening_balance:0}];
 const blank=():LocalStore=>({transactions:[],budgets:[],goals:[],investments:[],account_settings:defaults(),pending:[]});
+export const emptyStore=blank;
 const key=(entity:Entity,record:RecordValue)=>entity==='budgets'?`${(record as Budget).month}:${(record as Budget).category}`:entity==='account_settings'?(record as AccountSetting).account:(record as Transaction).id;
 const list=(state:LocalStore,entity:Entity)=>state[entity] as RecordValue[];
 const put=(state:LocalStore,entity:Entity,values:RecordValue[])=>{(state as unknown as Record<Entity,RecordValue[]>)[entity]=values};
 const queued=(items:Pending[],entry:Pending)=>[...items.filter(item=>!(item.entity===entry.entity&&item.id===entry.id)),entry];
 export function readStore(scope:string):LocalStore{
-  try{const raw=localStorage.getItem(prefix+scope);if(raw){const value=JSON.parse(raw) as LocalStore;if(Array.isArray(value.transactions)&&Array.isArray(value.budgets)&&Array.isArray(value.pending))return {...blank(),...value,goals:value.goals??[],investments:value.investments??[],account_settings:value.account_settings??defaults()}}}catch{/* Damaged cache: use a new local state. */}
+  const raw=localStorage.getItem(prefix+scope);
+  if(raw){
+    try{
+      const value=JSON.parse(raw) as LocalStore;
+      if(Array.isArray(value.transactions)&&Array.isArray(value.budgets)&&Array.isArray(value.pending))
+        return {...blank(),...value,goals:value.goals??[],investments:value.investments??[],account_settings:value.account_settings??defaults()};
+    }catch{/* Keep the original storage value intact for recovery. */}
+    throw new Error('Los datos locales no se pueden leer. No se sobrescribirán. Conserva los datos de este navegador y contacta con soporte.');
+  }
   return scope==='guest'&&!configured?{...blank(),...readDemo()}:blank();
 }
 export function writeStore(scope:string,state:LocalStore){localStorage.setItem(prefix+scope,JSON.stringify(state))}
@@ -41,7 +50,18 @@ export function claimGuest(userId:string){
   writeStore(userId,state);writeStore('guest',blank());
 }
 
-async function fetchAll<T>(entity:Entity,userId:string){const all:T[]=[];for(let offset=0;;offset+=500){const {data,error}=await supabase!.from(entity).select('*').eq('user_id',userId).range(offset,offset+499);if(error)throw error;all.push(...data as T[]);if(data.length<500)return all}}
+async function fetchAll<T>(entity:Entity,userId:string){
+  const all:T[]=[];
+  for(let offset=0;;offset+=500){
+    let query=supabase!.from(entity).select('*').eq('user_id',userId);
+    if(entity==='budgets')query=query.order('month').order('category');
+    else query=query.order(entity==='account_settings'?'account':'id');
+    const {data,error}=await query.range(offset,offset+499);
+    if(error)throw error;
+    all.push(...data as T[]);
+    if(data.length<500)return all;
+  }
+}
 async function push(userId:string,item:Pending){
   let result;
   if(item.method==='upsert'){

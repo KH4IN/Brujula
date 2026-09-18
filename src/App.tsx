@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { Activity, ArrowDownLeft, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Download, FileSpreadsheet, Landmark, LayoutDashboard, LogOut, Menu, Plus, Search, Settings2, SlidersHorizontal, Target, Trash2, TrendingUp, Wallet, X } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import { CATEGORIES, configured, formatDate, localDate, money, monthLabel, monthOf, supabase, type AccountSetting, type Budget, type Category, type Goal, type Investment, type Transaction } from './data';
-import { claimGuest, readStore, removeBudget as removeLocalBudget, removeTransaction as removeLocalTransaction, saveBudget as saveLocalBudget, saveTransaction as saveLocalTransaction, saveGoal, removeGoal, saveInvestment, removeInvestment, saveAccount, importTransactions, synchronize, type LocalStore } from './ledger';
+import { claimGuest, emptyStore, readStore, removeBudget as removeLocalBudget, removeTransaction as removeLocalTransaction, saveBudget as saveLocalBudget, saveTransaction as saveLocalTransaction, saveGoal, removeGoal, saveInvestment, removeInvestment, saveAccount, importTransactions, synchronize, type LocalStore } from './ledger';
 import { AccountsPanel, DailyChart, GoalsPanel, ImportDialog, InvestmentsPanel } from './Features';
 import { accountBalances, marketValue } from './finance';
+import { authMessage } from './auth';
 
 type Tab = 'dashboard'|'transactions'|'budgets'|'accounts'|'goals'|'investments';
 const palette:Record<Category,string> = {Vivienda:'#839c86',Alimentación:'#b9a876',Transporte:'#a98c7b',Compras:'#b18b91',Ocio:'#8e96bb',Salud:'#85aba6',Suscripciones:'#b69dbe',Otros:'#aaa9a0'};
@@ -18,6 +19,7 @@ function csvCell(s:string|number,protect=true){let value=String(s);if(protect&&/
 
 export default function App(){
   const [user,setUser]=useState<User|null>(null);
+  const [loadedScope,setLoadedScope]=useState('guest');
   const [tab,setTab]=useState<Tab>('dashboard');
   const [month,setMonth]=useState(monthOf());
   const [items,setItems]=useState<Transaction[]>([]);
@@ -63,14 +65,22 @@ export default function App(){
       if(scopeRef.current===user.id){applyLocal(fresh);setSyncState(fresh.pending.length?'pending':'synced');setNotice('')}
     }catch(error){
       if(scopeRef.current===user.id){setSyncState('pending');setNotice(`La sincronización está pendiente: ${error instanceof Error?error.message:'comprueba tu conexión'}`)}
-    }finally{syncing.current=false;if(completed&&readStore(user.id).pending.length&&scopeRef.current===user.id)queueMicrotask(()=>void syncNow())}
+    }finally{
+      syncing.current=false;
+      if(completed&&scopeRef.current===user.id){
+        try{if(readStore(user.id).pending.length)queueMicrotask(()=>void syncNow())}catch{/* Error shown by the next read. */}
+      }
+    }
   },[user,applyLocal]);
 
   useEffect(()=>{
-    if(user)claimGuest(user.id);
-    const local=readStore(scope);applyLocal(local);
-    setSyncState(user?(navigator.onLine?'pending':'offline'):'local');
-    if(user)void syncNow();
+    try{
+      if(user)claimGuest(user.id);
+      const local=readStore(scope);applyLocal(local);
+      setLoadedScope(scope);
+      setSyncState(user?(navigator.onLine?'pending':'offline'):'local');
+      if(user)void syncNow();
+    }catch(error){applyLocal(emptyStore());setLoadedScope(scope);setNotice(error instanceof Error?error.message:'No se pueden leer los datos locales.')}
   },[scope,user,applyLocal,syncNow]);
   useEffect(()=>{
     const online=()=>{if(user)void syncNow()};
@@ -121,6 +131,7 @@ export default function App(){
   }
   function go(next:Tab){setTab(next);setMobileOpen(false);setNotice('')}
 
+  if(loadedScope!==scope)return <div className="app" role="status">Cargando tu espacio…</div>;
   return <div className="app">
     {mobileOpen&&<div className="mobile-scrim" onClick={()=>setMobileOpen(false)}/>}
     <aside className={`sidebar ${mobileOpen?'sidebar-open':''}`}>
@@ -188,4 +199,41 @@ function Stat({label,value,icon,tone,foot}:{label:string,value:number,icon:React
 function BudgetLine({budget,spent}:{budget:Budget,spent:number}){const fraction=Math.min(spent/Number(budget.amount),1);const over=spent>Number(budget.amount);return <div className="budget-line"><div className="budget-name"><span>{budget.category}</span><strong>{money(spent)} <em>/ {money(Number(budget.amount))}</em></strong></div><div className="progress"><span style={{width:`${fraction*100}%`,background:over?'#bd7769':colorFor(budget.category)}}/></div><div className={`budget-caption ${over?'over':''}`}>{over?`${money(spent-Number(budget.amount))} por encima del límite`:`${Math.round(fraction*100)}% utilizado`}</div></div>}
 function Empty({text,action,label='Añadir movimiento'}:{text:string,action:()=>void,label?:string}){return <div className="empty"><div className="empty-symbol">✳</div><p>{text}</p><button onClick={action}>{label} <ArrowRight size={14}/></button></div>}
 function TransactionList({items,onEdit,onDelete,onAdd}:{items:Transaction[],onEdit:(t:Transaction)=>void,onDelete:(t:Transaction)=>void,onAdd:()=>void}){if(!items.length)return <Empty text="Todavía no hay movimientos aquí. Empieza con el primero." action={onAdd}/>;return <div className="transaction-list">{items.map(t=><div className="transaction" key={t.id}><div className="category-icon" style={{background:t.kind==='income'?'#e0eee5':`${colorFor(t.category)}25`,color:t.kind==='income'?'#4b9172':colorFor(t.category)}}>{t.kind==='income'?<ArrowDownLeft size={19}/>:t.kind==='transfer'?<ArrowRight size={19}/>:symbolFor(t.category)}</div><div className="transaction-info"><strong>{t.description}</strong><span>{t.kind==='transfer'?'Traspaso':t.category} <b>·</b> {t.account==='cash'?'Efectivo':'Banco'}{t.to_account?` → ${t.to_account==='cash'?'Efectivo':'Banco'}`:''} <b>·</b> {formatDate(t.occurred_on)}</span></div><strong className={`transaction-amount ${t.kind==='income'?'positive':''}`}>{t.kind==='income'?'+':t.kind==='transfer'?'↔':'−'}{money(Number(t.amount))}</strong><div className="transaction-actions"><button className="icon-button" title="Editar" aria-label={`Editar ${t.description}`} onClick={()=>onEdit(t)}><Settings2 size={16}/></button><button className="icon-button" title="Eliminar" aria-label={`Eliminar ${t.description}`} onClick={()=>onDelete(t)}><Trash2 size={16}/></button></div></div>)}</div>}
-function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){const [register,setRegister]=useState(false);const [email,setEmail]=useState('');const [password,setPassword]=useState('');const [error,setError]=useState('');const [loading,setLoading]=useState(false);async function submit(e:FormEvent){e.preventDefault();setLoading(true);setError('');const result=register?await supabase!.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin}}):await supabase!.auth.signInWithPassword({email,password});setLoading(false);if(result.error)setError(result.error.message);else if(register&&!result.data.session)setError('Revisa tu correo para confirmar la cuenta. Después podrás iniciar sesión.');else onReady()}return <div className="auth-overlay"><div className="auth-page"><button className="auth-close icon-button" onClick={onClose} aria-label="Cerrar"><X size={20}/></button><div className="auth-decor"><div className="brand"><div className="brand-symbol">✳</div><div className="brand-name">brújula<span>.</span><small>FINANZAS PERSONALES</small></div></div><div className="auth-message"><span>UN POCO MÁS DE CLARIDAD, CADA DÍA</span><h1>Tu dinero tiene una historia.<br/><em>Entiéndela mejor.</em></h1><p>Organiza tus gastos, pon límites que puedas cumplir y descubre lo que de verdad importa.</p></div><div className="auth-bottom">✳ &nbsp; Un lugar tranquilo para tus finanzas.</div></div><div className="auth-panel"><div className="auth-box"><div className="auth-mobile-brand">✳ brújula.</div><span className="section-kicker">BIENVENIDO A BRÚJULA</span><h2>{register?'Crea tu espacio':'Qué bien verte de nuevo.'}</h2><p>{register?'Empieza a ver tus finanzas con otros ojos.':'Entra y descubre cómo va tu mes.'}</p><form onSubmit={submit}><label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Contraseña<input type="password" required minLength={6} autoComplete={register?'new-password':'current-password'} placeholder="Mínimo 6 caracteres" value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<div className="notice" role="alert">{error}</div>}<button className="primary-button form-submit" disabled={loading}>{loading?'Un momento…':register?'Crear cuenta':'Entrar en mi espacio'} <ArrowRight size={18}/></button></form><div className="auth-toggle">{register?'¿Ya tienes cuenta?':'¿Todavía no tienes cuenta?'} <button onClick={()=>{setRegister(!register);setError('')}}>{register?'Inicia sesión':'Crear una cuenta'}</button></div></div></div></div></div>}
+function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
+  const [register,setRegister]=useState(false);
+  const [email,setEmail]=useState('');
+  const [password,setPassword]=useState('');
+  const [error,setError]=useState('');
+  const [confirmationEmail,setConfirmationEmail]=useState('');
+  const [loading,setLoading]=useState(false);
+  async function submit(e:FormEvent){
+    e.preventDefault();
+    if(loading)return;
+    setLoading(true);setError('');setConfirmationEmail('');
+    const address=email.trim().toLowerCase();
+    try{
+      if(register&&password.length<8){setError('La contraseña debe tener al menos 8 caracteres.');return}
+      const result=register
+        ?await supabase!.auth.signUp({email:address,password,options:{emailRedirectTo:window.location.origin}})
+        :await supabase!.auth.signInWithPassword({email:address,password});
+      if(result.error){setError(authMessage(result.error));return}
+      if(register&&!result.data.session){setConfirmationEmail(address);setPassword('');return}
+      onReady();
+    }catch{
+      setError('No se pudo conectar. Tus datos locales siguen disponibles; vuelve a intentarlo cuando tengas conexión.');
+    }finally{setLoading(false)}
+  }
+  return <div className="auth-overlay"><div className="auth-page">
+    <button className="auth-close icon-button" onClick={onClose} aria-label="Cerrar"><X size={20}/></button>
+    <div className="auth-decor"><div className="brand"><div className="brand-symbol">✳</div><div className="brand-name">brújula<span>.</span><small>FINANZAS PERSONALES</small></div></div><div className="auth-message"><span>UN POCO MÁS DE CLARIDAD, CADA DÍA</span><h1>Tu dinero tiene una historia.<br/><em>Entiéndela mejor.</em></h1><p>Organiza tus gastos, pon límites que puedas cumplir y descubre lo que de verdad importa.</p></div><div className="auth-bottom">✳ &nbsp; Un lugar tranquilo para tus finanzas.</div></div>
+    <div className="auth-panel"><div className="auth-box"><div className="auth-mobile-brand">✳ brújula.</div><span className="section-kicker">BIENVENIDO A BRÚJULA</span><h2>{register?'Crea tu espacio':'Qué bien verte de nuevo.'}</h2>
+      {confirmationEmail?<><p>Si la dirección es válida, recibirás un enlace de confirmación en <strong>{confirmationEmail}</strong>. Revisa también el correo no deseado.</p><div className="auth-toggle"><button type="button" onClick={()=>{setConfirmationEmail('');setEmail('');setError('')}}>Me equivoqué de correo: escribir otro</button></div><div className="auth-toggle"><button type="button" onClick={()=>{setRegister(false);setConfirmationEmail('');setError('')}}>Ya confirmé mi cuenta: iniciar sesión</button></div></>:
+      <><p>{register?'Empieza a ver tus finanzas con otros ojos.':'Entra y descubre cómo va tu mes.'}</p><form onSubmit={submit}>
+        <label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>
+        <label>Contraseña<input type="password" required minLength={register?8:1} autoComplete={register?'new-password':'current-password'} placeholder={register?'Mínimo 8 caracteres':'Tu contraseña'} value={password} onChange={e=>setPassword(e.target.value)}/></label>
+        {error&&<div className="notice" role="alert">{error}</div>}
+        <button className="primary-button form-submit" disabled={loading}>{loading?'Un momento…':register?'Crear cuenta':'Entrar en mi espacio'} <ArrowRight size={18}/></button>
+      </form><div className="auth-toggle">{register?'¿Ya tienes cuenta?':'¿Todavía no tienes cuenta?'} <button type="button" onClick={()=>{setRegister(!register);setError('');setPassword('')}}>{register?'Inicia sesión':'Crear una cuenta'}</button></div></>}
+    </div></div>
+  </div></div>;
+}
