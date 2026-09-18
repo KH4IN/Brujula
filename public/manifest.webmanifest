@@ -1,0 +1,11 @@
+{
+  "name":"Brújula — Finanzas personales",
+  "short_name":"Brújula",
+  "description":"Gastos y presupuestos locales con sincronización opcional.",
+  "start_url":"/",
+  "scope":"/",
+  "display":"standalone",
+  "background_color":"#f7f8f5",
+  "theme_color":"#173f32",
+  "icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
