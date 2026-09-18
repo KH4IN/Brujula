@@ -1,0 +1,79 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { parseFile, parseSheets, amountNumber, dateString, detectColumns } from './.import.bundle.mjs';
+const file=(name,body)=>new File([body],name,{type:'text/csv'});
+const parse=(name,body,existing=[],options={})=>parseFile(file(name,body),existing,'bank',options);
+const tx=r=>({id:r.id,kind:r.kind,occurred_on:r.occurred_on,amount:r.amount,description:r.description,category:r.category,account:'bank',import_key:r.import_key});
+
+test('separadores, preámbulo, comillas y coma decimal (BBVA/Santander/Sabadell)',async()=>{
+ const p=await parse('bbva.csv','Extracto de cuenta\nFecha Operación;Concepto;Importe;Saldo\n01/09/2026;"MERCADONA, MADRID";-1.234,56;10,00\n');
+ assert.equal(p.rows.length,1);assert.equal(p.rows[0].amount,1234.56);assert.equal(p.rows[0].kind,'expense');assert.equal(p.rows[0].merchant,'Mercadona');assert.equal(p.rows[0].category,'Alimentación');
+});
+test('Revolut: columnas inglesas, fecha ISO y tipo explícito',async()=>{
+ const p=await parse('revolut.csv','Type,Date completed (UTC),Description,Amount,Fee,Currency,State\nCARD_PAYMENT,2026-09-01 13:10:00,LIDL,-24.95,0,EUR,COMPLETED');
+ assert.equal(p.rows.length,1);assert.equal(p.rows[0].kind,'expense');assert.equal(p.rows[0].merchant,'Lidl');assert.equal(p.rows[0].amount,24.95);
+});
+test('CaixaBank: cargo/abono sin inventar el signo',async()=>{
+ const p=await parse('caixa.csv','Fecha;Concepto;Cargo;Abono\n02/09/2026;ALCAMPO;38,20;\n03/09/2026;Nómina;;2100,00');
+ assert.deepEqual(p.rows.map(r=>[r.kind,r.amount,r.category]),[['expense',38.2,'Alimentación'],['income',2100,'Salario']]);
+});
+test('N26 alemán y Wise francés representativos',async()=>{
+ const de=await parse('n26.csv','Buchungstag;Verwendungszweck;Betrag\n05.09.2026;ALDI;-17,85');
+ assert.equal(de.rows[0].merchant,'Aldi');
+ const fr=await parse('wise.csv','Date opération;Libellé;Montant;Devise\n2026-09-04;CARREFOUR;-22,50;EUR');
+ assert.equal(fr.rows[0].merchant,'Carrefour');assert.equal(fr.rows[0].valid,true);
+});
+test('fila positiva sin tipo exige decisión manual',async()=>{
+ const data='Fecha,Descripción,Importe\n01/09/2026,Compra DIA,34.50';
+ const p=await parse('banco.csv',data);assert.equal(p.needsMapping,true);
+ const q=await parse('banco.csv',data,[],{sheet:'Movimientos',columns:p.sheets[0].suggested,signMode:'expenses'});
+ assert.equal(q.needsMapping,false);assert.equal(q.rows[0].kind,'expense');
+});
+test('mapeo manual de columnas desconocidas',async()=>{
+ const csv='ColA;ColB;ColC\n05/09/2026;PAGO MERCADONA;12,40';
+ const first=await parse('desconocido.csv',csv);assert.equal(first.needsMapping,true);
+ const mapped=await parse('desconocido.csv',csv,[],{sheet:'Movimientos',header:0,columns:{date:0,description:1,amount:2},signMode:'expenses'});
+ assert.equal(mapped.rows[0].category,'Alimentación');assert.equal(mapped.rows[0].amount,12.4);
+});
+test('dos pagos iguales legítimos y reimportación por ocurrencia',async()=>{
+ const csv='Fecha,Descripción,Importe\n2026-09-01,TPV,-10\n2026-09-01,TPV,-10';
+ const first=await parse('historial.csv',csv);assert.equal(first.rows.filter(r=>r.selected).length,2);
+ const second=await parse('historial.csv',csv,first.rows.map(tx));assert.equal(second.rows.filter(r=>r.duplicate).length,2);
+ const partial=await parse('historial.csv',csv,[tx(first.rows[0])]);assert.deepEqual(partial.rows.map(r=>r.duplicate),[true,false]);
+});
+test('referencias estables por cuenta y referencia repetida en archivo',async()=>{
+ const csv='Fecha;Concepto;Cargo;Referencia bancaria\n01/09/2026;Mercadona;12;ABC-9\n01/09/2026;Mercadona;12;ABC-9';
+ const p=await parse('santander.csv',csv);assert.deepEqual(p.rows.map(r=>r.duplicate),[false,true]);
+ const cash=await parseFile(file('santander.csv',csv),[tx(p.rows[0])],'cash');assert.equal(cash.rows[0].duplicate,false);
+});
+test('categoría bancaria prevalece; Bizum no se atribuye a comercio',async()=>{
+ const p=await parse('mov.csv','Fecha;Concepto;Categoría;Importe\n01/09/2026;Mercadona;Personalizado;-12\n02/09/2026;Bizum a Ana;;-8');
+ assert.deepEqual(p.rows.map(r=>r.category),['Personalizado','Otros']);
+});
+test('divisas sin conversión y filas contradictorias se descartan',async()=>{
+ const p=await parse('wise.csv','Date;Description;Debit;Credit;Currency\n2026-09-01;Tesco;10;;GBP\n2026-09-02;Pago;10;11;EUR');
+ assert.equal(p.rows[0].valid,false);assert.match(p.rows[0].reason,/Divisa/);assert.equal(p.rows[1].valid,false);
+});
+test('fecha imposible e importe vacío se detectan',async()=>{
+ const p=await parse('mov.csv','Fecha;Concepto;Importe\n31/02/2026;PAGO;-10\n01/09/2026;PAGO;');
+ assert.equal(p.rows.filter(r=>!r.valid).length,2);assert.equal(dateString('2026-02-31'),null);
+});
+test('UTF-16, UTF-8 BOM y Windows-1252',async()=>{
+ const csv='Fecha;Descripción;Importe\n01/09/2026;Día supermercado;-4,10';
+ const utf16=new Uint8Array([255,254,...new Uint8Array(new TextEncoder().encode(''))]);
+ const bytes=Buffer.from(csv,'utf16le'),p=await parseFile(new File([utf16,bytes],'utf16.csv'),[],'bank');
+ assert.equal(p.rows[0].amount,4.1);
+ const bom=await parse('bom.csv','\uFEFF'+csv);assert.equal(bom.rows[0].valid,true);
+ const cp=Buffer.from('Fecha;Descripci\xf3n;Importe\n01/09/2026;Aldi;-1,20','latin1');
+ const legacy=await parseFile(new File([cp],'legacy.csv'),[],'bank');assert.equal(legacy.rows[0].merchant,'Aldi');
+});
+test('plantilla de presupuesto con dos bloques y saldo inicial',async()=>{
+ const p=await parseSheets([{sheet:'Resumen',data:[['Saldo inicial',100]]},{sheet:'Transacciones',data:[[null,'Fecha','Importe','Concepto','Categoría',null,'Fecha','Importe','Concepto','Categoría'],[null,'01/09/2026',20,'ALDI',null,null,'02/09/2026',900,'Nómina',null]]}],'presupuesto.xlsx',[],'bank');
+ assert.equal(p.openingBalance,100);assert.deepEqual(p.rows.map(r=>r.kind),['expense','income']);
+});
+test('cantidades agrupadas, negativos contables y columnas de saldo',()=>{
+ assert.equal(amountNumber('1.234,56 €'),1234.56);assert.equal(amountNumber('(1,234.56)'),-1234.56);
+ assert.equal(amountNumber('1 234,56-'),-1234.56);
+ const cols=detectColumns(['Fecha Valor','IBAN','Saldo','Importe (EUR)','Concepto']);
+ assert.equal(cols.amount,3);assert.equal(cols.description,4);
+});
