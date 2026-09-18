@@ -71,6 +71,11 @@ test('plantilla de presupuesto con dos bloques y saldo inicial',async()=>{
  const p=await parseSheets([{sheet:'Resumen',data:[['Saldo inicial',100]]},{sheet:'Transacciones',data:[[null,'Fecha','Importe','Concepto','Categoría',null,'Fecha','Importe','Concepto','Categoría'],[null,'01/09/2026',20,'ALDI',null,null,'02/09/2026',900,'Nómina',null]]}],'presupuesto.xlsx',[],'bank');
  assert.equal(p.openingBalance,100);assert.deepEqual(p.rows.map(r=>r.kind),['expense','income']);
 });
+test('hojas auxiliares no bloquean los movimientos del Excel',async()=>{
+ const sheets=[{sheet:'Resumen',data:[['Cuenta','Saldo','Fecha'],['Banco',1200,'01/09/2026']]},{sheet:'Movimientos',data:[['Fecha','Concepto','Cargo','Abono'],['02/09/2026','Carrefour',25,null]]}];
+ const result=await parseSheets(sheets,'extracto.xlsx',[],'bank');
+ assert.equal(result.needsMapping,false);assert.equal(result.rows.length,1);assert.equal(result.rows[0].sheet,'Movimientos');
+});
 test('cantidades agrupadas, negativos contables y columnas de saldo',()=>{
  assert.equal(amountNumber('1.234,56 €'),1234.56);assert.equal(amountNumber('(1,234.56)'),-1234.56);
  assert.equal(amountNumber('1 234,56-'),-1234.56);

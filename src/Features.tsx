@@ -1,6 +1,6 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { ArrowRight, Check, CircleAlert, FileSpreadsheet, Pencil, Plus, Target, Trash2, TrendingUp, UploadCloud, Wallet, X } from 'lucide-react';
-import { type AccountSetting, type AccountType, type Goal, type Investment, type Transaction, formatDate, localDate, money, monthLabel } from './data';
+import { CATEGORIES, type AccountSetting, type AccountType, type Goal, type Investment, type Transaction, formatDate, localDate, money, monthLabel } from './data';
 import { investedCost, marketValue } from './finance';
 import { parseFile, type ImportPreview, type ColumnMap, type Field, type SignMode } from './import';
 
@@ -12,18 +12,18 @@ const freshInvestment=()=>({name:'',ticker:'',units:'',average_cost:'',current_p
 export function ImportDialog({existing,onConfirm,onClose}:{existing:Transaction[];onConfirm:(values:Transaction[])=>void;onClose:()=>void}){
   const [file,setFile]=useState<File|null>(null),[account,setAccount]=useState<AccountType>('bank');
   const [preview,setPreview]=useState<ImportPreview|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState('');
-  const [selected,setSelected]=useState<Set<string>>(new Set()),[columns,setColumns]=useState<ColumnMap>({});
+  const [selected,setSelected]=useState<Set<string>>(new Set()),[columns,setColumns]=useState<ColumnMap>({}),[categoryEdits,setCategoryEdits]=useState<Record<string,string>>({});
   const [sheet,setSheet]=useState(''),[header,setHeader]=useState(0),[signMode,setSignMode]=useState<SignMode>('signed');
   async function load(nextFile:File|null,nextAccount=account,manual=false){if(!nextFile)return;setFile(nextFile);setLoading(true);setError('');
     try{const result=await parseFile(nextFile,existing,nextAccount,manual?{sheet,header,columns,signMode}:{});
-      setPreview(result);setSelected(new Set(result.rows.filter(r=>r.selected).map(r=>r.id)));
-      if(!manual){const first=result.sheets[0];setSheet(first?.name??'');setHeader(first?.header??0);setColumns(first?.suggested??{});setSignMode('signed')}
+      setPreview(result);setSelected(new Set(result.rows.filter(r=>r.selected).map(r=>r.id)));setCategoryEdits({});
+      if(!manual){const first=result.sheets.find(s=>s.name===result.rows[0]?.sheet)??result.sheets[0];setSheet(first?.name??'');setHeader(first?.header??0);setColumns(first?.suggested??{});setSignMode('signed')}
     }catch(reason){setPreview(null);setError(reason instanceof Error?reason.message:'No se pudo leer el archivo')}finally{setLoading(false)}
   }
   const ready=preview?.rows.filter(r=>selected.has(r.id)&&r.valid&&!r.duplicate)??[];
   const invalid=preview?.rows.filter(r=>!r.valid)??[],duplicates=preview?.rows.filter(r=>r.duplicate)??[];
   const active=preview?.sheets.find(s=>s.name===sheet)??preview?.sheets[0];
-  function finish(){if(!ready.length||preview?.needsMapping)return;onConfirm(ready.map(r=>({id:r.id,kind:r.kind,amount:r.amount,description:r.description,category:r.category,occurred_on:r.occurred_on,account,import_key:r.import_key})));onClose()}
+  function finish(){if(!ready.length||preview?.needsMapping)return;onConfirm(ready.map(r=>({id:r.id,kind:r.kind,amount:r.amount,description:r.description,category:categoryEdits[r.id]?.trim().slice(0,60)||r.category,occurred_on:r.occurred_on,account,import_key:r.import_key})));onClose()}
   const fields:Array<[Field,string]>=[['date','Fecha'],['amount','Importe con signo'],['debit','Cargo / debe'],['credit','Abono / haber'],['description','Descripción'],['description2','Detalle adicional'],['merchant','Comercio'],['category','Categoría del banco'],['type','Tipo de movimiento'],['reference','ID de operación'],['currency','Divisa']];
   return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><div className="modal import-modal" role="dialog" aria-modal="true" aria-labelledby="import-title"><div className="modal-heading"><div><span className="section-kicker">IMPORTAR ARCHIVO</span><h2 id="import-title">De la hoja a tus gráficos.</h2></div><button className="icon-button" onClick={onClose} aria-label="Cerrar"><X size={20}/></button></div>
     <p className="feature-copy">Descarga los movimientos desde tu banco en CSV o Excel. Se leen en tu dispositivo: revisa importes, fechas y comercios antes de guardarlos. Solo se sincronizan los movimientos que confirmes.</p>
@@ -41,8 +41,8 @@ export function ImportDialog({existing,onConfirm,onClose}:{existing:Transaction[
         <button className="secondary-button" disabled={loading||!file} onClick={()=>void load(file,account,true)}>Aplicar y revisar vista previa</button>
       </details>}
       {preview.needsMapping&&<p className="import-warning" role="status">Confirma las columnas y el sentido del importe para habilitar la importación.</p>}
-      {!!preview.rows.length&&<><div className="import-table-wrap"><table className="import-table"><thead><tr><th>Incluir</th><th>Fecha</th><th>Movimiento y comercio</th><th>Categoría</th><th>Importe</th></tr></thead><tbody>{preview.rows.map(row=><tr key={row.id} className={!row.valid||row.duplicate?'muted-row':''}><td><input type="checkbox" aria-label={'Importar fila '+row.line+' de '+row.sheet} checked={selected.has(row.id)} disabled={!row.valid||row.duplicate||preview.needsMapping} onChange={e=>setSelected(current=>{const next=new Set(current);if(e.target.checked)next.add(row.id);else next.delete(row.id);return next})}/></td><td>{row.occurred_on||'—'}</td><td><strong>{row.merchant?row.merchant+' · ':''}{row.description||'Sin descripción'}</strong><small>{row.reason??(row.duplicate?'Posible duplicado':row.sheet+' · fila '+row.line)}</small></td><td>{row.category}</td><td className={row.kind==='income'?'positive':''}>{row.kind==='income'?'+':'−'}{money(row.amount)}</td></tr>)}</tbody></table></div>
-        <p className="import-footnote">Las filas inválidas y los importes de otras divisas no se guardan. Comprueba los movimientos repetidos antes de confirmar.</p><button className="primary-button form-submit" disabled={!ready.length||preview.needsMapping} onClick={finish}><Check size={18}/> Importar {ready.length} movimientos</button></>}
+      {!!preview.rows.length&&<><datalist id="import-categories">{[...new Set([...CATEGORIES,'Salario',...preview.rows.map(r=>r.category)])].map(category=><option key={category} value={category}/>)}</datalist><div className="import-table-wrap"><table className="import-table"><thead><tr><th>Incluir</th><th>Fecha</th><th>Movimiento y comercio</th><th>Categoría</th><th>Importe</th></tr></thead><tbody>{preview.rows.map(row=><tr key={row.id} className={!row.valid||row.duplicate?'muted-row':''}><td><input type="checkbox" aria-label={'Importar fila '+row.line+' de '+row.sheet} checked={selected.has(row.id)} disabled={!row.valid||row.duplicate||preview.needsMapping} onChange={e=>setSelected(current=>{const next=new Set(current);if(e.target.checked)next.add(row.id);else next.delete(row.id);return next})}/></td><td>{row.occurred_on||'—'}</td><td><strong>{row.merchant?row.merchant+' · ':''}{row.description||'Sin descripción'}</strong><small>{row.reason??(row.duplicate?'Posible duplicado':row.sheet+' · fila '+row.line)}</small></td><td><input className="import-category-input" aria-label={'Categoría fila '+row.line} list="import-categories" maxLength={60} disabled={!row.valid||row.duplicate} value={categoryEdits[row.id]??row.category} onChange={e=>setCategoryEdits(prev=>({...prev,[row.id]:e.target.value}))}/></td><td className={row.kind==='income'?'positive':''}>{row.kind==='income'?'+':'−'}{money(row.amount)}</td></tr>)}</tbody></table></div>
+        <p className="import-footnote">Las categorías son sugerencias: puedes corregirlas aquí. Las filas inválidas y los importes de otras divisas no se guardan. Comprueba los movimientos repetidos antes de confirmar.</p><button className="primary-button form-submit" disabled={!ready.length||preview.needsMapping} onClick={finish}><Check size={18}/> Importar {ready.length} movimientos</button></>}
     </>}
   </div></div>
 }

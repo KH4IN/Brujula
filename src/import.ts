@@ -63,9 +63,13 @@ const signature=(r:Pick<ImportRow,'kind'|'occurred_on'|'amount'|'description'>,a
 export async function parseSheets(sheets:Sheet[],fileName:string,existing:Transaction[],account:'bank'|'cash',options:ImportOptions={}):Promise<ImportPreview>{
  const previews:ImportPreview['sheets']=[],candidates:Array<Omit<ImportRow,'id'|'import_key'|'duplicate'|'selected'>&{reference:string}>=[];
  let needsMapping=false,warning='';
+ const templateFor=(sheet:Sheet)=>normal(sheet.sheet)==='transacciones'&&sheet.data.some(row=>normal(row[1])==='fecha'&&normal(row[2])==='importe'&&normal(row[6])==='fecha');
+ const preferred=options.sheet??sheets.find(templateFor)?.sheet??sheets.map(s=>({sheet:s.sheet,...layout(s)})).sort((a,b)=>b.score-a.score)[0]?.sheet;
  for(const sheet of sheets){
-  const template=normal(sheet.sheet)==='transacciones'&&sheet.data.some(row=>normal(row[1])==='fecha'&&normal(row[2])==='importe'&&normal(row[6])==='fecha');
+  const template=templateFor(sheet);
   if(template){const h=sheet.data.findIndex(row=>normal(row[1])==='fecha'&&normal(row[2])==='importe');
+   previews.push({name:sheet.sheet,header:h,headers:(sheet.data[h]??[]).map(tidy),suggested:{date:1,amount:2,description:3,category:4},choices:[{index:h,sample:'Plantilla de gastos e ingresos'}]});
+   if(sheet.sheet!==preferred)continue;
    for(let i=h+1;i<sheet.data.length;i++)for(const [col,kind] of [[1,'expense'],[6,'income']] as const){const row=sheet.data[i];if(!row||[row[col],row[col+1],row[col+2]].every(v=>!tidy(v)))continue;
     const date=dateString(row[col]??null),amount=amountNumber(row[col+1]??null),description=tidy(row[col+2]).slice(0,120);
     const reasons=[!date&&'Fecha no válida',(amount===null||Math.abs(amount)<.005||Math.abs(amount)>9999999999.99)&&'Importe no válido',!description&&'Sin descripción'].filter(Boolean);
@@ -75,7 +79,7 @@ export async function parseSheets(sheets:Sheet[],fileName:string,existing:Transa
   const detected=layout(sheet);if(detected.index<0)continue;
   const header=options.sheet===sheet.sheet&&options.header!==undefined?options.header:detected.index;
   const headers=sheet.data[header]??[],columns=options.sheet===sheet.sheet&&options.columns&&Object.values(options.columns).some(v=>v!==undefined)?options.columns:detectColumns(headers);
-  previews.push({name:sheet.sheet,header,headers:headers.map(tidy),suggested:columns,choices:sheet.data.slice(0,30).map((row,index)=>({index,sample:row.map(tidy).filter(Boolean).slice(0,3).join(' · ').slice(0,105)})).filter(row=>row.sample)});if(options.sheet&&options.sheet!==sheet.sheet)continue;
+  previews.push({name:sheet.sheet,header,headers:headers.map(tidy),suggested:columns,choices:sheet.data.slice(0,30).map((row,index)=>({index,sample:row.map(tidy).filter(Boolean).slice(0,3).join(' · ').slice(0,105)})).filter(row=>row.sample)});if(sheet.sheet!==preferred)continue;
   if(columns.date===undefined||(columns.amount===undefined&&columns.debit===undefined&&columns.credit===undefined)||(columns.description===undefined&&columns.merchant===undefined)){needsMapping=true;continue}
   const read=(row:Cell[],field:Field)=>columns[field]===undefined?'':tidy(row[columns[field]!]);
   const content=sheet.data.slice(header+1).filter(row=>row.some(v=>tidy(v)));
