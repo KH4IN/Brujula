@@ -1,6 +1,6 @@
 # Brújula — finanzas personales
 
-Web instalable (PWA) adaptable a móvil y ordenador. Registra movimientos de banco y efectivo, traspasos, presupuestos, objetivos de ahorro e inversiones manuales. Muestra el reparto por categorías, el gasto diario, el patrimonio estimado y un detalle interactivo. Importa Excel `.xlsx`, CSV y TSV con revisión previa, y exporta movimientos a CSV. Cada cambio se guarda primero en el dispositivo y puede sincronizarse con Supabase mediante una cuenta. Para acceder, se solicita un código de seis cifras por correo, sin contraseña.
+Web instalable (PWA) adaptable a móvil y ordenador. Registra movimientos de banco y efectivo, traspasos, presupuestos, objetivos de ahorro e inversiones manuales. Muestra el reparto por categorías, el gasto diario, el patrimonio estimado y un detalle interactivo. Importa Excel `.xlsx`, CSV y TSV con revisión previa, y exporta movimientos a CSV. Cada cambio se guarda primero en el dispositivo y puede sincronizarse con Supabase mediante una cuenta. Para acceder, se solicita un código de seis cifras por correo, sin contraseña. La web oficial para usar y probar Brújula es https://brujula-finanzas-kh4ins-projects.vercel.app/; la rama `main` se publica allí.
 
 ## Probar en local
 
@@ -39,6 +39,8 @@ Las referencias bancarias y el número de ocurrencia ayudan a señalar duplicado
 
 En Cuentas puedes crear varios bancos con nombre y saldo inicial propios, además de efectivo; el panel suma los bancos y muestra cada saldo por separado. En Cartera puedes registrar criptomonedas, ETF, fondos y acciones con unidades y valoración manual en euros. Una inversión es un activo separado, no una cuenta para importar extractos. Si su compra ya figura como movimiento del banco, elige «Ya contabilizado en mis saldos» al registrarla para evitar descontarla dos veces; revisa el gasto importado si quieres excluir la compra de los gráficos de consumo.
 
+El efectivo permite anotar unidades de billetes (500, 200, 100, 50, 20, 10 y 5 €) y monedas (2 y 1 €, 50, 20, 10, 5, 2 y 1 céntimo). El recuento muestra su diferencia frente al saldo que resulta de los movimientos y no se añade otra vez al patrimonio. Al guardarlo puedes elegir ajustar el saldo inicial para conciliarlo. El modo oscuro se activa desde el botón de la barra superior; el dispositivo recuerda tu elección.
+
 - Saldo de banco/efectivo = saldo inicial + ingresos − gastos ± traspasos − coste de inversiones que se hayan marcado como financiadas desde esa cuenta.
 - Un traspaso no cuenta como ingreso ni gasto.
 - Patrimonio estimado = banco + efectivo + valor manual de las inversiones. La variación de precio de una inversión no es un ingreso realizado.
@@ -49,7 +51,7 @@ Tras abrirla online, el icono y los archivos de la app se almacenan para poder a
 
 ### Acceso rápido desde iPhone
 
-En Atajos de iOS crea un atajo con la acción «URL» que contenga `https://TU-DOMINIO/?nuevo=1&tipo=expense` y después la acción «Abrir URL». La aplicación abre el formulario de gasto para que introduzcas el importe y confirmes el guardado; también admite `tipo=income`, `importe=12.50`, `descripcion=Compra` y `categoria=Alimentación` para rellenar el formulario. Evita poner detalles financieros sensibles en la URL del atajo, ya que el navegador puede transmitir esa URL al abrir la página. No se guarda nada sin confirmarlo.
+En Atajos de iOS crea un atajo con la acción «URL» que contenga `https://brujula-finanzas-kh4ins-projects.vercel.app/?nuevo=1&tipo=expense` y después la acción «Abrir URL». La aplicación abre el formulario de gasto para que introduzcas el importe y confirmes el guardado; también admite `tipo=income`, `importe=12.50`, `descripcion=Compra` y `categoria=Alimentación` para rellenar el formulario. Evita poner detalles financieros sensibles en la URL del atajo, ya que el navegador puede transmitir esa URL al abrir la página. No se guarda nada sin confirmarlo.
 
 ## Estructura
 
@@ -66,3 +68,9 @@ En Atajos de iOS crea un atajo con la acción «URL» que contenga `https://TU-D
 Las cantidades se guardan en EUR. Los presupuestos pertenecen a un mes concreto. Los cambios de mes permiten consultar históricos y añadir presupuestos para otro mes.
 
 La revisión de seguridad y sus límites se describen en `SECURITY_AUDIT.md`.
+
+## Publicar y volver atrás
+
+La única dirección de uso y pruebas es la de producción. Antes de publicar, `npm test` y `npm run build` deben terminar bien; el workflow `.github/workflows/ci.yml` los ejecuta en las pull requests y en cada push a `main`. Conserva cada cambio en un commit y revisa la pull request antes de fusionarla. Vercel publica automáticamente la rama `main`.
+
+El despliegue anterior de Vercel y el commit anterior de `main` permiten recuperar la interfaz; un `git revert <SHA>` publicado en `main` es la ruta reproducible desde GitHub. Una reversión del frontend **no revierte datos ni esquema**: `006_accounts_portfolio.sql` solo añade columnas y amplía restricciones, así que puede permanecer aplicada mientras el frontend anterior sigue funcionando. No borres columnas ni movimientos para deshacer la publicación. Si se perdió contenido guardado únicamente como invitado en el navegador, GitHub y Vercel no pueden recuperarlo: expórtalo o sincronízalo antes de borrar datos del navegador.
