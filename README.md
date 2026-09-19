@@ -14,7 +14,7 @@ Si no hay variables de Supabase, muestra datos de ejemplo en el almacenamiento l
 ## Activar cuentas y sincronización
 
 1. Crear un proyecto propio en Supabase.
-2. Ejecutar en orden `supabase/schema.sql`, `supabase/002_tracking.sql`, `supabase/003_import_key.sql`, `supabase/004_transfers.sql` y `supabase/005_security.sql` en el editor SQL. Todas las tablas llevan RLS y políticas por usuario; la última migración retira además los permisos anónimos. El proyecto Brújula ya tiene estas migraciones aplicadas.
+2. Ejecutar en orden `supabase/schema.sql`, `supabase/002_tracking.sql`, `supabase/003_import_key.sql`, `supabase/004_transfers.sql` y `supabase/005_security.sql` en el editor SQL. Todas las tablas llevan RLS y políticas por usuario; la última migración retira además los permisos anónimos. El proyecto Brújula ya tiene estas migraciones aplicadas. Para activar cuentas bancarias separadas y tipos de inversión al publicar esta versión, revisar y ejecutar `supabase/006_accounts_portfolio.sql` antes de permitir su uso a usuarios autenticados. El modo invitado funciona en local sin esta migración; las nuevas cuentas no se sincronizan hasta ejecutarla.
 3. Configurar acceso por email OTP según `supabase/OTP_SETUP.md`. **Primero publicar el nuevo frontend**, después sustituir las plantillas de confirmación y de Magic Link/OTP por la plantilla con `{{ .Token }}`. Mantener la confirmación por correo y configurar la URL pública. Para que funcione con cualquier dirección se necesita SMTP propio: el servicio integrado solo envía a direcciones autorizadas del proyecto y limita actualmente el proyecto a 2 correos por hora. Nunca publicar credenciales SMTP en el cliente.
 4. Para desarrollo, copiar `.env.example` a `.env.local` y rellenar `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY`. El despliegue desde GitHub usa `.env.production`, que incluye exclusivamente la URL y la **clave publicable** del proyecto Brújula. Esa clave ya es visible en cualquier navegador; la seguridad de los datos depende de RLS. No colocar claves secretas, credenciales SMTP ni `service_role` en archivos del repositorio o variables `VITE_`.
 5. Ejecutar `npm run build` y publicar el repositorio en Vercel con el framework Vite. Después de verificar el despliegue, completar el paso 3. Para utilizar otro proyecto Supabase, actualizar `.env.production` solo con su URL y clave publicable.
@@ -27,6 +27,8 @@ La hoja de ejemplo «Presupuesto mensual.xlsx» utiliza dos bloques en `Transacc
 
 Para importar un extracto, descarga los **movimientos** en CSV, TSV o Excel desde la banca online de tu entidad y selecciona el archivo en Brújula. Se detectan cabeceras frecuentes en español, inglés, francés, alemán, portugués e italiano, con comas, punto y coma, tabuladores y codificaciones habituales. Los extractos de Revolut, BBVA, CaixaBank, Santander, Sabadell y otras entidades pueden variar según país, producto y versión: si las columnas no se reconocen, selecciona la fila de cabeceras y asigna fecha, descripción e importe (o cargo y abono) en el formulario. Revisa siempre la vista previa; cuando todos los importes sean positivos y no haya tipo, indica si son gastos o ingresos.
 
+En un extracto con importes positivos y negativos, Brújula toma el signo: negativo es gasto y positivo es ingreso, aunque «Tipo» diga «Recibo enviado» u otra etiqueta desconocida. Si un tipo reconocido contradice al signo, bloquea la fila para revisión. Una transferencia entre cuentas propias aparece como cargo en una cuenta y abono en la otra: revísala y regístrala como **Traspaso** para que no infle las estadísticas de gastos e ingresos. No se puede deducir con certeza una transferencia propia únicamente por la descripción.
+
 En los extractos con inicio y finalización (por ejemplo Revolut) se usa la fecha de finalización y se reconoce por separado la fecha de inicio. Los pagos pendientes, cancelados o revertidos, las divisas distintas de EUR y los importes con comisión separada distinta de cero requieren revisión y no se importan automáticamente. Una compra o venta de valores en Trade Republic tampoco se cuenta como gasto o ingreso ordinario: se registra manualmente en Inversiones. El saldo exportado no es un movimiento. Los archivos de `tests/fixtures/` son **ejemplos sintéticos**, no extractos emitidos ni certificados por esos bancos; permiten comprobar la lectura del formato y no acreditan compatibilidad con todas sus exportaciones.
 
 Si el banco suministra una categoría se respeta; si no, se aplica una clasificación local basada en reglas. Los supermercados conocidos se identifican por marca (Mercadona, Lidl, Aldi, Día, Carrefour, Alcampo y otros) y pueden filtrarse por comercio en Movimientos. Se guardan la descripción original y la categoría; el comercio se vuelve a identificar a partir de la descripción en cada dispositivo. Los importes de otra divisa se omiten hasta que el usuario convierta el archivo a EUR; Brújula no inventa tipos de cambio. Los PDF y formatos propietarios distintos de XLSX no están soportados.
@@ -35,6 +37,8 @@ Las referencias bancarias y el número de ocurrencia ayudan a señalar duplicado
 
 ### Contabilidad
 
+En Cuentas puedes crear varios bancos con nombre y saldo inicial propios, además de efectivo; el panel suma los bancos y muestra cada saldo por separado. En Cartera puedes registrar criptomonedas, ETF, fondos y acciones con unidades y valoración manual en euros. Una inversión es un activo separado, no una cuenta para importar extractos. Si su compra ya figura como movimiento del banco, elige «Ya contabilizado en mis saldos» al registrarla para evitar descontarla dos veces; revisa el gasto importado si quieres excluir la compra de los gráficos de consumo.
+
 - Saldo de banco/efectivo = saldo inicial + ingresos − gastos ± traspasos − coste de inversiones que se hayan marcado como financiadas desde esa cuenta.
 - Un traspaso no cuenta como ingreso ni gasto.
 - Patrimonio estimado = banco + efectivo + valor manual de las inversiones. La variación de precio de una inversión no es un ingreso realizado.
@@ -42,6 +46,10 @@ Las referencias bancarias y el número de ocurrencia ayudan a señalar duplicado
 - Al importar un histórico, el saldo inicial que configures debe representar el dinero **anterior** a esos movimientos. Si el saldo de la hoja ya incluye los movimientos importados, no lo introduzcas como saldo inicial porque duplicaría el saldo.
 
 Tras abrirla online, el icono y los archivos de la app se almacenan para poder arrancarla sin red. La PWA busca versiones nuevas al volver online y recargar. El almacenamiento local del navegador puede borrarse al limpiar datos de la web; antes de hacerlo, sincroniza o exporta un CSV. En algunos móviles, la versión instalada y la pestaña del navegador usan almacenes locales separados hasta que se inicia sesión y se sincronizan.
+
+### Acceso rápido desde iPhone
+
+En Atajos de iOS crea un atajo con la acción «URL» que contenga `https://TU-DOMINIO/?nuevo=1&tipo=expense` y después la acción «Abrir URL». La aplicación abre el formulario de gasto para que introduzcas el importe y confirmes el guardado; también admite `tipo=income`, `importe=12.50`, `descripcion=Compra` y `categoria=Alimentación` para rellenar el formulario. Evita poner detalles financieros sensibles en la URL del atajo, ya que el navegador puede transmitir esa URL al abrir la página. No se guarda nada sin confirmarlo.
 
 ## Estructura
 

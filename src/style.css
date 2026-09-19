@@ -11,3 +11,41 @@
 .import-mapping{margin:15px 0;padding:15px;border:1px solid #dce8db;border-radius:10px;background:#f8fbf7}.import-mapping summary{cursor:pointer;color:#365d40;font-size:12px;font-weight:800}.import-mapping>label{display:grid;gap:6px;margin:12px 0;font-size:11px;color:#526f57}.import-mapping select{width:100%;height:35px;border:1px solid #dce8db;border-radius:7px;background:#fff;padding:0 8px;color:#334c3a}.mapping-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px;margin:14px 0}.mapping-form label{display:grid;gap:6px;font-size:10px;color:#526f57}.toolbar{flex-wrap:wrap}
 
 .import-category-input{border:1px solid #dce8db;border-radius:6px;padding:6px;width:120px;max-width:100%;font-size:10px;color:#405847;background:#fff}.import-category-input:disabled{opacity:.65}
+/* Resúmenes, saldos detallados y teclado de Safari en iPhone. */
+html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
+.main,.content,.dashboard-grid,.card,.transaction-info{min-width:0}
+.account-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.account-tile h3{font-size:16px;margin:8px 0;overflow-wrap:anywhere}
+.account-overview{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:2px 0 12px;max-width:100%}
+.account-overview-item{flex:1 0 135px;min-width:0;border:1px solid #dfe9dc;background:#fff;border-radius:9px;padding:11px;text-align:left;color:#466752}
+.account-overview-item span,.account-overview-item strong{display:block;overflow-wrap:anywhere}
+.account-overview-item strong{color:#264b35;font-size:14px;margin-top:6px}
+.flow-card{padding:22px 24px;margin-bottom:16px}
+.flow-card h2{font:800 19px 'Manrope',sans-serif;margin:8px 0}
+.flow-card p{font-size:11px;color:#819785}
+.flow-visual{display:flex;align-items:center;gap:26px;margin-top:16px}
+.flow-ring{width:150px;height:150px;flex:none;border-radius:50%;display:grid;place-items:center}
+.flow-ring>span{width:108px;height:108px;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;flex-direction:column;font:800 25px 'Manrope',sans-serif}
+.flow-ring small{font:600 10px 'DM Sans',sans-serif;color:#809588}
+.flow-legend{flex:1;min-width:0}
+.flow-legend button{width:100%;border:0;background:transparent;display:flex;align-items:center;gap:8px;padding:10px 0;text-align:left;color:#42634e;font-size:12px}
+.flow-legend button strong{margin-left:auto;color:#224a33}
+.flow-legend p{border-top:1px solid #e4ebe2;padding-top:12px}
+@media(max-width:650px){
+  .app,.main{width:100%;max-width:100%;min-width:0}
+  .heading-actions{min-width:0}
+  .heading-actions .primary-button,.heading-actions .import-button{min-width:0;overflow-wrap:anywhere}
+  .transaction-info strong,.transaction-info span{overflow-wrap:anywhere}
+  .modal-backdrop,.auth-overlay{align-items:flex-start;overflow-y:auto;overscroll-behavior:contain;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
+  .modal,.detail-modal{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
+  .import-modal{max-height:100dvh}
+  .modal input,.modal select,.auth-box input,.import-mapping select,.import-category-input,.search input,.filter select,.import-account select{font-size:16px}
+  .form-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .account-overview-item{flex-basis:145px}
+  .flow-visual{gap:13px}
+  .flow-card{padding:18px}
+  .flow-ring{width:124px;height:124px}
+  .flow-ring>span{width:90px;height:90px;font-size:21px}
+  .flow-legend button{font-size:11px;flex-wrap:wrap}
+  .flow-legend button strong{margin-left:20px}
+}

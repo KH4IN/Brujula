@@ -6,3 +6,4 @@ dist/
 *.tsbuildinfo
 
 tests/.import.bundle.mjs
+tests/.finance.bundle.mjs

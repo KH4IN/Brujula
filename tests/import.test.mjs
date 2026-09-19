@@ -39,6 +39,19 @@ test('fecha de finalización en español prevalece sobre inicio y las comisiones
  assert.match(p.rows[1].reason,/Comisión separada/);
 });
 
+test('un extracto mixto utiliza el signo aunque el tipo no exista o sea desconocido',async()=>{
+ const csv='Fecha;Tipo;Descripción;Importe\n01/08/2026;Recibo enviado;LIDL;-12,50\n02/08/2026;Operación recibida;Venta de libro;+25,00\n03/08/2026;Sin clasificar;REPSOL;-9,00';
+ const p=await parse('agosto.csv',csv);
+ assert.equal(p.needsMapping,false);
+ assert.deepEqual(p.rows.map(r=>[r.kind,r.amount,r.valid]),[['expense',12.5,true],['income',25,true],['expense',9,true]]);
+});
+
+test('el signo contrario al tipo conocido pide revisión y no falsea el saldo',async()=>{
+ const p=await parse('contradiccion.csv','Fecha;Tipo;Descripción;Importe\n01/08/2026;Ingreso;Devolución;-9,00');
+ assert.equal(p.rows[0].valid,false);
+ assert.match(p.rows[0].reason,/signo contradice/);
+});
+
 test('separadores, preámbulo, comillas y coma decimal (BBVA/Santander/Sabadell)',async()=>{
  const p=await parse('bbva.csv','Extracto de cuenta\nFecha Operación;Concepto;Importe;Saldo\n01/09/2026;"MERCADONA, MADRID";-1.234,56;10,00\n');
  assert.equal(p.rows.length,1);assert.equal(p.rows[0].amount,1234.56);assert.equal(p.rows[0].kind,'expense');assert.equal(p.rows[0].merchant,'Mercadona');assert.equal(p.rows[0].category,'Alimentación');
