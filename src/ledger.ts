@@ -5,7 +5,7 @@ type RecordValue=Transaction|Budget|Goal|Investment|AccountSetting;
 type Pending={token:string;entity:Entity;method:'upsert'|'delete';id:string;record?:RecordValue};
 export type LocalStore={transactions:Transaction[];budgets:Budget[];goals:Goal[];investments:Investment[];account_settings:AccountSetting[];pending:Pending[]};
 const prefix='brujula.local.v2.';
-const defaults=():AccountSetting[]=>[{account:'bank',opening_balance:0},{account:'cash',opening_balance:0}];
+const defaults=():AccountSetting[]=>[{account:'bank',name:'Banco',kind:'bank',opening_balance:0},{account:'cash',name:'Efectivo',kind:'cash',opening_balance:0}];
 const blank=():LocalStore=>({transactions:[],budgets:[],goals:[],investments:[],account_settings:defaults(),pending:[]});
 export const emptyStore=blank;
 const key=(entity:Entity,record:RecordValue)=>entity==='budgets'?`${(record as Budget).month}:${(record as Budget).category}`:entity==='account_settings'?(record as AccountSetting).account:(record as Transaction).id;
@@ -39,9 +39,9 @@ export function importTransactions(scope:string,values:Transaction[]){const stat
 
 export function claimGuest(userId:string){
   const guest=readStore('guest'),state=readStore(userId);
-  if(!guest.transactions.length&&!guest.budgets.length&&!guest.goals.length&&!guest.investments.length&&!guest.account_settings.some(a=>a.opening_balance!==0))return;
+  if(!guest.transactions.length&&!guest.budgets.length&&!guest.goals.length&&!guest.investments.length&&!guest.account_settings.some(a=>a.opening_balance!==0||a.account!=='bank'&&a.account!=='cash'||a.name&&a.name!== (a.account==='cash'?'Efectivo':'Banco')))return;
   for(const entity of ['transactions','budgets','goals','investments','account_settings'] as Entity[])for(const original of list(guest,entity)){
-    if(entity==='account_settings'&&(original as AccountSetting).opening_balance===0)continue;
+    if(entity==='account_settings'&&(original as AccountSetting).opening_balance===0&&['bank','cash'].includes((original as AccountSetting).account)&&(!((original as AccountSetting).name)||(original as AccountSetting).name===((original as AccountSetting).account==='cash'?'Efectivo':'Banco')))continue;
     const item=entity==='transactions'&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test((original as Transaction).id)?{...original,id:crypto.randomUUID()} as Transaction:original;
     const id=key(entity,item);if(list(state,entity).some(existing=>key(entity,existing)===id)&&entity!=='account_settings')continue;
     put(state,entity,[item,...list(state,entity).filter(existing=>key(entity,existing)!==id)]);
@@ -87,7 +87,7 @@ export async function synchronize(userId:string):Promise<LocalStore>{
     budgets:budgets.map(b=>({...b,month:b.month.slice(0,7),amount:Number(b.amount)})),
     goals:goals.map(g=>({...g,target_amount:Number(g.target_amount),saved_amount:Number(g.saved_amount)})),
     investments:investments.map(i=>({...i,units:Number(i.units),average_cost:Number(i.average_cost),current_price:Number(i.current_price)})),
-    account_settings:defaults().map(defaultValue=>{const found=settings.find(s=>s.account===defaultValue.account);return found?{...found,opening_balance:Number(found.opening_balance)}:defaultValue}),pending:[]
+    account_settings:[...defaults().map(defaultValue=>{const found=settings.find(s=>s.account===defaultValue.account);return found?{...defaultValue,...found,opening_balance:Number(found.opening_balance)}:defaultValue}),...settings.filter(s=>s.account!=='bank'&&s.account!=='cash').map(s=>({...s,opening_balance:Number(s.opening_balance)}))],pending:[]
   };
   const pending=readStore(userId).pending;
   for(const item of pending)put(state,item.entity,[...(item.method==='upsert'&&item.record?[item.record]:[]),...list(state,item.entity).filter(entry=>key(item.entity,entry)!==item.id)]);

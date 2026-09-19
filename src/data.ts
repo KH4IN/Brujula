@@ -2,12 +2,13 @@ import { createClient } from '@supabase/supabase-js';
 
 export const CATEGORIES = ['Vivienda','Alimentación','Transporte','Compras','Ocio','Salud','Suscripciones','Otros'] as const;
 export type Category = string;
-export type AccountType = 'bank'|'cash';
+export type AccountType = string;
+export const accountName = (account:AccountType,settings:AccountSetting[]=[]) => settings.find(a=>a.account===account)?.name || (account==='cash'?'Efectivo':account==='bank'?'Banco':'Cuenta bancaria');
 export type Transaction = {id:string; user_id?:string; amount:number; kind:'income'|'expense'|'transfer'; category:Category; description:string; occurred_on:string; account?:AccountType; to_account?:AccountType|null; import_key?:string|null; created_at?:string};
 export type Budget = {id?:string; user_id?:string; category:Category; amount:number; month:string};
-export type AccountSetting = {account:AccountType;opening_balance:number;user_id?:string};
+export type AccountSetting = {account:AccountType;opening_balance:number;name?:string;kind?:'bank'|'cash';cash_counts?:Record<string,number>;cash_counted_at?:string|null;user_id?:string};
 export type Goal = {id:string;user_id?:string;name:string;target_amount:number;saved_amount:number;due_on:string|null;created_at?:string};
-export type Investment = {id:string;user_id?:string;name:string;ticker:string;units:number;average_cost:number;current_price:number;funding_account:AccountType|'outside';purchased_on:string|null;created_at?:string};
+export type Investment = {id:string;user_id?:string;name:string;ticker:string;units:number;average_cost:number;current_price:number;asset_type?:'crypto'|'etf'|'stock'|'other';funding_account:AccountType|'outside';purchased_on:string|null;created_at?:string};
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 export const configured = Boolean(url && key);
