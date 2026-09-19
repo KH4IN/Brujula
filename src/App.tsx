@@ -32,6 +32,7 @@ export default function App(){
   const [pending,setPending]=useState(0);
   const [syncState,setSyncState]=useState<'local'|'syncing'|'synced'|'pending'|'offline'>('local');
   const [authOpen,setAuthOpen]=useState(false);
+  const [oauthRedirectError,setOauthRedirectError]=useState('');
   const [busy,setBusy]=useState(false);
   const [notice,setNotice]=useState('');
   const [modal,setModal]=useState<'transaction'|'budget'|null>(null);
@@ -45,6 +46,16 @@ export default function App(){
   const scopeRef=useRef(scope);scopeRef.current=scope;
   const syncing=useRef(false);
   const applyLocal=useCallback((store:LocalStore)=>{setItems(store.transactions);setBudgets(store.budgets);setGoals(store.goals);setInvestments(store.investments);setAccounts(store.account_settings);setPending(store.pending.length)},[]);
+
+  useEffect(()=>{
+    const query=new URLSearchParams(window.location.search);
+    const fragment=new URLSearchParams(window.location.hash.slice(1));
+    if(query.has('error')||fragment.has('error')){
+      setOauthRedirectError('Google no pudo completar el acceso. Revisa la configuración de Google en Supabase o inténtalo de nuevo.');
+      setAuthOpen(true);
+      window.history.replaceState(window.history.state,'',window.location.pathname);
+    }
+  },[]);
 
   useEffect(()=>{
     if(!supabase)return;
@@ -173,7 +184,7 @@ export default function App(){
     </main>
     {categoryDetail&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setCategoryDetail(null)}}><div className="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div className="modal-heading"><div><span className="section-kicker">DESGLOSE DEL MES</span><h2 id="detail-title">{categoryDetail}</h2></div><button className="icon-button" onClick={()=>setCategoryDetail(null)}><X size={20}/></button></div><strong className="detail-total">{money(spentFor(categoryDetail))}</strong><p className="feature-copy">{expenses?Math.round(spentFor(categoryDetail)/expenses*100):0}% de tus gastos de {monthLabel(month)} · {monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail).length} movimientos.</p><TransactionList items={monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail)} onEdit={t=>{setCategoryDetail(null);openTransaction(t)}} onDelete={deleteTransaction} onAdd={()=>{setCategoryDetail(null);openTransaction()}}/></div></div>}
     {importOpen&&<ImportDialog existing={items} onClose={()=>setImportOpen(false)} onConfirm={importRows}/>}
-    {authOpen&&<Auth onReady={()=>setAuthOpen(false)} onClose={()=>setAuthOpen(false)}/>}
+    {authOpen&&<Auth initialError={oauthRedirectError} onReady={()=>{setOauthRedirectError('');setAuthOpen(false)}} onClose={()=>{setOauthRedirectError('');setAuthOpen(false)}}/>}
     {modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget){setModal(null);setNotice('')}}}>
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div className="modal-heading"><div><span className="section-kicker">{modal==='transaction'?'MOVIMIENTOS':'PLANIFICACIÓN'}</span><h2 id="modal-title">{modal==='transaction'?(editing?'Editar movimiento':'Nuevo movimiento'):'Presupuesto mensual'}</h2></div><button className="icon-button" onClick={()=>{setModal(null);setNotice('')}} aria-label="Cerrar"><X size={20}/></button></div>
@@ -199,11 +210,12 @@ function Stat({label,value,icon,tone,foot}:{label:string,value:number,icon:React
 function BudgetLine({budget,spent}:{budget:Budget,spent:number}){const fraction=Math.min(spent/Number(budget.amount),1);const over=spent>Number(budget.amount);return <div className="budget-line"><div className="budget-name"><span>{budget.category}</span><strong>{money(spent)} <em>/ {money(Number(budget.amount))}</em></strong></div><div className="progress"><span style={{width:`${fraction*100}%`,background:over?'#bd7769':colorFor(budget.category)}}/></div><div className={`budget-caption ${over?'over':''}`}>{over?`${money(spent-Number(budget.amount))} por encima del límite`:`${Math.round(fraction*100)}% utilizado`}</div></div>}
 function Empty({text,action,label='Añadir movimiento'}:{text:string,action:()=>void,label?:string}){return <div className="empty"><div className="empty-symbol">✳</div><p>{text}</p><button onClick={action}>{label} <ArrowRight size={14}/></button></div>}
 function TransactionList({items,onEdit,onDelete,onAdd}:{items:Transaction[],onEdit:(t:Transaction)=>void,onDelete:(t:Transaction)=>void,onAdd:()=>void}){if(!items.length)return <Empty text="Todavía no hay movimientos aquí. Empieza con el primero." action={onAdd}/>;return <div className="transaction-list">{items.map(t=><div className="transaction" key={t.id}><div className="category-icon" style={{background:t.kind==='income'?'#e0eee5':`${colorFor(t.category)}25`,color:t.kind==='income'?'#4b9172':colorFor(t.category)}}>{t.kind==='income'?<ArrowDownLeft size={19}/>:t.kind==='transfer'?<ArrowRight size={19}/>:symbolFor(t.category)}</div><div className="transaction-info"><strong>{t.description}</strong><span>{t.kind==='transfer'?'Traspaso':t.category} <b>·</b> {t.account==='cash'?'Efectivo':'Banco'}{t.to_account?` → ${t.to_account==='cash'?'Efectivo':'Banco'}`:''} <b>·</b> {formatDate(t.occurred_on)}</span></div><strong className={`transaction-amount ${t.kind==='income'?'positive':''}`}>{t.kind==='income'?'+':t.kind==='transfer'?'↔':'−'}{money(Number(t.amount))}</strong><div className="transaction-actions"><button className="icon-button" title="Editar" aria-label={`Editar ${t.description}`} onClick={()=>onEdit(t)}><Settings2 size={16}/></button><button className="icon-button" title="Eliminar" aria-label={`Eliminar ${t.description}`} onClick={()=>onDelete(t)}><Trash2 size={16}/></button></div></div>)}</div>}
-function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
+function Auth({initialError,onReady,onClose}:{initialError:string,onReady:()=>void,onClose:()=>void}){
   const [email,setEmail]=useState('');
+  const [useEmail,setUseEmail]=useState(false);
   const [sentEmail,setSentEmail]=useState('');
   const [code,setCode]=useState('');
-  const [error,setError]=useState('');
+  const [error,setError]=useState(initialError);
   const [loading,setLoading]=useState(false);
   const [retryAt,setRetryAt]=useState(0);
   const [now,setNow]=useState(Date.now());
@@ -213,6 +225,15 @@ function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
     return ()=>window.clearInterval(timer);
   },[retryAt]);
   const seconds=Math.max(0,Math.ceil((retryAt-now)/1000));
+  async function signInGoogle(){
+    if(loading||!supabase)return;
+    setLoading(true);setError('');
+    try{
+      const {error:oauthError}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}});
+      if(oauthError)setError('No se pudo iniciar sesión con Google. Comprueba que el proveedor esté activado en Supabase.');
+    }catch{setError('No se pudo conectar con Google. Comprueba tu conexión e inténtalo otra vez.')}
+    finally{setLoading(false)}
+  }
   async function sendCode(address:string){
     if(loading)return;
     const clean=address.trim().toLowerCase();
@@ -245,8 +266,8 @@ function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
   return <div className="auth-overlay"><div className="auth-page">
     <button className="auth-close icon-button" onClick={onClose} aria-label="Cerrar"><X size={20}/></button>
     <div className="auth-decor"><div className="brand"><div className="brand-symbol">✳</div><div className="brand-name">brújula<span>.</span><small>FINANZAS PERSONALES</small></div></div><div className="auth-message"><span>UN POCO MÁS DE CLARIDAD, CADA DÍA</span><h1>Tu dinero tiene una historia.<br/><em>Entiéndela mejor.</em></h1><p>Organiza tus gastos, pon límites que puedas cumplir y descubre lo que de verdad importa.</p></div><div className="auth-bottom">✳ &nbsp; Un lugar tranquilo para tus finanzas.</div></div>
-    <div className="auth-panel"><div className="auth-box"><div className="auth-mobile-brand">✳ brújula.</div><span className="section-kicker">BIENVENIDO A BRÚJULA</span><h2>{sentEmail?'Revisa tu correo.':'Entra en tu espacio.'}</h2>
-      {sentEmail?<><p>Hemos solicitado un código de seis cifras para <strong>{sentEmail}</strong>. Revisa también el correo no deseado.</p>
+    <div className="auth-panel"><div className="auth-box"><div className="auth-mobile-brand">✳ brújula.</div><span className="section-kicker">BIENVENIDO A BRÚJULA</span><h2>{useEmail?(sentEmail?'Revisa tu correo.':'Accede con código.'):'Entra en tu espacio.'}</h2>
+      {useEmail ? (sentEmail?<><p>Hemos solicitado un código de seis cifras para <strong>{sentEmail}</strong>. Revisa también el correo no deseado.</p>
         <form onSubmit={verifyCode}><label>Código de verificación<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required autoFocus placeholder="000000" value={code} onChange={e=>{setCode(e.target.value.replace(/\D/g,'').slice(0,6));setError('')}}/></label>
           {error&&<div className="notice" role="alert">{error}</div>}
           <button className="primary-button form-submit" disabled={loading||code.length!==6}>{loading?'Comprobando…':'Verificar y entrar'} <ArrowRight size={18}/></button>
@@ -259,7 +280,11 @@ function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
           {error&&<div className="notice" role="alert">{error}</div>}
           <button className="primary-button form-submit" disabled={loading}>{loading?'Enviando…':'Enviar código'} <ArrowRight size={18}/></button>
         </form>
+      </>) : <><p>Accede de forma segura con tu cuenta de Google. Brújula no necesita enviarte ningún correo.</p>
+        {error&&<div className="notice" role="alert">{error}</div>}
+        <button type="button" className="primary-button form-submit" disabled={loading} onClick={()=>void signInGoogle()}>{loading?'Abriendo Google…':'Continuar con Google'} <ArrowRight size={18}/></button>
       </>}
+      <div className="auth-toggle"><button type="button" onClick={()=>{setUseEmail(!useEmail);setError('')}}>{useEmail?'Volver a entrar con Google':'Usar código por correo (si está activado)'}</button></div>
     </div></div>
   </div></div>;
 }
