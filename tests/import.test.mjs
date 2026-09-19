@@ -1,9 +1,43 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { parseFile, parseSheets, amountNumber, dateString, detectColumns } from './.import.bundle.mjs';
 const file=(name,body)=>new File([body],name,{type:'text/csv'});
 const parse=(name,body,existing=[],options={})=>parseFile(file(name,body),existing,'bank',options);
 const tx=r=>({id:r.id,kind:r.kind,occurred_on:r.occurred_on,amount:r.amount,description:r.description,category:r.category,account:'bank',import_key:r.import_key});
+
+test('seis extractos sintéticos: columnas, importes, categorías y exclusiones',async()=>{
+ const expected={
+  'revolut-ejemplo.csv':{accepted:[['2026-09-01','expense',24.95,'Alimentación'],['2026-09-06','expense',20,'Transporte']],rejected:3},
+  'trade-republic-ejemplo.csv':{accepted:[['2026-09-07','expense',14.2,'Alimentación'],['2026-09-08','income',1.5,'Otros']],rejected:1},
+  'bbva-ejemplo.csv':{accepted:[['2026-09-10','expense',21.35,'Alimentación'],['2026-09-12','income',1200,'Salario']],rejected:0},
+  'santander-ejemplo.csv':{accepted:[['2026-09-13','expense',12.25,'Alimentación'],['2026-09-14','income',5,'Otros']],rejected:0},
+  'sabadell-ejemplo.csv':{accepted:[['2026-09-15','expense',31.4,'Alimentación'],['2026-09-16','income',1400,'Salario']],rejected:0},
+  'caixabank-ejemplo.csv':{accepted:[['2026-09-17','expense',9.9,'Salud'],['2026-09-18','income',30,'Otros']],rejected:0},
+ };
+ for(const [name,want] of Object.entries(expected)){
+  const csv=readFileSync(new URL(`./fixtures/${name}`,import.meta.url));
+  const preview=await parseFile(new File([csv],name),[],'bank');
+  assert.equal(preview.needsMapping,false,name);
+  assert.deepEqual(preview.rows.filter(row=>row.valid).map(row=>[row.occurred_on,row.kind,row.amount,row.category]),want.accepted,name);
+  assert.equal(preview.rows.filter(row=>!row.valid).length,want.rejected,name);
+  const existing=preview.rows.filter(row=>row.valid).map(tx);
+  const repeated=await parseFile(new File([csv],name),existing,'bank');
+  assert.equal(repeated.rows.filter(row=>row.valid&&!row.duplicate).length,0,`duplicados ${name}`);
+ }
+});
+
+test('fecha de finalización en español prevalece sobre inicio y las comisiones se revisan',async()=>{
+ const csv='Tipo;Producto;Fecha inicio;Fecha finalización;Descripción;Importe;Comisión;Divisa;Estado;Saldo\nPAGO TARJETA;Cuenta;01/09/2026;03/09/2026;MERCADONA;-10,00;0,00;EUR;COMPLETED;90,00\nPAGO TARJETA;Cuenta;04/09/2026;05/09/2026;REPSOL;-12,00;1,00;EUR;COMPLETED;78,00';
+ const p=await parse('revolut-es.csv',csv);
+ assert.equal(p.sheets[0].suggested.date,3);
+ assert.equal(p.sheets[0].suggested.startDate,2);
+ assert.equal(p.sheets[0].suggested.fee,6);
+ assert.equal(p.rows[0].occurred_on,'2026-09-03');
+ assert.equal(p.rows[0].valid,true);
+ assert.equal(p.rows[1].valid,false);
+ assert.match(p.rows[1].reason,/Comisión separada/);
+});
 
 test('separadores, preámbulo, comillas y coma decimal (BBVA/Santander/Sabadell)',async()=>{
  const p=await parse('bbva.csv','Extracto de cuenta\nFecha Operación;Concepto;Importe;Saldo\n01/09/2026;"MERCADONA, MADRID";-1.234,56;10,00\n');
