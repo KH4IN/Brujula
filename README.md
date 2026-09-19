@@ -23,7 +23,13 @@ Los datos se actualizan inmediatamente después de cada cambio local. Si hay una
 
 ### Importación
 
-La hoja de ejemplo «Presupuesto mensual.xlsx» utiliza dos bloques en `Transacciones`: columnas B–E para gastos y G–J para ganancias. La app los reconoce y preserva fecha, importe, descripción y categoría. Omite filas con fecha inválida o importe cero después de redondear a céntimos, muestra posibles duplicados, y pide confirmar la selección. La hoja `Resumen` puede indicar un saldo inicial, pero nunca se importa automáticamente como ingreso. En CSV/TSV admite encabezados como Fecha, Importe, Descripción, Categoría y Tipo; si falta Tipo, infiere ingreso/gasto del signo y conviene revisar la vista previa. Límite de 8 MB y 5.000 filas. El archivo original no se sube: solo se guardan los movimientos confirmados. Las claves de importación distinguen banco de efectivo.
+La hoja de ejemplo «Presupuesto mensual.xlsx» utiliza dos bloques en `Transacciones` para gastos e ingresos. El saldo inicial de `Resumen` nunca se suma automáticamente.
+
+Para importar un extracto, descarga los **movimientos** en CSV, TSV o Excel desde la banca online de tu entidad y selecciona el archivo en Brújula. Se detectan cabeceras frecuentes en español, inglés, francés, alemán, portugués e italiano, con comas, punto y coma, tabuladores y codificaciones habituales. Los extractos de Revolut, BBVA, CaixaBank, Santander, Sabadell y otras entidades pueden variar según país, producto y versión: si las columnas no se reconocen, selecciona la fila de cabeceras y asigna fecha, descripción e importe (o cargo y abono) en el formulario. Revisa siempre la vista previa; cuando todos los importes sean positivos y no haya tipo, indica si son gastos o ingresos.
+
+Si el banco suministra una categoría se respeta; si no, se aplica una clasificación local basada en reglas. Los supermercados conocidos se identifican por marca (Mercadona, Lidl, Aldi, Día, Carrefour, Alcampo y otros) y pueden filtrarse por comercio en Movimientos. Se guardan la descripción original y la categoría; el comercio se vuelve a identificar a partir de la descripción en cada dispositivo. Los importes de otra divisa se omiten hasta que el usuario convierta el archivo a EUR; Brújula no inventa tipos de cambio. Los PDF y formatos propietarios distintos de XLSX no están soportados.
+
+Las referencias bancarias y el número de ocurrencia ayudan a señalar duplicados; dos compras idénticas en un mismo extracto no se eliminan automáticamente. Un importe imposible, una fecha inválida o columnas de cargo y abono simultáneas bloquean la fila. Límite de 8 MB y 5.000 filas. El archivo original se lee en el navegador y no se envía al servidor; solo se sincronizan los movimientos que el usuario confirma. `npm test` ejecuta pruebas con formatos representativos sintéticos, no con extractos oficiales de todos los bancos.
 
 ### Contabilidad
 
@@ -41,6 +47,8 @@ Tras abrirla online, el icono y los archivos de la app se almacenan para poder a
 - `src/data.ts`: cliente de Supabase y datos demo.
 - `src/ledger.ts`: almacenamiento local, cola de cambios y conciliación con la nube.
 - `src/import.ts`: lectura y validación de Excel/CSV.
+- `src/categorize.ts`: reglas de comercios y categorías.
+- `IMPORT_AUDIT.md`: hallazgos, pruebas y límites de la importación.
 - `src/finance.ts`: cálculos de cuentas, inversiones y patrimonio.
 - `public/sw.js`: caché de recursos para apertura sin conexión.
 - `supabase/*.sql`: esquema, ampliaciones y políticas de acceso.
