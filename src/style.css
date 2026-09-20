@@ -92,3 +92,31 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 :root[data-theme="dark"] .modal-backdrop,:root[data-theme="dark"] .auth-overlay{background:#090811c9}
 :root[data-theme="dark"] .auth-decor{background:#302347}
 :root[data-theme="dark"] .theme-toggle:focus-visible,:root[data-theme="dark"] button:focus-visible,:root[data-theme="dark"] input:focus-visible{outline-color:#dfbd74}
+
+/* La navegación principal permanece en el mismo lugar al desplazar el contenido. */
+.app{display:block}
+.sidebar{position:fixed;left:0;top:0;height:100dvh;max-height:100dvh;overflow-y:auto;overscroll-behavior:contain}
+.main{margin-left:248px}
+@media(max-width:1150px){.main{margin-left:215px}}
+@media(max-width:900px){.main{margin-left:0}}
+
+/* Resumen compacto: aprovecha la anchura de la portada sin crear una tarjeta alta. */
+.flow-card{display:grid;grid-template-columns:minmax(170px,1fr) minmax(300px,1.45fr);align-items:center;gap:18px;padding:17px 22px}
+.flow-card h2{font-size:17px}
+.flow-visual{margin-top:0;gap:18px}
+.flow-ring{width:106px;height:106px}
+.flow-ring>span{width:78px;height:78px;font-size:19px}
+.flow-ring small{font-size:9px}
+.flow-legend button{padding:6px 0}
+.flow-legend p{padding-top:8px;margin-bottom:0}
+@media(max-width:650px){.flow-card{display:block;padding:17px}.flow-card h2{font-size:16px}.flow-visual{margin-top:12px;gap:14px}.flow-ring{width:104px;height:104px}.flow-ring>span{width:76px;height:76px;font-size:18px}}
+
+/* Los controles de presupuesto respetan el tema oscuro en toda la sección. */
+:root[data-theme="dark"] .budget-summary{background:#302b3d;border:1px solid #514661;color:#eee8f5}
+:root[data-theme="dark"] .add-budget-tile{background:#302f3a;border-color:#756184;color:#cbb3f6}
+:root[data-theme="dark"] .add-budget-tile:hover{background:#41384e}
+:root[data-theme="dark"] .add-budget-tile strong{color:#f0eaf7}
+:root[data-theme="dark"] .add-budget-tile span{color:#bdb0cd}
+:root[data-theme="dark"] .flow-legend button{color:#ddc8f2}
+:root[data-theme="dark"] .flow-legend button strong{color:#f0d38c}
+:root[data-theme="dark"] .flow-legend p{border-color:#514661}
