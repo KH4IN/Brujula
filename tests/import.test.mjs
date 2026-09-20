@@ -46,6 +46,17 @@ test('un extracto mixto utiliza el signo aunque el tipo no exista o sea desconoc
  assert.deepEqual(p.rows.map(r=>[r.kind,r.amount,r.valid]),[['expense',12.5,true],['income',25,true],['expense',9,true]]);
 });
 
+test('extracto con Concepto;Fecha;Importe;Saldo y EUR pegado al importe',async()=>{
+ const csv='Concepto;Fecha;Importe;Saldo\nCompra supermercado;19/09/2026;-8,00EUR;6.218,81EUR\nNómina;18/09/2026;1.400,00EUR;6.226,81EUR';
+ const p=await parse('extracto.csv',csv);
+ assert.equal(p.needsMapping,false);
+ assert.deepEqual(p.rows.map(r=>[r.occurred_on,r.kind,r.amount,r.valid]),[['2026-09-19','expense',8,true],['2026-09-18','income',1400,true]]);
+ assert.equal(p.rows[1].category,'Salario');
+ assert.equal(amountNumber('-8,00EUR'),-8);
+ assert.equal(amountNumber('1.400,00EUR'),1400);
+ assert.equal(amountNumber('-8,00USD'),null);
+});
+
 test('el signo contrario al tipo conocido pide revisión y no falsea el saldo',async()=>{
  const p=await parse('contradiccion.csv','Fecha;Tipo;Descripción;Importe\n01/08/2026;Ingreso;Devolución;-9,00');
  assert.equal(p.rows[0].valid,false);
