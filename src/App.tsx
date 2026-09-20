@@ -6,6 +6,7 @@ import { claimGuest, emptyStore, readStore, removeBudget as removeLocalBudget, r
 import { AccountsPanel, DailyChart, GoalsPanel, ImportDialog, InvestmentsPanel } from './Features';
 import { accountBalances, marketValue } from './finance';
 import { authMessage } from './auth';
+import { disconnectFirebase, firebaseConfigured, googleIdTokenFromFirebase } from './firebase';
 import { merchantFor } from './categorize';
 
 type Tab = 'dashboard'|'transactions'|'budgets'|'accounts'|'goals'|'investments';
@@ -33,6 +34,7 @@ export default function App(){
   const [pending,setPending]=useState(0);
   const [syncState,setSyncState]=useState<'local'|'syncing'|'synced'|'pending'|'offline'>('local');
   const [authOpen,setAuthOpen]=useState(false);
+  const [passwordRecovery,setPasswordRecovery]=useState(false);
   const [busy,setBusy]=useState(false);
   const [notice,setNotice]=useState('');
   const [modal,setModal]=useState<'transaction'|'budget'|null>(null);
@@ -65,7 +67,10 @@ export default function App(){
   useEffect(()=>{
     if(!supabase)return;
     supabase.auth.getSession().then(({data})=>setUser(data.session?.user??null));
-    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>setUser(session?.user??null));
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
+      setUser(session?.user??null);
+      if(event==='PASSWORD_RECOVERY'){setPasswordRecovery(true);setAuthOpen(true)}
+    });
     return ()=>subscription.unsubscribe();
   },[]);
 
@@ -166,7 +171,7 @@ export default function App(){
       </nav>
       <div className="sidebar-spacer"/>
       <div className="sidebar-tip"><div className="tip-icon"><CircleHelp size={20}/></div><strong>Una visión más clara.</strong><p>Registra tus movimientos para ver adónde va cada euro.</p></div>
-      <div className="sidebar-footer"><div className="avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</div><div className="account"><strong>{user?.email?.split('@')[0]??'Mi espacio'}</strong><span>{user?'Sincronización activada':'Solo en este dispositivo'}</span></div>{user?<button title="Desconectar cuenta" className="icon-button" onClick={()=>supabase?.auth.signOut({scope:'local'})}><LogOut size={17}/></button>:configured&&<button className="connect-button" onClick={()=>setAuthOpen(true)}>Sincronizar</button>}</div>
+      <div className="sidebar-footer"><div className="avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</div><div className="account"><strong>{user?.email?.split('@')[0]??'Mi espacio'}</strong><span>{user?'Sincronización activada':'Solo en este dispositivo'}</span></div>{user?<button title="Desconectar cuenta" className="icon-button" onClick={()=>{void supabase?.auth.signOut({scope:'local'});void disconnectFirebase()}}><LogOut size={17}/></button>:configured&&<button className="connect-button" onClick={()=>setAuthOpen(true)}>Sincronizar</button>}</div>
     </aside>
     <main className="main">
       <header className="topbar"><button className="mobile-menu icon-button" aria-label="Abrir menú" onClick={()=>setMobileOpen(true)}><Menu size={23}/></button><div className="breadcrumb">Mi espacio <ChevronRight size={14}/><strong>{({dashboard:'Vista general',transactions:'Movimientos',budgets:'Presupuestos',accounts:'Cuentas y efectivo',goals:'Objetivos',investments:'Inversiones'} as Record<Tab,string>)[tab]}</strong></div><div className="topbar-right"><button className="icon-button theme-toggle" aria-label={dark?'Activar modo claro':'Activar modo oscuro'} title={dark?'Modo claro':'Modo oscuro'} aria-pressed={dark} onClick={()=>setDark(value=>!value)}>{dark?<Sun size={19}/>:<Moon size={19}/>}</button><span className="online-dot"/> Tu dinero, en orden <span className="top-avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</span></div></header>
@@ -194,7 +199,7 @@ export default function App(){
     </main>
     {categoryDetail&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setCategoryDetail(null)}}><div className="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div className="modal-heading"><div><span className="section-kicker">DESGLOSE DEL MES</span><h2 id="detail-title">{categoryDetail}</h2></div><button className="icon-button" onClick={()=>setCategoryDetail(null)}><X size={20}/></button></div><strong className="detail-total">{money(spentFor(categoryDetail))}</strong><p className="feature-copy">{expenses?Math.round(spentFor(categoryDetail)/expenses*100):0}% de tus gastos de {monthLabel(month)} · {monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail).length} movimientos.</p><TransactionList accountLabels={accounts} items={monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail)} onEdit={t=>{setCategoryDetail(null);openTransaction(t)}} onDelete={deleteTransaction} onAdd={()=>{setCategoryDetail(null);openTransaction()}}/></div></div>}
     {importOpen&&<ImportDialog existing={items} accounts={accounts} onClose={()=>setImportOpen(false)} onConfirm={importRows}/>}
-    {authOpen&&<Auth onReady={()=>setAuthOpen(false)} onClose={()=>setAuthOpen(false)}/>}
+    {authOpen&&<Auth recovering={passwordRecovery} onReady={()=>{setAuthOpen(false);setPasswordRecovery(false)}} onClose={()=>{setAuthOpen(false);setPasswordRecovery(false)}}/>}
     {modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget){setModal(null);setNotice('')}}}>
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div className="modal-heading"><div><span className="section-kicker">{modal==='transaction'?'MOVIMIENTOS':'PLANIFICACIÓN'}</span><h2 id="modal-title">{modal==='transaction'?(editing?'Editar movimiento':'Nuevo movimiento'):'Presupuesto mensual'}</h2></div><button className="icon-button" onClick={()=>{setModal(null);setNotice('')}} aria-label="Cerrar"><X size={20}/></button></div>
@@ -220,8 +225,11 @@ function Stat({label,value,icon,tone,foot}:{label:string,value:number,icon:React
 function BudgetLine({budget,spent}:{budget:Budget,spent:number}){const fraction=Math.min(spent/Number(budget.amount),1);const over=spent>Number(budget.amount);return <div className="budget-line"><div className="budget-name"><span>{budget.category}</span><strong>{money(spent)} <em>/ {money(Number(budget.amount))}</em></strong></div><div className="progress"><span style={{width:`${fraction*100}%`,background:over?'#bd7769':colorFor(budget.category)}}/></div><div className={`budget-caption ${over?'over':''}`}>{over?`${money(spent-Number(budget.amount))} por encima del límite`:`${Math.round(fraction*100)}% utilizado`}</div></div>}
 function Empty({text,action,label='Añadir movimiento'}:{text:string,action:()=>void,label?:string}){return <div className="empty"><div className="empty-symbol">✳</div><p>{text}</p><button onClick={action}>{label} <ArrowRight size={14}/></button></div>}
 function TransactionList({items,onEdit,onDelete,onAdd,accountLabels=[]}:{items:Transaction[],onEdit:(t:Transaction)=>void,onDelete:(t:Transaction)=>void,onAdd:()=>void,accountLabels?:AccountSetting[]}){if(!items.length)return <Empty text="Todavía no hay movimientos aquí. Empieza con el primero." action={onAdd}/>;return <div className="transaction-list">{items.map(t=><div className="transaction" key={t.id}><div className="category-icon" style={{background:t.kind==='income'?'#e0eee5':`${colorFor(t.category)}25`,color:t.kind==='income'?'#4b9172':colorFor(t.category)}}>{t.kind==='income'?<ArrowDownLeft size={19}/>:t.kind==='transfer'?<ArrowRight size={19}/>:symbolFor(t.category)}</div><div className="transaction-info"><strong>{t.description}</strong><span>{t.kind==='transfer'?'Traspaso':t.category}{merchantFor(t.description)?' · '+merchantFor(t.description):''} <b>·</b> {accountName(t.account??'bank',accountLabels)}{t.to_account?` → ${accountName(t.to_account,accountLabels)}`:''} <b>·</b> {formatDate(t.occurred_on)}</span></div><strong className={`transaction-amount ${t.kind==='income'?'positive':''}`}>{t.kind==='income'?'+':t.kind==='transfer'?'↔':'−'}{money(Number(t.amount))}</strong><div className="transaction-actions"><button className="icon-button" title="Editar" aria-label={`Editar ${t.description}`} onClick={()=>onEdit(t)}><Settings2 size={16}/></button><button className="icon-button" title="Eliminar" aria-label={`Eliminar ${t.description}`} onClick={()=>onDelete(t)}><Trash2 size={16}/></button></div></div>)}</div>}
-function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
+function Auth({onReady,onClose,recovering}:{onReady:()=>void,onClose:()=>void,recovering:boolean}){
   const [email,setEmail]=useState('');
+  const [password,setPassword]=useState('');
+  const [mode,setMode]=useState<'code'|'login'|'register'|'forgot'|'reset'>(recovering?'reset':'code');
+  const [info,setInfo]=useState('');
   const [sentEmail,setSentEmail]=useState('');
   const [code,setCode]=useState('');
   const [error,setError]=useState('');
@@ -234,6 +242,55 @@ function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
     return ()=>window.clearInterval(timer);
   },[retryAt]);
   const seconds=Math.max(0,Math.ceil((retryAt-now)/1000));
+  useEffect(()=>{if(recovering)setMode('reset')},[recovering]);
+  function switchMode(next:typeof mode){setMode(next);setSentEmail('');setCode('');setPassword('');setInfo('');setError('')}
+  async function passwordAction(e:FormEvent){
+    e.preventDefault();
+    if(loading||!supabase)return;
+    setLoading(true);setError('');setInfo('');
+    const address=email.trim().toLowerCase();
+    try{
+      if(mode==='login'){
+        const {data,error:loginError}=await supabase.auth.signInWithPassword({email:address,password});
+        if(loginError||!data.session){setError(loginError?.code==='invalid_credentials'?'Correo o contraseña incorrectos. También puedes entrar con un código.':loginError?authMessage(loginError):'No se pudo iniciar sesión.');return}
+        setPassword('');onReady();
+      }else if(mode==='register'){
+        const {data,error:registrationError}=await supabase.auth.signUp({email:address,password,options:{emailRedirectTo:window.location.origin}});
+        if(registrationError){setError(authMessage(registrationError));return}
+        setPassword('');
+        if(data.session){onReady();return}
+        if(!data.user){setError('No se pudo crear la cuenta. Comprueba el correo e inténtalo otra vez.');return}
+        setSentEmail(address);setMode('register');setInfo('Si la cuenta es nueva, recibirás un código para verificarla. Si ya tienes cuenta, vuelve y usa la opción de código para entrar.');
+      }else if(mode==='forgot'){
+        const {error:resetError}=await supabase.auth.resetPasswordForEmail(address,{redirectTo:window.location.origin});
+        if(resetError){setError(authMessage(resetError));return}
+        setInfo('Si esa dirección tiene una cuenta, recibirás un enlace para cambiar la contraseña. Revisa también el correo no deseado.');
+      }else if(mode==='reset'){
+        const {error:updateError}=await supabase.auth.updateUser({password});
+        if(updateError){setError(authMessage(updateError));return}
+        setPassword('');onReady();
+      }
+    }catch{setError('No se pudo completar la operación. Comprueba la conexión y vuelve a intentarlo.')}
+    finally{setLoading(false)}
+  }
+  async function signInGoogle(){
+    if(loading||!supabase)return;
+    setLoading(true);setError('');
+    try{
+      const token=await googleIdTokenFromFirebase();
+      const {data,error:signInError}=await supabase.auth.signInWithIdToken({provider:'google',token});
+      if(signInError||!data.session){
+        await disconnectFirebase();
+        setError('Google verificó tu cuenta, pero falta configurar Google en Supabase para sincronizar tus datos. Puedes seguir usando el acceso por correo.');
+        return;
+      }
+      onReady();
+    }catch(error){
+      const code=typeof error==='object'&&error&&'code' in error?String(error.code):'';
+      if(code==='auth/popup-closed-by-user')return;
+      setError(code==='auth/unauthorized-domain'?'Este dominio aún no está autorizado en Firebase.':code==='auth/operation-not-allowed'?'Activa el proveedor Google en Firebase.':code==='auth/popup-blocked'?'El navegador bloqueó la ventana de Google. Permite ventanas emergentes para Brújula.':'No se pudo acceder con Google. Comprueba la conexión e inténtalo de nuevo.');
+    }finally{setLoading(false)}
+  }
   async function sendCode(address:string){
     if(loading)return;
     const clean=address.trim().toLowerCase();
@@ -255,7 +312,7 @@ function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
     if(loading||!/^\d{6}$/.test(code))return;
     setLoading(true);setError('');
     try{
-      const {data,error:verifyError}=await supabase!.auth.verifyOtp({email:sentEmail,token:code,type:'email'});
+      const {data,error:verifyError}=await supabase!.auth.verifyOtp({email:sentEmail,token:code,type:mode==='register'?'signup':'email'});
       if(verifyError){setError(authMessage(verifyError));return}
       if(!data.session){setError('No se pudo iniciar sesión con ese código. Solicita otro y prueba de nuevo.');return}
       setCode('');onReady();
@@ -266,20 +323,32 @@ function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
   return <div className="auth-overlay"><div className="auth-page">
     <button className="auth-close icon-button" onClick={onClose} aria-label="Cerrar"><X size={20}/></button>
     <div className="auth-decor"><div className="brand"><div className="brand-symbol">✳</div><div className="brand-name">brújula<span>.</span><small>FINANZAS PERSONALES</small></div></div><div className="auth-message"><span>UN POCO MÁS DE CLARIDAD, CADA DÍA</span><h1>Tu dinero tiene una historia.<br/><em>Entiéndela mejor.</em></h1><p>Organiza tus gastos, pon límites que puedas cumplir y descubre lo que de verdad importa.</p></div><div className="auth-bottom">✳ &nbsp; Un lugar tranquilo para tus finanzas.</div></div>
-    <div className="auth-panel"><div className="auth-box"><div className="auth-mobile-brand">✳ brújula.</div><span className="section-kicker">BIENVENIDO A BRÚJULA</span><h2>{sentEmail?'Revisa tu correo.':'Entra en tu espacio.'}</h2>
-      {sentEmail?<><p>Hemos solicitado un código de seis cifras para <strong>{sentEmail}</strong>. Revisa también el correo no deseado.</p>
+    <div className="auth-panel"><div className="auth-box"><div className="auth-mobile-brand">✳ brújula.</div><span className="section-kicker">BIENVENIDO A BRÚJULA</span><h2>{sentEmail?'Revisa tu correo.':mode==='reset'?'Nueva contraseña.':mode==='forgot'?'Recupera tu acceso.':mode==='register'?'Crea tu cuenta.':'Entra en tu espacio.'}</h2>
+      {sentEmail?<><p>{mode==='register'?'Si esta cuenta es nueva, recibirás un código de confirmación':'Hemos solicitado un código de seis cifras'} para <strong>{sentEmail}</strong>. Revisa también el correo no deseado.</p>{info&&<p role="status" className="form-hint">{info}</p>}
         <form onSubmit={verifyCode}><label>Código de verificación<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required autoFocus placeholder="000000" value={code} onChange={e=>{setCode(e.target.value.replace(/\D/g,'').slice(0,6));setError('')}}/></label>
           {error&&<div className="notice" role="alert">{error}</div>}
           <button className="primary-button form-submit" disabled={loading||code.length!==6}>{loading?'Comprobando…':'Verificar y entrar'} <ArrowRight size={18}/></button>
         </form>
-        <div className="auth-toggle"><button type="button" disabled={loading||seconds>0} onClick={()=>void sendCode(sentEmail)}>{seconds>0?`Pedir otro código en ${seconds} s`:'Reenviar código'}</button></div>
-        <div className="auth-toggle"><button type="button" onClick={()=>{setSentEmail('');setCode('');setError('')}}>Cambiar dirección de correo</button></div>
-      </>:<><p>Escribe tu correo y te enviaremos un código. Si todavía no tienes cuenta, se creará al verificarlo.</p>
+        {mode!=='register'&&<div className="auth-toggle"><button type="button" disabled={loading||seconds>0} onClick={()=>void sendCode(sentEmail)}>{seconds>0?`Pedir otro código en ${seconds} s`:'Reenviar código'}</button></div>}
+        <div className="auth-toggle"><button type="button" onClick={()=>{setSentEmail('');setCode('');setError('');setInfo('')}}>Volver y cambiar correo o método</button></div>
+      </>:<><p>{mode==='reset'?'Elige una contraseña nueva para tu cuenta.':mode==='forgot'?'Te enviaremos un enlace para cambiarla.':mode==='register'?'Regístrate con tu correo y confirma el código que recibirás.':'Entra con Google, con contraseña o con un código de correo.'}</p>
+        {mode!=='reset'&&mode!=='forgot'&&<div className="auth-methods"><button type="button" className={mode==='code'?'active':''} onClick={()=>switchMode('code')}>Código</button><button type="button" className={mode==='login'?'active':''} onClick={()=>switchMode('login')}>Contraseña</button><button type="button" className={mode==='register'?'active':''} onClick={()=>switchMode('register')}>Crear cuenta</button></div>}
+        {mode!=='reset'&&mode!=='forgot'&&firebaseConfigured&&<button type="button" className="secondary-button google-signin" disabled={loading} onClick={()=>void signInGoogle()}>{loading?'Conectando…':'Continuar con Google'}</button>}
+        {mode==='code'?<>
         <form onSubmit={e=>{e.preventDefault();void sendCode(email)}}>
           <label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>
           {error&&<div className="notice" role="alert">{error}</div>}
           <button className="primary-button form-submit" disabled={loading}>{loading?'Enviando…':'Enviar código'} <ArrowRight size={18}/></button>
         </form>
+        </>:<form onSubmit={passwordAction}>
+          {mode!=='reset'&&<label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>}
+          {mode!=='forgot'&&<label>Contraseña<input type="password" required minLength={mode==='login'?undefined:8} maxLength={256} autoComplete={mode==='login'?'current-password':'new-password'} placeholder={mode==='login'?'Tu contraseña':'Al menos 8 caracteres'} value={password} onChange={e=>{setPassword(e.target.value);setError('')}}/></label>}
+          {info&&<p role="status" className="form-hint">{info}</p>}
+          {error&&<div className="notice" role="alert">{error}</div>}
+          <button className="primary-button form-submit" disabled={loading}>{loading?'Espera…':mode==='login'?'Entrar':mode==='register'?'Crear cuenta':mode==='forgot'?'Enviar enlace':'Guardar contraseña'} <ArrowRight size={18}/></button>
+        </form>}
+        {mode==='login'&&<div className="auth-toggle"><button type="button" onClick={()=>switchMode('forgot')}>He olvidado mi contraseña</button></div>}
+        {(mode==='forgot'||mode==='reset')&&<div className="auth-toggle"><button type="button" onClick={()=>switchMode('login')}>Volver al acceso</button></div>}
       </>}
     </div></div>
   </div></div>;
