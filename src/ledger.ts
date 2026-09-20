@@ -49,6 +49,26 @@ export const removeGoal=(scope:string,id:string)=>change(scope,'goals',id);
 export const saveInvestment=(scope:string,value:Investment)=>change(scope,'investments',value.id,value);
 export const removeInvestment=(scope:string,id:string)=>change(scope,'investments',id);
 export const saveAccount=(scope:string,value:AccountSetting)=>change(scope,'account_settings',value.account,value);
+// An unused bank can be folded into another without losing its opening balance.
+// Both local changes are committed together before synchronization starts.
+export function mergeUnusedBank(scope:string,sourceId:string,targetId:string){
+  const state=readStore(scope);
+  const source=state.account_settings.find(a=>a.account===sourceId);
+  const target=state.account_settings.find(a=>a.account===targetId);
+  if(!source?.account.startsWith('bank:')||!target||target.kind==='cash'||target.account===sourceId)
+    throw new Error('Elige un banco adicional y un banco de destino distinto.');
+  if(state.transactions.some(t=>t.account===sourceId||t.to_account===sourceId)||state.investments.some(i=>i.funding_account===sourceId))
+    throw new Error('Este banco tiene movimientos o inversiones. Reasígnalos antes de quitarlo.');
+  const opening=Math.round((Number(source.opening_balance)+Number(target.opening_balance))*100)/100;
+  if(!Number.isFinite(opening)||Math.abs(opening)>9999999999.99)throw new Error('La suma de saldos supera el límite permitido.');
+  const updated={...target,opening_balance:opening};
+  state.account_settings=[...state.account_settings.filter(a=>a.account!==sourceId&&a.account!==targetId),updated];
+  if(scope!=='guest'){
+    state.pending=queued(state.pending,{token:crypto.randomUUID(),entity:'account_settings',method:'upsert',id:targetId,record:updated});
+    state.pending=queued(state.pending,{token:crypto.randomUUID(),entity:'account_settings',method:'delete',id:sourceId});
+  }
+  writeStore(scope,state);return state;
+}
 export function importTransactions(scope:string,values:Transaction[]){const state=readStore(scope),seen=new Set(state.transactions.map(item=>item.import_key).filter(Boolean));for(const item of values){if(item.import_key&&seen.has(item.import_key))continue;state.transactions.push(item);if(item.import_key)seen.add(item.import_key);if(scope!=='guest')state.pending=queued(state.pending,{token:crypto.randomUUID(),entity:'transactions',method:'upsert',id:item.id,record:item})}writeStore(scope,state);return state}
 
 export function claimGuest(userId:string){
