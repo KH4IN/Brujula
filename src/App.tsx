@@ -6,6 +6,7 @@ import { claimGuest, emptyStore, readStore, removeBudget as removeLocalBudget, r
 import { AccountsPanel, DailyChart, GoalsPanel, ImportDialog, InvestmentsPanel } from './Features';
 import { accountBalances, marketValue } from './finance';
 import { authMessage } from './auth';
+import { disconnectFirebase, firebaseConfigured, googleIdTokenFromFirebase } from './firebase';
 import { merchantFor } from './categorize';
 
 type Tab = 'dashboard'|'transactions'|'budgets'|'accounts'|'goals'|'investments';
@@ -166,7 +167,7 @@ export default function App(){
       </nav>
       <div className="sidebar-spacer"/>
       <div className="sidebar-tip"><div className="tip-icon"><CircleHelp size={20}/></div><strong>Una visión más clara.</strong><p>Registra tus movimientos para ver adónde va cada euro.</p></div>
-      <div className="sidebar-footer"><div className="avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</div><div className="account"><strong>{user?.email?.split('@')[0]??'Mi espacio'}</strong><span>{user?'Sincronización activada':'Solo en este dispositivo'}</span></div>{user?<button title="Desconectar cuenta" className="icon-button" onClick={()=>supabase?.auth.signOut({scope:'local'})}><LogOut size={17}/></button>:configured&&<button className="connect-button" onClick={()=>setAuthOpen(true)}>Sincronizar</button>}</div>
+      <div className="sidebar-footer"><div className="avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</div><div className="account"><strong>{user?.email?.split('@')[0]??'Mi espacio'}</strong><span>{user?'Sincronización activada':'Solo en este dispositivo'}</span></div>{user?<button title="Desconectar cuenta" className="icon-button" onClick={()=>{void supabase?.auth.signOut({scope:'local'});void disconnectFirebase()}}><LogOut size={17}/></button>:configured&&<button className="connect-button" onClick={()=>setAuthOpen(true)}>Sincronizar</button>}</div>
     </aside>
     <main className="main">
       <header className="topbar"><button className="mobile-menu icon-button" aria-label="Abrir menú" onClick={()=>setMobileOpen(true)}><Menu size={23}/></button><div className="breadcrumb">Mi espacio <ChevronRight size={14}/><strong>{({dashboard:'Vista general',transactions:'Movimientos',budgets:'Presupuestos',accounts:'Cuentas y efectivo',goals:'Objetivos',investments:'Inversiones'} as Record<Tab,string>)[tab]}</strong></div><div className="topbar-right"><button className="icon-button theme-toggle" aria-label={dark?'Activar modo claro':'Activar modo oscuro'} title={dark?'Modo claro':'Modo oscuro'} aria-pressed={dark} onClick={()=>setDark(value=>!value)}>{dark?<Sun size={19}/>:<Moon size={19}/>}</button><span className="online-dot"/> Tu dinero, en orden <span className="top-avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</span></div></header>
@@ -234,6 +235,24 @@ function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
     return ()=>window.clearInterval(timer);
   },[retryAt]);
   const seconds=Math.max(0,Math.ceil((retryAt-now)/1000));
+  async function signInGoogle(){
+    if(loading||!supabase)return;
+    setLoading(true);setError('');
+    try{
+      const token=await googleIdTokenFromFirebase();
+      const {data,error:signInError}=await supabase.auth.signInWithIdToken({provider:'google',token});
+      if(signInError||!data.session){
+        await disconnectFirebase();
+        setError('Google verificó tu cuenta, pero falta configurar Google en Supabase para sincronizar tus datos. Puedes seguir usando el acceso por correo.');
+        return;
+      }
+      onReady();
+    }catch(error){
+      const code=typeof error==='object'&&error&&'code' in error?String(error.code):'';
+      if(code==='auth/popup-closed-by-user')return;
+      setError(code==='auth/unauthorized-domain'?'Este dominio aún no está autorizado en Firebase.':code==='auth/operation-not-allowed'?'Activa el proveedor Google en Firebase.':code==='auth/popup-blocked'?'El navegador bloqueó la ventana de Google. Permite ventanas emergentes para Brújula.':'No se pudo acceder con Google. Comprueba la conexión e inténtalo de nuevo.');
+    }finally{setLoading(false)}
+  }
   async function sendCode(address:string){
     if(loading)return;
     const clean=address.trim().toLowerCase();
@@ -274,7 +293,8 @@ function Auth({onReady,onClose}:{onReady:()=>void,onClose:()=>void}){
         </form>
         <div className="auth-toggle"><button type="button" disabled={loading||seconds>0} onClick={()=>void sendCode(sentEmail)}>{seconds>0?`Pedir otro código en ${seconds} s`:'Reenviar código'}</button></div>
         <div className="auth-toggle"><button type="button" onClick={()=>{setSentEmail('');setCode('');setError('')}}>Cambiar dirección de correo</button></div>
-      </>:<><p>Escribe tu correo y te enviaremos un código. Si todavía no tienes cuenta, se creará al verificarlo.</p>
+      </>:<><p>Entra con Google o solicita un código por correo. Tus movimientos seguirán en tu espacio personal.</p>
+        {firebaseConfigured&&<button type="button" className="secondary-button google-signin" disabled={loading} onClick={()=>void signInGoogle()}>{loading?'Conectando…':'Continuar con Google'}</button>}
         <form onSubmit={e=>{e.preventDefault();void sendCode(email)}}>
           <label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>
           {error&&<div className="notice" role="alert">{error}</div>}

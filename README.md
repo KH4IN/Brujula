@@ -1,6 +1,6 @@
 # Brújula — finanzas personales
 
-Web instalable (PWA) adaptable a móvil y ordenador. Registra movimientos de banco y efectivo, traspasos, presupuestos, objetivos de ahorro e inversiones manuales. Muestra el reparto por categorías, el gasto diario, el patrimonio estimado y un detalle interactivo. Importa Excel `.xlsx`, CSV y TSV con revisión previa, y exporta movimientos a CSV. Cada cambio se guarda primero en el dispositivo y puede sincronizarse con Supabase mediante una cuenta. Para acceder, se solicita un código de seis cifras por correo, sin contraseña. La web oficial para usar y probar Brújula es https://brujula-finanzas-gamma.vercel.app/; la rama `main` se publica allí.
+Web instalable (PWA) adaptable a móvil y ordenador. Registra movimientos de banco y efectivo, traspasos, presupuestos, objetivos de ahorro e inversiones manuales. Muestra el reparto por categorías, el gasto diario, el patrimonio estimado y un detalle interactivo. Importa Excel `.xlsx`, CSV y TSV con revisión previa, y exporta movimientos a CSV. Cada cambio se guarda primero en el dispositivo y puede sincronizarse con Supabase mediante una cuenta. El acceso por código de seis cifras sigue disponible; el acceso con Google mediante Firebase requiere activar los proveedores según `supabase/FIREBASE_GOOGLE_SETUP.md` antes de publicarlo. La web oficial para usar y probar Brújula es https://brujula-finanzas-gamma.vercel.app/; la rama `main` se publica allí.
 
 ## Probar en local
 

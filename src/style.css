@@ -120,3 +120,4 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 :root[data-theme="dark"] .flow-legend button{color:#ddc8f2}
 :root[data-theme="dark"] .flow-legend button strong{color:#f0d38c}
 :root[data-theme="dark"] .flow-legend p{border-color:#514661}
+.google-signin{display:flex;width:100%;justify-content:center;margin:0 0 18px;min-height:44px;font-size:13px}
