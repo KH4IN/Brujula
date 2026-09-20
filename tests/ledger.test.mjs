@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {claimGuest, readStore, recoverLegacyGuest, saveAccount, saveBudget, saveTransaction, writeStore} from './.ledger.bundle.mjs';
+import {claimGuest, mergeUnusedBank, readStore, recoverLegacyGuest, saveAccount, saveBudget, saveTransaction, writeStore} from './.ledger.bundle.mjs';
 
 function storage(){
   const values=new Map();
@@ -39,4 +39,26 @@ test('recupera movimientos reales anteriores sin incorporar el presupuesto de mu
   assert.deepEqual(readStore('guest').transactions.map(t=>t.id),[transaction.id]);
   assert.deepEqual(readStore('guest').budgets.map(b=>b.category),['Vivienda']);
   assert.equal(recoverLegacyGuest(),0);
+});
+
+test('quitar un banco sin movimientos mueve el saldo inicial y deja ambas operaciones pendientes',()=>{
+  storage();
+  saveAccount('usuario-uno',{account:'bank',kind:'bank',opening_balance:100,name:'Santander'});
+  saveAccount('usuario-uno',{account:'bank:caixa',kind:'bank',opening_balance:1000,name:'Caixa'});
+  const result=mergeUnusedBank('usuario-uno','bank:caixa','bank');
+  assert.equal(result.account_settings.find(a=>a.account==='bank').opening_balance,1100);
+  assert.equal(result.account_settings.some(a=>a.account==='bank:caixa'),false);
+  assert.deepEqual(result.pending.filter(p=>p.entity==='account_settings').map(p=>[p.method,p.id]),[['upsert','bank'],['delete','bank:caixa']]);
+});
+
+test('un banco con movimientos o inversiones no se puede quitar ni altera sus saldos',()=>{
+  storage();
+  saveAccount('usuario-uno',{account:'bank:caixa',kind:'bank',opening_balance:1000,name:'Caixa'});
+  saveTransaction('usuario-uno',{...transaction,account:'bank:caixa'});
+  assert.throws(()=>mergeUnusedBank('usuario-uno','bank:caixa','bank'),/movimientos o inversiones/);
+  assert.equal(readStore('usuario-uno').account_settings.find(a=>a.account==='bank:caixa').opening_balance,1000);
+  const state=readStore('usuario-dos');state.account_settings.push({account:'bank:caixa',kind:'bank',opening_balance:1000,name:'Caixa'});
+  state.investments.push({id:'invest',name:'ETF',ticker:'ETF',units:1,average_cost:100,current_price:100,funding_account:'bank:caixa',purchased_on:null});writeStore('usuario-dos',state);
+  assert.throws(()=>mergeUnusedBank('usuario-dos','bank:caixa','bank'),/movimientos o inversiones/);
+  assert.throws(()=>mergeUnusedBank('usuario-dos','bank','bank:caixa'),/banco adicional/);
 });
