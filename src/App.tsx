@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { Activity, ArrowDownLeft, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Download, FileSpreadsheet, Landmark, LayoutDashboard, LogOut, Menu, Moon, Plus, Search, Settings2, SlidersHorizontal, Sun, Target, Trash2, TrendingUp, Wallet, X } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import { CATEGORIES, accountName, configured, formatDate, localDate, money, monthLabel, monthOf, supabase, type AccountSetting, type Budget, type Category, type Goal, type Investment, type Transaction } from './data';
-import { claimGuest, emptyStore, readStore, removeBudget as removeLocalBudget, removeTransaction as removeLocalTransaction, saveBudget as saveLocalBudget, saveTransaction as saveLocalTransaction, saveGoal, removeGoal, saveInvestment, removeInvestment, saveAccount, importTransactions, synchronize, type LocalStore } from './ledger';
+import { claimGuest, emptyStore, readStore, recoverLegacyGuest, removeBudget as removeLocalBudget, removeTransaction as removeLocalTransaction, saveBudget as saveLocalBudget, saveTransaction as saveLocalTransaction, saveGoal, removeGoal, saveInvestment, removeInvestment, saveAccount, importTransactions, synchronize, type LocalStore } from './ledger';
 import { AccountsPanel, DailyChart, GoalsPanel, ImportDialog, InvestmentsPanel } from './Features';
 import { accountBalances, marketValue } from './finance';
 import { authMessage } from './auth';
@@ -31,6 +31,7 @@ export default function App(){
   const [importOpen,setImportOpen]=useState(false);
   const [categoryDetail,setCategoryDetail]=useState<string|null>(null);
   const [pending,setPending]=useState(0);
+  const [transferred,setTransferred]=useState(0);
   const [syncState,setSyncState]=useState<'local'|'syncing'|'synced'|'pending'|'offline'>('local');
   const [authOpen,setAuthOpen]=useState(false);
   const [passwordRecovery,setPasswordRecovery]=useState(false);
@@ -48,6 +49,8 @@ export default function App(){
   const scope=user?.id??'guest';
   const scopeRef=useRef(scope);scopeRef.current=scope;
   const syncing=useRef(false);
+  const syncRequested=useRef(false);
+  const latestSync=useRef<()=>void>(()=>{});
   useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('brujula.theme',dark?'dark':'light')}catch{/* The theme still works without storage. */}document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark?'#171720':'#173f32')},[dark]);
   useEffect(()=>{const saved=user?.user_metadata?.theme;if(saved==='dark'||saved==='light')setDark(saved==='dark')},[user?.id,user?.user_metadata?.theme]);
   function changeTheme(){
@@ -72,7 +75,6 @@ export default function App(){
 
   useEffect(()=>{
     if(!supabase)return;
-    supabase.auth.getSession().then(({data})=>setUser(data.session?.user??null));
     const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
       setUser(session?.user??null);
       if(event==='PASSWORD_RECOVERY'){setPasswordRecovery(true);setAuthOpen(true)}
@@ -83,7 +85,7 @@ export default function App(){
   const syncNow=useCallback(async()=>{
     if(!user||!supabase)return;
     if(!navigator.onLine){setSyncState('offline');return}
-    if(syncing.current)return;
+    if(syncing.current){syncRequested.current=true;return}
     syncing.current=true;setSyncState('syncing');
     let completed=false;
     try{
@@ -94,15 +96,18 @@ export default function App(){
       if(scopeRef.current===user.id){setSyncState('pending');setNotice(`La sincronización está pendiente: ${error instanceof Error?error.message:'comprueba tu conexión'}`)}
     }finally{
       syncing.current=false;
+      if(syncRequested.current){syncRequested.current=false;queueMicrotask(()=>latestSync.current());return}
       if(completed&&scopeRef.current===user.id){
         try{if(readStore(user.id).pending.length)queueMicrotask(()=>void syncNow())}catch{/* Error shown by the next read. */}
       }
     }
   },[user,applyLocal]);
+  latestSync.current=()=>void syncNow();
 
   useEffect(()=>{
     try{
-      if(user)claimGuest(user.id);
+      recoverLegacyGuest();
+      if(user)setTransferred(claimGuest(user.id));else setTransferred(0);
       const local=readStore(scope);applyLocal(local);
       setLoadedScope(scope);
       setSyncState(user?(navigator.onLine?'pending':'offline'):'local');
@@ -182,7 +187,7 @@ export default function App(){
     <main className="main">
       <header className="topbar"><button className="mobile-menu icon-button" aria-label="Abrir menú" onClick={()=>setMobileOpen(true)}><Menu size={23}/></button><div className="breadcrumb">Mi espacio <ChevronRight size={14}/><strong>{({dashboard:'Vista general',transactions:'Movimientos',budgets:'Presupuestos',accounts:'Cuentas y efectivo',goals:'Objetivos',investments:'Inversiones'} as Record<Tab,string>)[tab]}</strong></div><div className="topbar-right"><button className="icon-button theme-toggle" aria-label={dark?'Activar modo claro':'Activar modo oscuro'} title={dark?'Modo claro':'Modo oscuro'} aria-pressed={dark} onClick={changeTheme}>{dark?<Sun size={19}/>:<Moon size={19}/>}</button><span className="online-dot"/> Tu dinero, en orden <span className="top-avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</span></div></header>
       <div className="content">
-        <div className="demo-banner"><span className="demo-badge">{user?'SYNC':'LOCAL'}</span><span>{user?syncState==='synced'?'Todo sincronizado en tus dispositivos.':syncState==='syncing'?'Sincronizando cambios…':syncState==='offline'?`Sin conexión. ${pending} cambios pendientes.`:`${pending} cambios pendientes de sincronizar.`:'Tus datos se guardan en este dispositivo. Inicia sesión para sincronizarlos con otros.'}</span>{user&&<button className="sync-button" onClick={()=>void syncNow()} disabled={syncState==='syncing'}>Sincronizar ahora</button>}{!user&&configured&&<button className="sync-button" onClick={()=>setAuthOpen(true)}>Activar sincronización</button>}</div>
+        <div className="demo-banner" role="status"><span className="demo-badge">{user?'SYNC':'LOCAL'}</span><span>{user?syncState==='synced'?transferred?`${transferred} registros locales incorporados a tu cuenta. Todo sincronizado.`:'Todo sincronizado en tus dispositivos.':syncState==='syncing'?'Sincronizando cambios…':syncState==='offline'?`Sin conexión. ${pending} cambios pendientes; aún no aparecen en otros dispositivos.`:`${pending} cambios pendientes de sincronizar; aún no aparecen en otros dispositivos.`:'Tus datos se guardan en este dispositivo. Inicia sesión para sincronizarlos con otros.'}</span>{user&&<button className="sync-button" onClick={()=>void syncNow()} disabled={syncState==='syncing'}>Sincronizar ahora</button>}{!user&&configured&&<button className="sync-button" onClick={()=>setAuthOpen(true)}>Activar sincronización</button>}</div>
         <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line"/> TU PANORAMA FINANCIERO</div><h1>{({dashboard:'Tu dinero, con claridad.',transactions:'Tus movimientos.',budgets:'Presupuestos a tu medida.',accounts:'Tus cuentas, siempre claras.',goals:'Tus objetivos.',investments:'Tu cartera de inversión.'} as Record<Tab,string>)[tab]}</h1><p>{({dashboard:'Todo lo que entra, lo que sale y lo que estás construyendo.',transactions:'Cada movimiento cuenta una parte de la historia.',budgets:'Pon un límite a cada categoría y sigue tu progreso.',accounts:'Cada banco, efectivo y cartera, por separado.',goals:'Pequeños pasos hacia algo grande.',investments:'Tus posiciones y precios, actualizados por ti.'} as Record<Tab,string>)[tab]}</p></div><div className="heading-actions"><div className="month-picker"><button aria-label="Mes anterior" onClick={()=>setMonth(shiftMonth(month,-1))}><ChevronLeft size={17}/></button><span><CalendarDays size={16}/>{monthLabel(month)}</span><button aria-label="Mes siguiente" onClick={()=>setMonth(shiftMonth(month,1))}><ChevronRight size={17}/></button></div><button className="secondary-button import-button" onClick={()=>setImportOpen(true)}><FileSpreadsheet size={17}/> Importar archivo</button><button className="primary-button" onClick={()=>openTransaction()}><Plus size={18}/> Añadir movimiento</button></div></div>
         {notice&&!modal&&<div className="notice" role="alert">{notice}<button onClick={()=>setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
         {busy&&<div className="loading-line"/>}
@@ -234,6 +239,7 @@ function TransactionList({items,onEdit,onDelete,onAdd,accountLabels=[]}:{items:T
 function Auth({onReady,onClose,recovering,managePassword}:{onReady:()=>void,onClose:()=>void,recovering:boolean,managePassword:boolean}){
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
+  const [repeatPassword,setRepeatPassword]=useState('');
   const [mode,setMode]=useState<'login'|'link'|'register'|'set-password'|'forgot'|'reset'>(recovering?'reset':managePassword?'set-password':'login');
   const [info,setInfo]=useState('');
   const [sentEmail,setSentEmail]=useState('');
@@ -248,7 +254,7 @@ function Auth({onReady,onClose,recovering,managePassword}:{onReady:()=>void,onCl
   },[retryAt]);
   const seconds=Math.max(0,Math.ceil((retryAt-now)/1000));
   useEffect(()=>{if(recovering)setMode('reset')},[recovering]);
-  function switchMode(next:typeof mode){setMode(next);setSentEmail('');setPassword('');setInfo('');setError('')}
+  function switchMode(next:typeof mode){setMode(next);setSentEmail('');setPassword('');setRepeatPassword('');setInfo('');setError('')}
   async function passwordAction(e:FormEvent){
     e.preventDefault();
     if(loading||!supabase)return;
@@ -259,6 +265,14 @@ function Auth({onReady,onClose,recovering,managePassword}:{onReady:()=>void,onCl
         const {data,error:loginError}=await supabase.auth.signInWithPassword({email:address,password});
         if(loginError||!data.session){setError(loginError?.code==='invalid_credentials'?'Correo o contraseña incorrectos. También puedes entrar con un enlace.':loginError?authMessage(loginError):'No se pudo iniciar sesión.');return}
         setPassword('');onReady();
+      }else if(mode==='register'){
+        if(password.length<8){setError('La contraseña debe tener al menos 8 caracteres.');return}
+        if(password!==repeatPassword){setError('Las contraseñas no coinciden.');return}
+        const {data,error:signupError}=await supabase.auth.signUp({email:address,password,options:{emailRedirectTo:window.location.origin}});
+        if(signupError){setError(authMessage(signupError));return}
+        setPassword('');setRepeatPassword('');
+        if(data.session){onReady();return}
+        setInfo('Cuenta solicitada. Supabase requiere confirmar el correo antes de entrar. El envío de correos del proyecto todavía debe configurarse; si no recibes el enlace, no podrás iniciar sesión con esta cuenta.');
       }else if(mode==='forgot'){
         const {error:resetError}=await supabase.auth.resetPasswordForEmail(address,{redirectTo:window.location.origin});
         if(resetError){setError(authMessage(resetError));return}
@@ -312,18 +326,19 @@ function Auth({onReady,onClose,recovering,managePassword}:{onReady:()=>void,onCl
         <div className="auth-toggle"><button type="button" onClick={()=>{setSentEmail('');setError('')}}>Cambiar correo o método</button></div>
       </>:<>
         {mode!=='reset'&&mode!=='forgot'&&mode!=='set-password'&&<div className="auth-methods"><button type="button" className={mode==='register'?'':'active'} onClick={()=>switchMode('login')}>Iniciar sesión</button><button type="button" className={mode==='register'?'active':''} onClick={()=>switchMode('register')}>Registrarse</button></div>}
-        <p>{mode==='register'?'Regístrate con un enlace enviado a tu correo. Después podrás establecer una contraseña desde tu cuenta.':mode==='link'?'Recibe un enlace para iniciar sesión, sin contraseña.':mode==='forgot'?'Te enviaremos un enlace para cambiarla.':mode==='reset'||mode==='set-password'?'Elige una contraseña para tu cuenta.':'Entra con tu correo y contraseña.'}</p>
+        <p>{mode==='register'?'Crea tu cuenta con correo y contraseña. Si Supabase exige confirmar el correo, necesitarás el enlace que te envíe.':mode==='link'?'Recibe un enlace para iniciar sesión, sin contraseña.':mode==='forgot'?'Te enviaremos un enlace para cambiarla.':mode==='reset'||mode==='set-password'?'Elige una contraseña para tu cuenta.':'Entra con tu correo y contraseña.'}</p>
         {mode==='login'&&import.meta.env.VITE_GOOGLE_OAUTH_ENABLED==='true'&&<button type="button" className="secondary-button google-signin" disabled={loading} onClick={()=>void signInGoogle()}>Continuar con Google</button>}
-        {mode==='link'||mode==='register'?<form onSubmit={e=>{e.preventDefault();void sendLink(email)}}>
+        {mode==='link'?<form onSubmit={e=>{e.preventDefault();void sendLink(email)}}>
           <label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>
           {error&&<div className="notice" role="alert">{error}</div>}
           <button className="primary-button form-submit" disabled={loading}>{loading?'Solicitando…':'Enviar enlace'} <ArrowRight size={18}/></button>
         </form>:<form onSubmit={passwordAction}>
           {mode!=='reset'&&mode!=='set-password'&&<label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>}
           {mode!=='forgot'&&<label>Contraseña<input type="password" required minLength={mode==='login'?undefined:8} maxLength={256} autoComplete={mode==='login'?'current-password':'new-password'} placeholder={mode==='login'?'Tu contraseña':'Al menos 8 caracteres'} value={password} onChange={e=>{setPassword(e.target.value);setError('')}}/></label>}
+          {mode==='register'&&<label>Repite la contraseña<input type="password" required minLength={8} maxLength={256} autoComplete="new-password" placeholder="Vuelve a escribir la contraseña" value={repeatPassword} onChange={e=>{setRepeatPassword(e.target.value);setError('')}}/></label>}
           {info&&<p role="status" className="form-hint">{info}</p>}
           {error&&<div className="notice" role="alert">{error}</div>}
-          <button className="primary-button form-submit" disabled={loading}>{loading?'Espera…':mode==='login'?'Iniciar sesión':mode==='forgot'?'Enviar enlace':'Guardar contraseña'} <ArrowRight size={18}/></button>
+          <button className="primary-button form-submit" disabled={loading}>{loading?'Espera…':mode==='login'?'Iniciar sesión':mode==='register'?'Crear cuenta':mode==='forgot'?'Enviar enlace':'Guardar contraseña'} <ArrowRight size={18}/></button>
         </form>}
         {mode==='login'&&<div className="auth-toggle"><button type="button" onClick={()=>switchMode('link')}>Entrar con enlace por correo</button><button type="button" onClick={()=>switchMode('forgot')}>He olvidado mi contraseña</button></div>}
         {(mode==='link'||mode==='forgot')&&<div className="auth-toggle"><button type="button" onClick={()=>switchMode('login')}>Volver a iniciar sesión</button></div>}
