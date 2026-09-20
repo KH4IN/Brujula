@@ -52,7 +52,9 @@ export function dateString(value:Cell):string|null{
 }
 export function amountNumber(value:Cell):number|null{
  if(typeof value==='number')return Number.isFinite(value)?value:null;
- let str=tidy(value).replace(/[\s\u00a0\u202f€£$]/g,'');if(!str||str==='-')return null;
+ // Some bank exports append the currency without a separator (e.g. -8,00EUR).
+ // Strip EUR only: other currencies must not silently become euro transactions.
+ let str=tidy(value).replace(/[\s\u00a0\u202f€£$]/g,'').replace(/^(?:EUROS?|EUR)|(?:EUROS?|EUR)$/gi,'');if(!str||str==='-')return null;
  const parens=str.startsWith('(')&&str.endsWith(')'),trailingMinus=str.endsWith('-');str=str.replace(/[()]/g,'');if(trailingMinus)str=str.slice(0,-1);
  if(!/^[+-]?[\d.,']+$/.test(str))return null;str=str.replaceAll("'",'');
  const comma=str.lastIndexOf(','),dot=str.lastIndexOf('.');
