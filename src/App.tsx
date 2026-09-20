@@ -228,7 +228,7 @@ function TransactionList({items,onEdit,onDelete,onAdd,accountLabels=[]}:{items:T
 function Auth({onReady,onClose,recovering}:{onReady:()=>void,onClose:()=>void,recovering:boolean}){
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
-  const [mode,setMode]=useState<'code'|'login'|'register'|'forgot'|'reset'>(recovering?'reset':'code');
+  const [mode,setMode]=useState<'code'|'login'|'register'|'set-password'|'forgot'|'reset'>(recovering?'reset':'code');
   const [info,setInfo]=useState('');
   const [sentEmail,setSentEmail]=useState('');
   const [code,setCode]=useState('');
@@ -254,18 +254,11 @@ function Auth({onReady,onClose,recovering}:{onReady:()=>void,onClose:()=>void,re
         const {data,error:loginError}=await supabase.auth.signInWithPassword({email:address,password});
         if(loginError||!data.session){setError(loginError?.code==='invalid_credentials'?'Correo o contraseña incorrectos. También puedes entrar con un código.':loginError?authMessage(loginError):'No se pudo iniciar sesión.');return}
         setPassword('');onReady();
-      }else if(mode==='register'){
-        const {data,error:registrationError}=await supabase.auth.signUp({email:address,password,options:{emailRedirectTo:window.location.origin}});
-        if(registrationError){setError(authMessage(registrationError));return}
-        setPassword('');
-        if(data.session){onReady();return}
-        if(!data.user){setError('No se pudo crear la cuenta. Comprueba el correo e inténtalo otra vez.');return}
-        setSentEmail(address);setMode('register');setInfo('Si la cuenta es nueva, recibirás un código para verificarla. Si ya tienes cuenta, vuelve y usa la opción de código para entrar.');
       }else if(mode==='forgot'){
         const {error:resetError}=await supabase.auth.resetPasswordForEmail(address,{redirectTo:window.location.origin});
         if(resetError){setError(authMessage(resetError));return}
         setInfo('Si esa dirección tiene una cuenta, recibirás un enlace para cambiar la contraseña. Revisa también el correo no deseado.');
-      }else if(mode==='reset'){
+      }else if(mode==='reset'||mode==='set-password'){
         const {error:updateError}=await supabase.auth.updateUser({password});
         if(updateError){setError(authMessage(updateError));return}
         setPassword('');onReady();
@@ -288,7 +281,7 @@ function Auth({onReady,onClose,recovering}:{onReady:()=>void,onClose:()=>void,re
     }catch(error){
       const code=typeof error==='object'&&error&&'code' in error?String(error.code):'';
       if(code==='auth/popup-closed-by-user')return;
-      setError(code==='auth/unauthorized-domain'?'Este dominio aún no está autorizado en Firebase.':code==='auth/operation-not-allowed'?'Activa el proveedor Google en Firebase.':code==='auth/popup-blocked'?'El navegador bloqueó la ventana de Google. Permite ventanas emergentes para Brújula.':'No se pudo acceder con Google. Comprueba la conexión e inténtalo de nuevo.');
+      setError(code==='auth/unauthorized-domain'?'El dominio de Brújula no está autorizado en Firebase.':code==='auth/operation-not-allowed'?'Google no está habilitado en Firebase.':code==='auth/popup-blocked'?'El navegador bloqueó la ventana de Google. Permite ventanas emergentes para Brújula.':code==='auth/network-request-failed'?'No se pudo conectar con Firebase. Comprueba tu conexión y prueba sin bloqueadores de contenido; también puedes entrar con contraseña.':`No se pudo acceder con Google${code?` (${code})`:''}. Puedes entrar con contraseña o código.`);
     }finally{setLoading(false)}
   }
   async function sendCode(address:string){
@@ -312,10 +305,12 @@ function Auth({onReady,onClose,recovering}:{onReady:()=>void,onClose:()=>void,re
     if(loading||!/^\d{6}$/.test(code))return;
     setLoading(true);setError('');
     try{
-      const {data,error:verifyError}=await supabase!.auth.verifyOtp({email:sentEmail,token:code,type:mode==='register'?'signup':'email'});
+      const {data,error:verifyError}=await supabase!.auth.verifyOtp({email:sentEmail,token:code,type:'email'});
       if(verifyError){setError(authMessage(verifyError));return}
       if(!data.session){setError('No se pudo iniciar sesión con ese código. Solicita otro y prueba de nuevo.');return}
-      setCode('');onReady();
+      setCode('');
+      if(mode==='register'){setEmail(sentEmail);setSentEmail('');setMode('set-password');return}
+      onReady();
     }catch{
       setError('No se pudo verificar el código. Comprueba la conexión e inténtalo otra vez.');
     }finally{setLoading(false)}
@@ -323,29 +318,29 @@ function Auth({onReady,onClose,recovering}:{onReady:()=>void,onClose:()=>void,re
   return <div className="auth-overlay"><div className="auth-page">
     <button className="auth-close icon-button" onClick={onClose} aria-label="Cerrar"><X size={20}/></button>
     <div className="auth-decor"><div className="brand"><div className="brand-symbol">✳</div><div className="brand-name">brújula<span>.</span><small>FINANZAS PERSONALES</small></div></div><div className="auth-message"><span>UN POCO MÁS DE CLARIDAD, CADA DÍA</span><h1>Tu dinero tiene una historia.<br/><em>Entiéndela mejor.</em></h1><p>Organiza tus gastos, pon límites que puedas cumplir y descubre lo que de verdad importa.</p></div><div className="auth-bottom">✳ &nbsp; Un lugar tranquilo para tus finanzas.</div></div>
-    <div className="auth-panel"><div className="auth-box"><div className="auth-mobile-brand">✳ brújula.</div><span className="section-kicker">BIENVENIDO A BRÚJULA</span><h2>{sentEmail?'Revisa tu correo.':mode==='reset'?'Nueva contraseña.':mode==='forgot'?'Recupera tu acceso.':mode==='register'?'Crea tu cuenta.':'Entra en tu espacio.'}</h2>
-      {sentEmail?<><p>{mode==='register'?'Si esta cuenta es nueva, recibirás un código de confirmación':'Hemos solicitado un código de seis cifras'} para <strong>{sentEmail}</strong>. Revisa también el correo no deseado.</p>{info&&<p role="status" className="form-hint">{info}</p>}
+    <div className="auth-panel"><div className="auth-box"><div className="auth-mobile-brand">✳ brújula.</div><span className="section-kicker">BIENVENIDO A BRÚJULA</span><h2>{sentEmail?'Revisa tu correo.':mode==='reset'||mode==='set-password'?'Elige tu contraseña.':mode==='forgot'?'Recupera tu acceso.':mode==='register'?'Crea tu cuenta.':'Entra en tu espacio.'}</h2>
+      {sentEmail?<><p>Hemos solicitado un código de seis cifras para <strong>{sentEmail}</strong>. Revisa también el correo no deseado.</p>{info&&<p role="status" className="form-hint">{info}</p>}
         <form onSubmit={verifyCode}><label>Código de verificación<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required autoFocus placeholder="000000" value={code} onChange={e=>{setCode(e.target.value.replace(/\D/g,'').slice(0,6));setError('')}}/></label>
           {error&&<div className="notice" role="alert">{error}</div>}
           <button className="primary-button form-submit" disabled={loading||code.length!==6}>{loading?'Comprobando…':'Verificar y entrar'} <ArrowRight size={18}/></button>
         </form>
-        {mode!=='register'&&<div className="auth-toggle"><button type="button" disabled={loading||seconds>0} onClick={()=>void sendCode(sentEmail)}>{seconds>0?`Pedir otro código en ${seconds} s`:'Reenviar código'}</button></div>}
+        <div className="auth-toggle"><button type="button" disabled={loading||seconds>0} onClick={()=>void sendCode(sentEmail)}>{seconds>0?`Pedir otro código en ${seconds} s`:'Reenviar código'}</button></div>
         <div className="auth-toggle"><button type="button" onClick={()=>{setSentEmail('');setCode('');setError('');setInfo('')}}>Volver y cambiar correo o método</button></div>
-      </>:<><p>{mode==='reset'?'Elige una contraseña nueva para tu cuenta.':mode==='forgot'?'Te enviaremos un enlace para cambiarla.':mode==='register'?'Regístrate con tu correo y confirma el código que recibirás.':'Entra con Google, con contraseña o con un código de correo.'}</p>
-        {mode!=='reset'&&mode!=='forgot'&&<div className="auth-methods"><button type="button" className={mode==='code'?'active':''} onClick={()=>switchMode('code')}>Código</button><button type="button" className={mode==='login'?'active':''} onClick={()=>switchMode('login')}>Contraseña</button><button type="button" className={mode==='register'?'active':''} onClick={()=>switchMode('register')}>Crear cuenta</button></div>}
-        {mode!=='reset'&&mode!=='forgot'&&firebaseConfigured&&<button type="button" className="secondary-button google-signin" disabled={loading} onClick={()=>void signInGoogle()}>{loading?'Conectando…':'Continuar con Google'}</button>}
-        {mode==='code'?<>
+      </>:<><p>{mode==='reset'||mode==='set-password'?'El correo está verificado. Elige la contraseña con la que entrarás.':mode==='forgot'?'Te enviaremos un enlace para cambiarla.':mode==='register'?'Primero verificamos el correo y después eliges la contraseña. Si ya tenías cuenta, conservarás tus movimientos.':'Entra con Google, con contraseña o con un código de correo.'}</p>
+        {mode!=='reset'&&mode!=='forgot'&&mode!=='set-password'&&<div className="auth-methods"><button type="button" className={mode==='code'?'active':''} onClick={()=>switchMode('code')}>Código</button><button type="button" className={mode==='login'?'active':''} onClick={()=>switchMode('login')}>Contraseña</button><button type="button" className={mode==='register'?'active':''} onClick={()=>switchMode('register')}>Crear cuenta</button></div>}
+        {mode!=='reset'&&mode!=='forgot'&&mode!=='set-password'&&firebaseConfigured&&<button type="button" className="secondary-button google-signin" disabled={loading} onClick={()=>void signInGoogle()}>{loading?'Conectando…':'Continuar con Google'}</button>}
+        {mode==='code'||mode==='register'?<>
         <form onSubmit={e=>{e.preventDefault();void sendCode(email)}}>
           <label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>
           {error&&<div className="notice" role="alert">{error}</div>}
-          <button className="primary-button form-submit" disabled={loading}>{loading?'Enviando…':'Enviar código'} <ArrowRight size={18}/></button>
+          <button className="primary-button form-submit" disabled={loading}>{loading?'Enviando…':mode==='register'?'Enviar código y continuar':'Enviar código'} <ArrowRight size={18}/></button>
         </form>
         </>:<form onSubmit={passwordAction}>
-          {mode!=='reset'&&<label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>}
+          {mode!=='reset'&&mode!=='set-password'&&<label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>}
           {mode!=='forgot'&&<label>Contraseña<input type="password" required minLength={mode==='login'?undefined:8} maxLength={256} autoComplete={mode==='login'?'current-password':'new-password'} placeholder={mode==='login'?'Tu contraseña':'Al menos 8 caracteres'} value={password} onChange={e=>{setPassword(e.target.value);setError('')}}/></label>}
           {info&&<p role="status" className="form-hint">{info}</p>}
           {error&&<div className="notice" role="alert">{error}</div>}
-          <button className="primary-button form-submit" disabled={loading}>{loading?'Espera…':mode==='login'?'Entrar':mode==='register'?'Crear cuenta':mode==='forgot'?'Enviar enlace':'Guardar contraseña'} <ArrowRight size={18}/></button>
+          <button className="primary-button form-submit" disabled={loading}>{loading?'Espera…':mode==='login'?'Entrar':mode==='forgot'?'Enviar enlace':'Guardar contraseña'} <ArrowRight size={18}/></button>
         </form>}
         {mode==='login'&&<div className="auth-toggle"><button type="button" onClick={()=>switchMode('forgot')}>He olvidado mi contraseña</button></div>}
         {(mode==='forgot'||mode==='reset')&&<div className="auth-toggle"><button type="button" onClick={()=>switchMode('login')}>Volver al acceso</button></div>}
