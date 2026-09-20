@@ -6,7 +6,6 @@ import { claimGuest, emptyStore, readStore, removeBudget as removeLocalBudget, r
 import { AccountsPanel, DailyChart, GoalsPanel, ImportDialog, InvestmentsPanel } from './Features';
 import { accountBalances, marketValue } from './finance';
 import { authMessage } from './auth';
-import { disconnectFirebase, firebaseConfigured, googleIdTokenFromFirebase } from './firebase';
 import { merchantFor } from './categorize';
 
 type Tab = 'dashboard'|'transactions'|'budgets'|'accounts'|'goals'|'investments';
@@ -50,6 +49,13 @@ export default function App(){
   const scopeRef=useRef(scope);scopeRef.current=scope;
   const syncing=useRef(false);
   useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('brujula.theme',dark?'dark':'light')}catch{/* The theme still works without storage. */}document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark?'#171720':'#173f32')},[dark]);
+  useEffect(()=>{const saved=user?.user_metadata?.theme;if(saved==='dark'||saved==='light')setDark(saved==='dark')},[user?.id,user?.user_metadata?.theme]);
+  function changeTheme(){
+    const next=!dark;setDark(next);
+    if(user&&supabase)void supabase.auth.updateUser({data:{theme:next?'dark':'light'}}).then(({error})=>{
+      if(error)setNotice('El tema se cambió aquí, pero no se pudo guardar en tu cuenta. Revisa la conexión.');
+    });
+  }
   useEffect(()=>{
     const url=new URL(window.location.href);
     if(url.searchParams.get('nuevo')!=='1')return;
@@ -171,10 +177,10 @@ export default function App(){
       </nav>
       <div className="sidebar-spacer"/>
       <div className="sidebar-tip"><div className="tip-icon"><CircleHelp size={20}/></div><strong>Una visión más clara.</strong><p>Registra tus movimientos para ver adónde va cada euro.</p></div>
-      <div className="sidebar-footer"><div className="avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</div><div className="account"><strong>{user?.email?.split('@')[0]??'Mi espacio'}</strong><span>{user?'Sincronización activada':'Solo en este dispositivo'}</span></div>{user?<button title="Desconectar cuenta" className="icon-button" onClick={()=>{void supabase?.auth.signOut({scope:'local'});void disconnectFirebase()}}><LogOut size={17}/></button>:configured&&<button className="connect-button" onClick={()=>setAuthOpen(true)}>Sincronizar</button>}</div>
+      <div className="sidebar-footer"><div className="avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</div><div className="account"><strong>{user?.email?.split('@')[0]??'Mi espacio'}</strong><span>{user?'Sincronización activada':'Solo en este dispositivo'}</span></div>{user?<><button className="account-password" onClick={()=>setAuthOpen(true)}>Contraseña</button><button title="Desconectar cuenta" className="icon-button" onClick={()=>{void supabase?.auth.signOut({scope:'local'})}}><LogOut size={17}/></button></>:configured&&<button className="connect-button" onClick={()=>setAuthOpen(true)}>Sincronizar</button>}</div>
     </aside>
     <main className="main">
-      <header className="topbar"><button className="mobile-menu icon-button" aria-label="Abrir menú" onClick={()=>setMobileOpen(true)}><Menu size={23}/></button><div className="breadcrumb">Mi espacio <ChevronRight size={14}/><strong>{({dashboard:'Vista general',transactions:'Movimientos',budgets:'Presupuestos',accounts:'Cuentas y efectivo',goals:'Objetivos',investments:'Inversiones'} as Record<Tab,string>)[tab]}</strong></div><div className="topbar-right"><button className="icon-button theme-toggle" aria-label={dark?'Activar modo claro':'Activar modo oscuro'} title={dark?'Modo claro':'Modo oscuro'} aria-pressed={dark} onClick={()=>setDark(value=>!value)}>{dark?<Sun size={19}/>:<Moon size={19}/>}</button><span className="online-dot"/> Tu dinero, en orden <span className="top-avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</span></div></header>
+      <header className="topbar"><button className="mobile-menu icon-button" aria-label="Abrir menú" onClick={()=>setMobileOpen(true)}><Menu size={23}/></button><div className="breadcrumb">Mi espacio <ChevronRight size={14}/><strong>{({dashboard:'Vista general',transactions:'Movimientos',budgets:'Presupuestos',accounts:'Cuentas y efectivo',goals:'Objetivos',investments:'Inversiones'} as Record<Tab,string>)[tab]}</strong></div><div className="topbar-right"><button className="icon-button theme-toggle" aria-label={dark?'Activar modo claro':'Activar modo oscuro'} title={dark?'Modo claro':'Modo oscuro'} aria-pressed={dark} onClick={changeTheme}>{dark?<Sun size={19}/>:<Moon size={19}/>}</button><span className="online-dot"/> Tu dinero, en orden <span className="top-avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</span></div></header>
       <div className="content">
         <div className="demo-banner"><span className="demo-badge">{user?'SYNC':'LOCAL'}</span><span>{user?syncState==='synced'?'Todo sincronizado en tus dispositivos.':syncState==='syncing'?'Sincronizando cambios…':syncState==='offline'?`Sin conexión. ${pending} cambios pendientes.`:`${pending} cambios pendientes de sincronizar.`:'Tus datos se guardan en este dispositivo. Inicia sesión para sincronizarlos con otros.'}</span>{user&&<button className="sync-button" onClick={()=>void syncNow()} disabled={syncState==='syncing'}>Sincronizar ahora</button>}{!user&&configured&&<button className="sync-button" onClick={()=>setAuthOpen(true)}>Activar sincronización</button>}</div>
         <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line"/> TU PANORAMA FINANCIERO</div><h1>{({dashboard:'Tu dinero, con claridad.',transactions:'Tus movimientos.',budgets:'Presupuestos a tu medida.',accounts:'Tus cuentas, siempre claras.',goals:'Tus objetivos.',investments:'Tu cartera de inversión.'} as Record<Tab,string>)[tab]}</h1><p>{({dashboard:'Todo lo que entra, lo que sale y lo que estás construyendo.',transactions:'Cada movimiento cuenta una parte de la historia.',budgets:'Pon un límite a cada categoría y sigue tu progreso.',accounts:'Cada banco, efectivo y cartera, por separado.',goals:'Pequeños pasos hacia algo grande.',investments:'Tus posiciones y precios, actualizados por ti.'} as Record<Tab,string>)[tab]}</p></div><div className="heading-actions"><div className="month-picker"><button aria-label="Mes anterior" onClick={()=>setMonth(shiftMonth(month,-1))}><ChevronLeft size={17}/></button><span><CalendarDays size={16}/>{monthLabel(month)}</span><button aria-label="Mes siguiente" onClick={()=>setMonth(shiftMonth(month,1))}><ChevronRight size={17}/></button></div><button className="secondary-button import-button" onClick={()=>setImportOpen(true)}><FileSpreadsheet size={17}/> Importar archivo</button><button className="primary-button" onClick={()=>openTransaction()}><Plus size={18}/> Añadir movimiento</button></div></div>
@@ -199,7 +205,7 @@ export default function App(){
     </main>
     {categoryDetail&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setCategoryDetail(null)}}><div className="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div className="modal-heading"><div><span className="section-kicker">DESGLOSE DEL MES</span><h2 id="detail-title">{categoryDetail}</h2></div><button className="icon-button" onClick={()=>setCategoryDetail(null)}><X size={20}/></button></div><strong className="detail-total">{money(spentFor(categoryDetail))}</strong><p className="feature-copy">{expenses?Math.round(spentFor(categoryDetail)/expenses*100):0}% de tus gastos de {monthLabel(month)} · {monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail).length} movimientos.</p><TransactionList accountLabels={accounts} items={monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail)} onEdit={t=>{setCategoryDetail(null);openTransaction(t)}} onDelete={deleteTransaction} onAdd={()=>{setCategoryDetail(null);openTransaction()}}/></div></div>}
     {importOpen&&<ImportDialog existing={items} accounts={accounts} onClose={()=>setImportOpen(false)} onConfirm={importRows}/>}
-    {authOpen&&<Auth recovering={passwordRecovery} onReady={()=>{setAuthOpen(false);setPasswordRecovery(false)}} onClose={()=>{setAuthOpen(false);setPasswordRecovery(false)}}/>}
+    {authOpen&&<Auth recovering={passwordRecovery} managePassword={Boolean(user)} onReady={()=>{setAuthOpen(false);setPasswordRecovery(false)}} onClose={()=>{setAuthOpen(false);setPasswordRecovery(false)}}/>}
     {modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget){setModal(null);setNotice('')}}}>
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div className="modal-heading"><div><span className="section-kicker">{modal==='transaction'?'MOVIMIENTOS':'PLANIFICACIÓN'}</span><h2 id="modal-title">{modal==='transaction'?(editing?'Editar movimiento':'Nuevo movimiento'):'Presupuesto mensual'}</h2></div><button className="icon-button" onClick={()=>{setModal(null);setNotice('')}} aria-label="Cerrar"><X size={20}/></button></div>
@@ -225,13 +231,12 @@ function Stat({label,value,icon,tone,foot}:{label:string,value:number,icon:React
 function BudgetLine({budget,spent}:{budget:Budget,spent:number}){const fraction=Math.min(spent/Number(budget.amount),1);const over=spent>Number(budget.amount);return <div className="budget-line"><div className="budget-name"><span>{budget.category}</span><strong>{money(spent)} <em>/ {money(Number(budget.amount))}</em></strong></div><div className="progress"><span style={{width:`${fraction*100}%`,background:over?'#bd7769':colorFor(budget.category)}}/></div><div className={`budget-caption ${over?'over':''}`}>{over?`${money(spent-Number(budget.amount))} por encima del límite`:`${Math.round(fraction*100)}% utilizado`}</div></div>}
 function Empty({text,action,label='Añadir movimiento'}:{text:string,action:()=>void,label?:string}){return <div className="empty"><div className="empty-symbol">✳</div><p>{text}</p><button onClick={action}>{label} <ArrowRight size={14}/></button></div>}
 function TransactionList({items,onEdit,onDelete,onAdd,accountLabels=[]}:{items:Transaction[],onEdit:(t:Transaction)=>void,onDelete:(t:Transaction)=>void,onAdd:()=>void,accountLabels?:AccountSetting[]}){if(!items.length)return <Empty text="Todavía no hay movimientos aquí. Empieza con el primero." action={onAdd}/>;return <div className="transaction-list">{items.map(t=><div className="transaction" key={t.id}><div className="category-icon" style={{background:t.kind==='income'?'#e0eee5':`${colorFor(t.category)}25`,color:t.kind==='income'?'#4b9172':colorFor(t.category)}}>{t.kind==='income'?<ArrowDownLeft size={19}/>:t.kind==='transfer'?<ArrowRight size={19}/>:symbolFor(t.category)}</div><div className="transaction-info"><strong>{t.description}</strong><span>{t.kind==='transfer'?'Traspaso':t.category}{merchantFor(t.description)?' · '+merchantFor(t.description):''} <b>·</b> {accountName(t.account??'bank',accountLabels)}{t.to_account?` → ${accountName(t.to_account,accountLabels)}`:''} <b>·</b> {formatDate(t.occurred_on)}</span></div><strong className={`transaction-amount ${t.kind==='income'?'positive':''}`}>{t.kind==='income'?'+':t.kind==='transfer'?'↔':'−'}{money(Number(t.amount))}</strong><div className="transaction-actions"><button className="icon-button" title="Editar" aria-label={`Editar ${t.description}`} onClick={()=>onEdit(t)}><Settings2 size={16}/></button><button className="icon-button" title="Eliminar" aria-label={`Eliminar ${t.description}`} onClick={()=>onDelete(t)}><Trash2 size={16}/></button></div></div>)}</div>}
-function Auth({onReady,onClose,recovering}:{onReady:()=>void,onClose:()=>void,recovering:boolean}){
+function Auth({onReady,onClose,recovering,managePassword}:{onReady:()=>void,onClose:()=>void,recovering:boolean,managePassword:boolean}){
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
-  const [mode,setMode]=useState<'code'|'login'|'register'|'set-password'|'forgot'|'reset'>(recovering?'reset':'code');
+  const [mode,setMode]=useState<'login'|'link'|'register'|'set-password'|'forgot'|'reset'>(recovering?'reset':managePassword?'set-password':'login');
   const [info,setInfo]=useState('');
   const [sentEmail,setSentEmail]=useState('');
-  const [code,setCode]=useState('');
   const [error,setError]=useState('');
   const [loading,setLoading]=useState(false);
   const [retryAt,setRetryAt]=useState(0);
@@ -243,7 +248,7 @@ function Auth({onReady,onClose,recovering}:{onReady:()=>void,onClose:()=>void,re
   },[retryAt]);
   const seconds=Math.max(0,Math.ceil((retryAt-now)/1000));
   useEffect(()=>{if(recovering)setMode('reset')},[recovering]);
-  function switchMode(next:typeof mode){setMode(next);setSentEmail('');setCode('');setPassword('');setInfo('');setError('')}
+  function switchMode(next:typeof mode){setMode(next);setSentEmail('');setPassword('');setInfo('');setError('')}
   async function passwordAction(e:FormEvent){
     e.preventDefault();
     if(loading||!supabase)return;
@@ -252,7 +257,7 @@ function Auth({onReady,onClose,recovering}:{onReady:()=>void,onClose:()=>void,re
     try{
       if(mode==='login'){
         const {data,error:loginError}=await supabase.auth.signInWithPassword({email:address,password});
-        if(loginError||!data.session){setError(loginError?.code==='invalid_credentials'?'Correo o contraseña incorrectos. También puedes entrar con un código.':loginError?authMessage(loginError):'No se pudo iniciar sesión.');return}
+        if(loginError||!data.session){setError(loginError?.code==='invalid_credentials'?'Correo o contraseña incorrectos. También puedes entrar con un enlace.':loginError?authMessage(loginError):'No se pudo iniciar sesión.');return}
         setPassword('');onReady();
       }else if(mode==='forgot'){
         const {error:resetError}=await supabase.auth.resetPasswordForEmail(address,{redirectTo:window.location.origin});
@@ -270,80 +275,58 @@ function Auth({onReady,onClose,recovering}:{onReady:()=>void,onClose:()=>void,re
     if(loading||!supabase)return;
     setLoading(true);setError('');
     try{
-      const token=await googleIdTokenFromFirebase();
-      const {data,error:signInError}=await supabase.auth.signInWithIdToken({provider:'google',token});
-      if(signInError||!data.session){
-        await disconnectFirebase();
-        setError('Google verificó tu cuenta, pero falta configurar Google en Supabase para sincronizar tus datos. Puedes seguir usando el acceso por correo.');
-        return;
-      }
-      onReady();
-    }catch(error){
-      const code=typeof error==='object'&&error&&'code' in error?String(error.code):'';
-      if(code==='auth/popup-closed-by-user')return;
-      setError(code==='auth/unauthorized-domain'?'El dominio de Brújula no está autorizado en Firebase.':code==='auth/operation-not-allowed'?'Google no está habilitado en Firebase.':code==='auth/popup-blocked'?'El navegador bloqueó la ventana de Google. Permite ventanas emergentes para Brújula.':code==='auth/network-request-failed'?'No se pudo conectar con Firebase. Comprueba tu conexión y prueba sin bloqueadores de contenido; también puedes entrar con contraseña.':`No se pudo acceder con Google${code?` (${code})`:''}. Puedes entrar con contraseña o código.`);
-    }finally{setLoading(false)}
+      const {error:googleError}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}});
+      if(googleError)setError(authMessage(googleError));
+    }catch{setError('No se pudo abrir el acceso con Google. Prueba el enlace por correo o la contraseña.')}
+    finally{setLoading(false)}
   }
-  async function sendCode(address:string){
+  async function sendLink(address:string){
     if(loading)return;
     const clean=address.trim().toLowerCase();
     setLoading(true);setError('');
     try{
       const {error:sendError}=await supabase!.auth.signInWithOtp({
         email:clean,
-        options:{shouldCreateUser:true,emailRedirectTo:window.location.origin}
+        options:{shouldCreateUser:mode==='register',emailRedirectTo:window.location.origin}
       });
       if(sendError){setError(authMessage(sendError));return}
-      setSentEmail(clean);setCode('');
+      setSentEmail(clean);
       setNow(Date.now());setRetryAt(Date.now()+60000);
     }catch{
-      setError('No se pudo enviar el código. Comprueba la conexión y vuelve a intentarlo.');
+      setError('No se pudo solicitar el enlace. Comprueba la conexión y vuelve a intentarlo.');
     }finally{setLoading(false)}
   }
-  async function verifyCode(e:FormEvent){
-    e.preventDefault();
-    if(loading||!/^\d{6}$/.test(code))return;
-    setLoading(true);setError('');
-    try{
-      const {data,error:verifyError}=await supabase!.auth.verifyOtp({email:sentEmail,token:code,type:'email'});
-      if(verifyError){setError(authMessage(verifyError));return}
-      if(!data.session){setError('No se pudo iniciar sesión con ese código. Solicita otro y prueba de nuevo.');return}
-      setCode('');
-      if(mode==='register'){setEmail(sentEmail);setSentEmail('');setMode('set-password');return}
-      onReady();
-    }catch{
-      setError('No se pudo verificar el código. Comprueba la conexión e inténtalo otra vez.');
-    }finally{setLoading(false)}
-  }
+  useEffect(()=>{
+    if(!supabase)return;
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{
+      if(event==='SIGNED_IN'&&!recovering)onReady();
+    });
+    return ()=>subscription.unsubscribe();
+  },[onReady,recovering]);
   return <div className="auth-overlay"><div className="auth-page">
     <button className="auth-close icon-button" onClick={onClose} aria-label="Cerrar"><X size={20}/></button>
     <div className="auth-decor"><div className="brand"><div className="brand-symbol">✳</div><div className="brand-name">brújula<span>.</span><small>FINANZAS PERSONALES</small></div></div><div className="auth-message"><span>UN POCO MÁS DE CLARIDAD, CADA DÍA</span><h1>Tu dinero tiene una historia.<br/><em>Entiéndela mejor.</em></h1><p>Organiza tus gastos, pon límites que puedas cumplir y descubre lo que de verdad importa.</p></div><div className="auth-bottom">✳ &nbsp; Un lugar tranquilo para tus finanzas.</div></div>
     <div className="auth-panel"><div className="auth-box"><div className="auth-mobile-brand">✳ brújula.</div><span className="section-kicker">BIENVENIDO A BRÚJULA</span><h2>{sentEmail?'Revisa tu correo.':mode==='reset'||mode==='set-password'?'Elige tu contraseña.':mode==='forgot'?'Recupera tu acceso.':mode==='register'?'Crea tu cuenta.':'Entra en tu espacio.'}</h2>
-      {sentEmail?<><p>Hemos solicitado un código de seis cifras para <strong>{sentEmail}</strong>. Revisa también el correo no deseado.</p>{info&&<p role="status" className="form-hint">{info}</p>}
-        <form onSubmit={verifyCode}><label>Código de verificación<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required autoFocus placeholder="000000" value={code} onChange={e=>{setCode(e.target.value.replace(/\D/g,'').slice(0,6));setError('')}}/></label>
-          {error&&<div className="notice" role="alert">{error}</div>}
-          <button className="primary-button form-submit" disabled={loading||code.length!==6}>{loading?'Comprobando…':'Verificar y entrar'} <ArrowRight size={18}/></button>
-        </form>
-        <div className="auth-toggle"><button type="button" disabled={loading||seconds>0} onClick={()=>void sendCode(sentEmail)}>{seconds>0?`Pedir otro código en ${seconds} s`:'Reenviar código'}</button></div>
-        <div className="auth-toggle"><button type="button" onClick={()=>{setSentEmail('');setCode('');setError('');setInfo('')}}>Volver y cambiar correo o método</button></div>
-      </>:<><p>{mode==='reset'||mode==='set-password'?'El correo está verificado. Elige la contraseña con la que entrarás.':mode==='forgot'?'Te enviaremos un enlace para cambiarla.':mode==='register'?'Primero verificamos el correo y después eliges la contraseña. Si ya tenías cuenta, conservarás tus movimientos.':'Entra con Google, con contraseña o con un código de correo.'}</p>
-        {mode!=='reset'&&mode!=='forgot'&&mode!=='set-password'&&<div className="auth-methods"><button type="button" className={mode==='code'?'active':''} onClick={()=>switchMode('code')}>Código</button><button type="button" className={mode==='login'?'active':''} onClick={()=>switchMode('login')}>Contraseña</button><button type="button" className={mode==='register'?'active':''} onClick={()=>switchMode('register')}>Crear cuenta</button></div>}
-        {mode!=='reset'&&mode!=='forgot'&&mode!=='set-password'&&firebaseConfigured&&<button type="button" className="secondary-button google-signin" disabled={loading} onClick={()=>void signInGoogle()}>{loading?'Conectando…':'Continuar con Google'}</button>}
-        {mode==='code'||mode==='register'?<>
-        <form onSubmit={e=>{e.preventDefault();void sendCode(email)}}>
+      {sentEmail?<><p>Si puede enviarse a <strong>{sentEmail}</strong>, recibirás un enlace para abrir Brújula. Puedes abrirlo en otro dispositivo.</p>
+        <div className="auth-toggle"><button type="button" disabled={loading||seconds>0} onClick={()=>void sendLink(sentEmail)}>{seconds>0?`Solicitar otro enlace en ${seconds} s`:'Solicitar otro enlace'}</button></div>
+        <div className="auth-toggle"><button type="button" onClick={()=>{setSentEmail('');setError('')}}>Cambiar correo o método</button></div>
+      </>:<>
+        {mode!=='reset'&&mode!=='forgot'&&mode!=='set-password'&&<div className="auth-methods"><button type="button" className={mode==='register'?'':'active'} onClick={()=>switchMode('login')}>Iniciar sesión</button><button type="button" className={mode==='register'?'active':''} onClick={()=>switchMode('register')}>Registrarse</button></div>}
+        <p>{mode==='register'?'Regístrate con un enlace enviado a tu correo. Después podrás establecer una contraseña desde tu cuenta.':mode==='link'?'Recibe un enlace para iniciar sesión, sin contraseña.':mode==='forgot'?'Te enviaremos un enlace para cambiarla.':mode==='reset'||mode==='set-password'?'Elige una contraseña para tu cuenta.':'Entra con tu correo y contraseña.'}</p>
+        {mode==='login'&&import.meta.env.VITE_GOOGLE_OAUTH_ENABLED==='true'&&<button type="button" className="secondary-button google-signin" disabled={loading} onClick={()=>void signInGoogle()}>Continuar con Google</button>}
+        {mode==='link'||mode==='register'?<form onSubmit={e=>{e.preventDefault();void sendLink(email)}}>
           <label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>
           {error&&<div className="notice" role="alert">{error}</div>}
-          <button className="primary-button form-submit" disabled={loading}>{loading?'Enviando…':mode==='register'?'Enviar código y continuar':'Enviar código'} <ArrowRight size={18}/></button>
-        </form>
-        </>:<form onSubmit={passwordAction}>
+          <button className="primary-button form-submit" disabled={loading}>{loading?'Solicitando…':'Enviar enlace'} <ArrowRight size={18}/></button>
+        </form>:<form onSubmit={passwordAction}>
           {mode!=='reset'&&mode!=='set-password'&&<label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>}
           {mode!=='forgot'&&<label>Contraseña<input type="password" required minLength={mode==='login'?undefined:8} maxLength={256} autoComplete={mode==='login'?'current-password':'new-password'} placeholder={mode==='login'?'Tu contraseña':'Al menos 8 caracteres'} value={password} onChange={e=>{setPassword(e.target.value);setError('')}}/></label>}
           {info&&<p role="status" className="form-hint">{info}</p>}
           {error&&<div className="notice" role="alert">{error}</div>}
-          <button className="primary-button form-submit" disabled={loading}>{loading?'Espera…':mode==='login'?'Entrar':mode==='forgot'?'Enviar enlace':'Guardar contraseña'} <ArrowRight size={18}/></button>
+          <button className="primary-button form-submit" disabled={loading}>{loading?'Espera…':mode==='login'?'Iniciar sesión':mode==='forgot'?'Enviar enlace':'Guardar contraseña'} <ArrowRight size={18}/></button>
         </form>}
-        {mode==='login'&&<div className="auth-toggle"><button type="button" onClick={()=>switchMode('forgot')}>He olvidado mi contraseña</button></div>}
-        {(mode==='forgot'||mode==='reset')&&<div className="auth-toggle"><button type="button" onClick={()=>switchMode('login')}>Volver al acceso</button></div>}
+        {mode==='login'&&<div className="auth-toggle"><button type="button" onClick={()=>switchMode('link')}>Entrar con enlace por correo</button><button type="button" onClick={()=>switchMode('forgot')}>He olvidado mi contraseña</button></div>}
+        {(mode==='link'||mode==='forgot')&&<div className="auth-toggle"><button type="button" onClick={()=>switchMode('login')}>Volver a iniciar sesión</button></div>}
       </>}
     </div></div>
   </div></div>;
