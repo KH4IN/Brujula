@@ -124,6 +124,8 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 .auth-methods{display:flex;gap:5px;margin:16px 0;padding:4px;background:#edf1eb;border-radius:9px}
 .auth-methods button{flex:1;min-width:0;padding:10px 4px;border:0;border-radius:7px;background:transparent;color:#416150;font-size:12px;font-weight:700}
 .auth-methods button.active{background:#fff;color:#254d36;box-shadow:0 1px 5px #213d3020}
+.sidebar-footer .account{min-width:0;flex:1}
+.account-password{border:0;background:transparent;color:#ded0f0;padding:5px;font-size:10px;text-decoration:underline}
 :root[data-theme="dark"] .auth-methods{background:#191820}
 :root[data-theme="dark"] .auth-methods button{color:#d8c6e7}
 :root[data-theme="dark"] .auth-methods button.active{background:#3d344f;color:#f2d58b}
