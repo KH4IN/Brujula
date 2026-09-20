@@ -25,6 +25,20 @@ export function readStore(scope:string):LocalStore{
   return scope==='guest'&&!configured?{...blank(),...readDemo()}:blank();
 }
 export function writeStore(scope:string,state:LocalStore){localStorage.setItem(prefix+scope,JSON.stringify(state))}
+// Older versions stored user edits alongside sample rows under this key.
+// Import only identifiable user edits; never turn sample finances into real finances.
+export function recoverLegacyGuest(){
+  if(localStorage.getItem(prefix+'guest'))return 0;
+  const raw=localStorage.getItem('brujula.demo.v1');if(!raw)return 0;
+  let legacy:{transactions?:Transaction[];budgets?:Budget[]};
+  try{legacy=JSON.parse(raw)}catch{return 0}
+  const transactions=Array.isArray(legacy.transactions)?legacy.transactions.filter(t=>t&&typeof t.id==='string'&&!/^s[1-7]$/.test(t.id)):[];
+  const sampleBudgets:Record<string,number>={Alimentación:280,Ocio:150,Transporte:100};
+  const budgets=Array.isArray(legacy.budgets)?legacy.budgets.filter(b=>b&&typeof b.month==='string'&&typeof b.category==='string'&&Number(b.amount)!==sampleBudgets[b.category]):[];
+  if(!transactions.length&&!budgets.length)return 0;
+  const guest=blank();guest.transactions=transactions;guest.budgets=budgets;writeStore('guest',guest);
+  return transactions.length+budgets.length;
+}
 function change(scope:string,entity:Entity,id:string,record?:RecordValue){const state=readStore(scope);put(state,entity,[...(record?[record]:[]),...list(state,entity).filter(item=>key(entity,item)!==id)]);if(scope!=='guest')state.pending=queued(state.pending,{token:crypto.randomUUID(),entity,method:record?'upsert':'delete',id,record});writeStore(scope,state);return state}
 export const saveTransaction=(scope:string,value:Transaction)=>change(scope,'transactions',value.id,value);
 export const removeTransaction=(scope:string,id:string)=>change(scope,'transactions',id);
@@ -39,15 +53,18 @@ export function importTransactions(scope:string,values:Transaction[]){const stat
 
 export function claimGuest(userId:string){
   const guest=readStore('guest'),state=readStore(userId);
-  if(!guest.transactions.length&&!guest.budgets.length&&!guest.goals.length&&!guest.investments.length&&!guest.account_settings.some(a=>a.opening_balance!==0||a.account!=='bank'&&a.account!=='cash'||a.name&&a.name!== (a.account==='cash'?'Efectivo':'Banco')))return;
+  if(!guest.transactions.length&&!guest.budgets.length&&!guest.goals.length&&!guest.investments.length&&!guest.account_settings.some(a=>a.opening_balance!==0||a.account!=='bank'&&a.account!=='cash'||a.name&&a.name!== (a.account==='cash'?'Efectivo':'Banco')))return 0;
+  let transferred=0;
   for(const entity of ['transactions','budgets','goals','investments','account_settings'] as Entity[])for(const original of list(guest,entity)){
     if(entity==='account_settings'&&(original as AccountSetting).opening_balance===0&&['bank','cash'].includes((original as AccountSetting).account)&&(!((original as AccountSetting).name)||(original as AccountSetting).name===((original as AccountSetting).account==='cash'?'Efectivo':'Banco')))continue;
     const item=entity==='transactions'&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test((original as Transaction).id)?{...original,id:crypto.randomUUID()} as Transaction:original;
     const id=key(entity,item);if(list(state,entity).some(existing=>key(entity,existing)===id)&&entity!=='account_settings')continue;
     put(state,entity,[item,...list(state,entity).filter(existing=>key(entity,existing)!==id)]);
     state.pending=queued(state.pending,{token:crypto.randomUUID(),entity,method:'upsert',id,record:item});
+    transferred++;
   }
   writeStore(userId,state);writeStore('guest',blank());
+  return transferred;
 }
 
 async function fetchAll<T>(entity:Entity,userId:string){
