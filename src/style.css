@@ -16,6 +16,10 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 .main,.content,.dashboard-grid,.card,.transaction-info{min-width:0}
 .account-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .account-tile h3{font-size:16px;margin:8px 0;overflow-wrap:anywhere}
+.remove-bank-link{color:#a14c58!important}.remove-bank-link:hover{text-decoration:underline}
+.top-account-menu{position:relative;z-index:25}.top-account-menu summary{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none;color:#694c90}.top-account-menu summary::-webkit-details-marker{display:none}.top-account-menu summary:focus-visible{outline:3px solid #b2d2b9;outline-offset:3px;border-radius:6px}.top-account-actions{position:absolute;right:0;top:calc(100% + 12px);min-width:215px;background:white;border:1px solid #e3e9e1;border-radius:10px;box-shadow:0 12px 32px #15192725;padding:10px;display:grid;gap:3px;color:#233532;font-size:12px}.top-account-actions strong{padding:8px;overflow-wrap:anywhere}.top-account-actions button{border:0;border-radius:7px;background:transparent;color:inherit;text-align:left;padding:10px}.top-account-actions button:hover{background:#f0f4ee}
+.top-account-menu .top-avatar{margin-left:0}
+:root[data-theme="dark"] .top-account-actions{background:#23232d;color:#f0edf7;border-color:#514661}:root[data-theme="dark"] .top-account-actions button:hover{background:#3c324a}
 .account-overview{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:2px 0 12px;max-width:100%}
 .account-overview-item{flex:1 0 135px;min-width:0;border:1px solid #dfe9dc;background:#fff;border-radius:9px;padding:11px;text-align:left;color:#466752}
 .account-overview-item span,.account-overview-item strong{display:block;overflow-wrap:anywhere}
