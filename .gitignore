@@ -8,3 +8,4 @@ dist/
 tests/.import.bundle.mjs
 tests/.finance.bundle.mjs
 tests/.cash.bundle.mjs
+tests/.ledger.bundle.mjs
