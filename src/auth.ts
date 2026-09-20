@@ -12,11 +12,11 @@ export function authMessage(error: AuthError): string {
     case 'email_not_confirmed':
       return 'Aún falta confirmar este correo. Revisa tu bandeja de entrada y el correo no deseado.';
     case 'invalid_credentials':
-      return 'No se pudo verificar el correo o el código. Comprueba las seis cifras e inténtalo de nuevo.';
+      return 'Correo o contraseña incorrectos. Comprueba los datos o solicita un enlace de acceso.';
     case 'otp_expired':
-      return 'El código ha caducado o ya se ha usado. Solicita otro cuando termine la espera.';
+      return 'El enlace ha caducado o ya se ha usado. Solicita otro cuando termine la espera.';
     case 'otp_disabled':
-      return 'El acceso por código está desactivado en Supabase. Revisa la configuración de autenticación.';
+      return 'El acceso por enlace está desactivado en Supabase. Revisa la configuración de autenticación.';
     case 'weak_password':
       return 'Usa una contraseña más segura, de al menos 8 caracteres.';
     case 'email_address_invalid':
