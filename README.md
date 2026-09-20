@@ -1,6 +1,6 @@
 # Brújula — finanzas personales
 
-Web instalable (PWA) adaptable a móvil y ordenador. Registra movimientos de banco y efectivo, traspasos, presupuestos, objetivos de ahorro e inversiones manuales. Muestra el reparto por categorías, el gasto diario, el patrimonio estimado y un detalle interactivo. Importa Excel `.xlsx`, CSV y TSV con revisión previa, y exporta movimientos a CSV. Cada cambio se guarda primero en el dispositivo y puede sincronizarse con Supabase mediante una cuenta. Para acceder, se solicita un código de seis cifras por correo, sin contraseña. La web oficial para usar y probar Brújula es https://brujula-finanzas-kh4ins-projects.vercel.app/; la rama `main` se publica allí.
+Web instalable (PWA) adaptable a móvil y ordenador. Registra movimientos de banco y efectivo, traspasos, presupuestos, objetivos de ahorro e inversiones manuales. Muestra el reparto por categorías, el gasto diario, el patrimonio estimado y un detalle interactivo. Importa Excel `.xlsx`, CSV y TSV con revisión previa, y exporta movimientos a CSV. Cada cambio se guarda primero en el dispositivo y puede sincronizarse con Supabase mediante una cuenta. Para acceder, se solicita un código de seis cifras por correo, sin contraseña. La web oficial para usar y probar Brújula es https://brujula-finanzas-gamma.vercel.app/; la rama `main` se publica allí.
 
 ## Probar en local
 
@@ -51,7 +51,7 @@ Tras abrirla online, el icono y los archivos de la app se almacenan para poder a
 
 ### Acceso rápido desde iPhone
 
-En Atajos de iOS crea un atajo con la acción «URL» que contenga `https://brujula-finanzas-kh4ins-projects.vercel.app/?nuevo=1&tipo=expense` y después la acción «Abrir URL». La aplicación abre el formulario de gasto para que introduzcas el importe y confirmes el guardado; también admite `tipo=income`, `importe=12.50`, `descripcion=Compra` y `categoria=Alimentación` para rellenar el formulario. Evita poner detalles financieros sensibles en la URL del atajo, ya que el navegador puede transmitir esa URL al abrir la página. No se guarda nada sin confirmarlo.
+En Atajos de iOS crea un atajo con la acción «URL» que contenga `https://brujula-finanzas-gamma.vercel.app/?nuevo=1&tipo=expense` y después la acción «Abrir URL». La aplicación abre el formulario de gasto para que introduzcas el importe y confirmes el guardado; también admite `tipo=income`, `importe=12.50`, `descripcion=Compra` y `categoria=Alimentación` para rellenar el formulario. Evita poner detalles financieros sensibles en la URL del atajo, ya que el navegador puede transmitir esa URL al abrir la página. No se guarda nada sin confirmarlo.
 
 ## Estructura
 
