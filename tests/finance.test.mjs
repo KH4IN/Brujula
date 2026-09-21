@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { accountBalances, marketValue } from './.finance.bundle.mjs';
+import { accountBalances, cashOpeningForBalance, marketValue } from './.finance.bundle.mjs';
 
 test('dos bancos, efectivo y traspasos no duplican el patrimonio', () => {
   const settings=[{account:'bank',opening_balance:100},{account:'bank:df02134b-53c9-42ec-9437-c078965d0172',opening_balance:2350},{account:'cash',opening_balance:30}];
@@ -22,4 +22,15 @@ test('Bitcoin y ETF manuales descuentan solo el origen elegido', () => {
   assert.equal(balances.cash,50);
   assert.equal(marketValue(holdings),300);
   assert.equal(Object.values(balances).reduce((sum,value)=>sum+value,0)+marketValue(holdings),650);
+});
+
+test('el importe directo de efectivo conserva los movimientos y los céntimos',()=>{
+  const transactions=[{account:'cash',kind:'expense',amount:12.35}];
+  const before=accountBalances(transactions,[{account:'bank',opening_balance:0},{account:'cash',opening_balance:100}],[]);
+  const opening=cashOpeningForBalance(100,before.cash,50.2);
+  const after=accountBalances(transactions,[{account:'bank',opening_balance:0},{account:'cash',opening_balance:opening}],[]);
+  assert.equal(opening,62.55);
+  assert.ok(Math.abs(after.cash-50.2)<1e-9);
+  assert.equal(cashOpeningForBalance(100,87.65,-1),null);
+  assert.equal(cashOpeningForBalance(100,87.65,3.999),null);
 });

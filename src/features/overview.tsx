@@ -1,0 +1,5 @@
+import type { ReactNode } from 'react';
+import { money, type Budget } from '../data';
+import { colorFor } from './presentation';
+export function Stat({label,value,icon,tone,foot}:{label:string,value:number,icon:ReactNode,tone:string,foot:string}){return <div className={`stat stat-${tone}`}><div className="stat-top"><span>{label}</span><div className="stat-icon">{icon}</div></div><strong>{money(value)}</strong><div className="stat-foot"><span className="mini-dot"/>{foot}</div></div>}
+export function BudgetLine({budget,spent}:{budget:Budget,spent:number}){const fraction=Math.min(spent/Number(budget.amount),1);const over=spent>Number(budget.amount);return <div className="budget-line"><div className="budget-name"><span>{budget.category}</span><strong>{money(spent)} <em>/ {money(Number(budget.amount))}</em></strong></div><div className="progress"><span style={{width:`${fraction*100}%`,background:over?'#bd7769':colorFor(budget.category)}}/></div><div className={`budget-caption ${over?'over':''}`}>{over?`${money(spent-Number(budget.amount))} por encima del límite`:`${Math.round(fraction*100)}% utilizado`}</div></div>}
