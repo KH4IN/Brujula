@@ -1,51 +1,46 @@
 # Copias de seguridad de Brújula
 
-Los commits de GitHub solo protegen el código. La base de datos de Supabase
-requiere una copia independiente. La tarea `.github/workflows/backup.yml`
-exporta roles, estructura y datos, cifra el archivo antes de subirlo como
-artefacto de GitHub Actions y lo conserva 30 días. No subas a GitHub extractos
-SQL, contraseñas ni archivos descifrados. Los artefactos contienen datos
-personales cifrados: limita quién puede descargarlos.
+Los commits protegen el código, no los movimientos de Supabase. El proyecto
+está en el plan gratuito, que no incluye las copias diarias automáticas.
+`scripts/backup-local.sh` crea una copia cifrada **en tu propio equipo**;
+no la sube a GitHub ni a otros servicios.
 
-## Activar las copias
+## Crear una copia en un ordenador de confianza
 
-1. En Supabase abre el proyecto `nvbkftnithuduyazhidc` y pulsa **Connect**.
-   Copia la cadena de conexión de **Session pooler**. Necesitarás la contraseña
-   de la base de datos; la clave pública de la web no sirve para exportarla.
-2. En GitHub, repositorio **KH4IN/Brujula** → **Settings** → **Secrets and
-   variables** → **Actions**, crea los secretos `SUPABASE_BACKUP_DB_URL`
-   (cadena completa con contraseña) y `BRUJULA_BACKUP_PASSPHRASE` (una frase
-   aleatoria de al menos 24 caracteres guardada fuera de GitHub). No compartas
-   ninguno por chat ni lo guardes en el repositorio.
-3. En **Actions** → **Copia cifrada de Supabase** → **Run workflow**, ejecuta
-   una copia manual. Comprueba que la ejecución termina en verde y que ofrece
-   el artefacto `brujula-backup-...`. Después se ejecutará cada día a las
-   02:17 UTC. Revisa periódicamente el espacio de artefactos disponible.
+Instala [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started),
+Docker y GnuPG. En el panel Supabase del proyecto `nvbkftnithuduyazhidc`,
+abre **Connect** y copia la cadena de conexión **Session pooler**. Necesitas
+la contraseña de la base de datos; la clave pública de la web no vale.
 
-Si faltan los secretos, la ejecución fallará explícitamente: **no habrá copia**.
-El proyecto y la web siguen funcionando, pero GitHub no sustituye una copia
-externa de larga duración. Descarga periódicamente el artefacto cifrado a un
-almacenamiento privado adicional antes de que caduque.
+Prepara una carpeta privada **fuera del repositorio**, por ejemplo una unidad
+externa cifrada. En tu terminal exporta `BACKUP_DB_URL` y
+`BACKUP_OUTPUT_DIR`; ejecuta `bash scripts/backup-local.sh`. GnuPG pedirá
+una frase larga para cifrar la copia. Guarda esa frase aparte: sin ella no
+podrás restaurar. Evita pegar la cadena de conexión o la frase en chats,
+capturas o archivos del repositorio.
 
-## Comprobar y restaurar en un proyecto aislado
+El script exporta roles, estructura y datos, cifra el paquete y elimina sus
+archivos temporales. Comprueba que aparece `brujula-<fecha>.tar.gz.gpg` en la
+carpeta elegida. Guarda otra copia **cifrada** en un segundo soporte privado.
+Repite el proceso regularmente y antes de cambios de esquema. La ejecución
+de este script nunca se hace desde la web de Brújula.
 
-Descarga el artefacto de Actions a un equipo bajo tu control y descífralo
-localmente. `gpg` pedirá la frase de cifrado; no la pases en argumentos ni en
-archivos de texto que acabes subiendo a la nube.
+## Verificar una restauración
+
+En un equipo privado, descifra y extrae la copia:
 
 ```bash
-gpg --output brujula.tar.gz --decrypt brujula-<run-id>-<attempt>.tar.gz.gpg
+gpg --output brujula.tar.gz --decrypt brujula-YYYYMMDDTHHMMSSZ.tar.gz.gpg
 mkdir -p brujula-restore
 tar -xzf brujula.tar.gz -C brujula-restore
 ```
 
-Crea un **proyecto Supabase separado para restauración** y obtén su cadena de
-conexión. Confirma antes de continuar que la URL apunta al proyecto nuevo,
-nunca a `nvbkftnithuduyazhidc`. Desde un equipo con `psql`, usa el
-procedimiento oficial y la cadena del proyecto nuevo:
+Crea un **proyecto de Supabase separado** y obtén su URL de conexión. En la
+terminal, establece `RESTORE_DB_URL` con la URL de ese proyecto. Este guardia
+detiene el proceso si la URL pertenece a producción:
 
 ```bash
-: "${RESTORE_DB_URL:?Configura la URL del proyecto de restauración}"
+: "${RESTORE_DB_URL:?Falta la URL del proyecto de restauración}"
 case "$RESTORE_DB_URL" in
   *nvbkftnithuduyazhidc*) echo 'La URL apunta a producción; cancelado' >&2; exit 1 ;;
 esac
@@ -57,13 +52,11 @@ psql --single-transaction --variable ON_ERROR_STOP=1 \
   --dbname "$RESTORE_DB_URL"
 ```
 
-Verifica los recuentos agregados de `auth.users`, `public.transactions`,
-`public.budgets`, `public.goals`, `public.investments` y
-`public.account_settings` frente a los anotados al hacer la copia. Comprueba
-también las políticas RLS y un inicio de sesión de prueba en el proyecto
-aislado. La importación completa de usuarios y configuración OAuth puede
-necesitar pasos adicionales: **no sustituyas la producción** hasta comprobarla.
-Elimina los SQL descifrados del equipo al terminar la prueba.
+Compara recuentos agregados de `auth.users` y las cinco tablas financieras,
+y revisa las políticas RLS. La restauración de OAuth, almacenamiento de
+archivos o configuración del proyecto puede requerir pasos adicionales.
+Nunca cambies la web para apuntar a ese proyecto antes de comprobarla.
+Elimina los SQL descifrados del equipo tras la prueba.
 
 Fuentes: [copias en Supabase](https://supabase.com/docs/guides/platform/backups)
 y [restauración con CLI](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore).
