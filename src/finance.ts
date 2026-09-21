@@ -10,3 +10,11 @@ export function accountBalances(transactions:Transaction[],settings:AccountSetti
 export const investedCost=(holdings:Investment[])=>holdings.reduce((sum,i)=>sum+Number(i.units)*Number(i.average_cost),0);
 export const marketValue=(holdings:Investment[])=>holdings.reduce((sum,i)=>sum+Number(i.units)*Number(i.current_price),0);
 export const goalProgress=(goals:Goal[])=>goals.reduce((sum,g)=>sum+Number(g.saved_amount),0);
+
+// Entering the cash amount changes its opening balance by the difference;
+// existing cash movements stay in place and are not counted twice.
+export function cashOpeningForBalance(opening:number,current:number,target:number):number|null{
+  if(![opening,current,target].every(Number.isFinite)||target<0||target>9999999999.99||Math.abs(target*100-Math.round(target*100))>1e-5)return null;
+  const cents=Math.round(opening*100)+Math.round(target*100)-Math.round(current*100);
+  return Math.abs(cents)<=999999999999?cents/100:null;
+}
