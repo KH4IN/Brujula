@@ -4,6 +4,12 @@ dist/
 .env.local
 .vercel/
 *.tsbuildinfo
+backup/
+brujula-restore/
+brujula.tar.gz
+brujula-*.tar.gz.gpg
+roles.sql
+data.sql
 
 tests/.import.bundle.mjs
 tests/.finance.bundle.mjs
