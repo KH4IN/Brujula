@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {claimGuest, mergeUnusedBank, readStore, recoverLegacyGuest, saveAccount, saveBudget, saveTransaction, writeStore} from './.ledger.bundle.mjs';
+import {claimGuest, importTransactions, mergeUnusedBank, readStore, recoverLegacyGuest, saveAccount, saveBudget, saveTransaction, writeStore} from './.ledger.bundle.mjs';
 
 function storage(){
   const values=new Map();
@@ -61,4 +61,31 @@ test('un banco con movimientos o inversiones no se puede quitar ni altera sus sa
   state.investments.push({id:'invest',name:'ETF',ticker:'ETF',units:1,average_cost:100,current_price:100,funding_account:'bank:caixa',purchased_on:null});writeStore('usuario-dos',state);
   assert.throws(()=>mergeUnusedBank('usuario-dos','bank:caixa','bank'),/movimientos o inversiones/);
   assert.throws(()=>mergeUnusedBank('usuario-dos','bank','bank:caixa'),/banco adicional/);
+});
+
+test('un navegador conserva cambios pendientes sin mezclar cuentas ni reemplazar los del otro',()=>{
+  const browserA=new Map(),browserB=new Map();
+  const useBrowser=values=>{globalThis.localStorage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,String(value)),removeItem:key=>values.delete(key)}};
+  useBrowser(browserA);
+  saveTransaction('usuario-uno',transaction);
+  useBrowser(browserB);
+  saveTransaction('usuario-uno',{...transaction,id:'99513a75-718b-4bdf-a452-594a47405d52',amount:12});
+  saveTransaction('usuario-dos',{...transaction,id:'04f6709b-3695-4c07-b81b-3962a284760c',amount:9});
+  assert.equal(readStore('usuario-uno').pending.length,1);
+  assert.equal(readStore('usuario-dos').transactions.length,1);
+  useBrowser(browserA);
+  assert.deepEqual(readStore('usuario-uno').transactions.map(t=>t.amount),[35]);
+  assert.equal(readStore('usuario-uno').pending.length,1);
+  assert.equal(readStore('usuario-dos').transactions.length,0);
+});
+
+test('una importación extensa reintentada conserva una sola copia local por clave bancaria',()=>{
+  storage();
+  const rows=Array.from({length:501},(_,i)=>({...transaction,id:crypto.randomUUID(),import_key:`banco-${i}`,amount:i+1}));
+  const first=importTransactions('usuario-uno',rows);
+  assert.equal(first.transactions.length,501);
+  assert.equal(first.pending.length,501);
+  const again=importTransactions('usuario-uno',rows);
+  assert.equal(again.transactions.length,501);
+  assert.equal(again.pending.length,501);
 });
