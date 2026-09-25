@@ -135,3 +135,6 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 :root[data-theme="dark"] .auth-methods{background:#191820}
 :root[data-theme="dark"] .auth-methods button{color:#d8c6e7}
 :root[data-theme="dark"] .auth-methods button.active{background:#3d344f;color:#f2d58b}
+
+/* En dispositivos táctiles, editar y borrar deben ser visibles sin pasar el ratón. */
+@media (hover: none){.transaction-actions{opacity:1}}
