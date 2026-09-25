@@ -1,5 +1,5 @@
-const CACHE='brujula-shell-v2';
-self.addEventListener('install',event=>{event.waitUntil((async()=>{const cache=await caches.open(CACHE);const page=await fetch('/index.html');const html=await page.clone().text();await cache.put('/index.html',page);const assets=[...html.matchAll(/(?:src|href)="(\/assets\/[^\"]+)"/g)].map(match=>match[1]);await cache.addAll(['/manifest.webmanifest','/icon.svg',...assets]);await self.skipWaiting()})())});
+const CACHE='brujula-shell-v3';
+self.addEventListener('install',event=>{event.waitUntil((async()=>{const cache=await caches.open(CACHE);const page=await fetch('/index.html');const html=await page.clone().text();await cache.put('/index.html',page);const assets=[...html.matchAll(/(?:src|href)="(\/assets\/[^\"]+)"/g)].map(match=>match[1]);await cache.addAll(['/manifest.webmanifest','/icon.svg','/theme-init.js',...assets]);await self.skipWaiting()})())});
 self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()]))});
 self.addEventListener('fetch',event=>{
   const request=event.request;
