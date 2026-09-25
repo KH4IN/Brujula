@@ -51,6 +51,13 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 - `src/ledger.ts` descarga las cinco tablas completas en páginas de 500 durante cada sincronización. Conviene medir antes de sustituirlo, como ya indica `ARCHITECTURE.md`.
 - Las 32 pruebas y el build del snapshot local disponible pasaron; el snapshot puede estar por detrás de `main`, por lo que no se marca todavía la auditoría de `main` como terminada. El despliegue de `staging` para el commit `38bb5dd` terminó en estado READY.
 
+### Comprobación de copias e importación (26-09-2026)
+
+- El repositorio de copias `KH4IN/Brujula-Copias-de-seguridad-` sigue privado. Contiene cinco archivos `.tar.gz.brujula` cifrados; las ejecuciones programadas del 22 al 25 de septiembre terminaron en éxito. El workflow exige dos secretos, exporta roles/esquema/datos, cifra con AES-GCM y comprueba descifrado y contenido antes del commit. No se descargó ni descifró ninguna copia con datos reales.
+- **Restauración aún sin verificar:** comprobar que el archivo se descifra en el runner y contiene tres SQL no demuestra que se restaure correctamente en un proyecto nuevo. El entorno «Brújula pruebas» contiene solo datos ficticios y no se usará para restaurar producción. Los objetos binarios de Storage y la configuración externa de OAuth quedan fuera del archivo, según el procedimiento documentado.
+- El importador limita archivos a 8 MB y la vista previa a 5.000 filas, procesa CSV/XLSX en el navegador y los 32 tests locales existentes pasaron. Siguen pendientes pruebas manuales con más formatos reales y mediciones con ficheros grandes; no se declara compatibilidad universal.
+- La regla de acciones visibles en pantallas táctiles se publicó en `main` mediante [PR #26](https://github.com/KH4IN/Brujula/pull/26); el despliegue quedó `READY`. No se comprobó visualmente en una tableta real.
+
 ## Fase 3 · Diseñar una experiencia más visual
 
 - [ ] Dibujar el mapa de navegación y reducir la longitud de la página principal: resumen breve con accesos claros a gastos, ingresos, cuentas, presupuestos, objetivos e inversiones.
