@@ -39,7 +39,7 @@ export function Auth({onReady,onClose,recovering,managePassword}:{onReady:()=>vo
         if(signupError){setError(authMessage(signupError));return}
         setPassword('');setRepeatPassword('');
         if(data.session){onReady();return}
-        setInfo('Cuenta solicitada. Supabase requiere confirmar el correo antes de entrar. El envío de correos del proyecto todavía debe configurarse; si no recibes el enlace, no podrás iniciar sesión con esta cuenta.');
+        setInfo('Cuenta solicitada. Si se requiere confirmar el correo, recibirás un enlace en esa dirección. Revisa también el correo no deseado.');
       }else if(mode==='forgot'){
         const {error:resetError}=await supabase.auth.resetPasswordForEmail(address,{redirectTo:window.location.origin});
         if(resetError){setError(authMessage(resetError));return}
@@ -93,8 +93,8 @@ export function Auth({onReady,onClose,recovering,managePassword}:{onReady:()=>vo
         <div className="auth-toggle"><button type="button" onClick={()=>{setSentEmail('');setError('')}}>Cambiar correo o método</button></div>
       </>:<>
         {mode!=='reset'&&mode!=='forgot'&&mode!=='set-password'&&<div className="auth-methods"><button type="button" className={mode==='register'?'':'active'} onClick={()=>switchMode('login')}>Iniciar sesión</button><button type="button" className={mode==='register'?'active':''} onClick={()=>switchMode('register')}>Registrarse</button></div>}
-        <p>{mode==='register'?'Crea tu cuenta con correo y contraseña. Si Supabase exige confirmar el correo, necesitarás el enlace que te envíe.':mode==='link'?'Recibe un enlace para iniciar sesión, sin contraseña.':mode==='forgot'?'Te enviaremos un enlace para cambiarla.':mode==='reset'||mode==='set-password'?'Elige una contraseña para tu cuenta.':'Entra con tu correo y contraseña.'}</p>
-        {mode==='login'&&import.meta.env.VITE_GOOGLE_OAUTH_ENABLED==='true'&&<button type="button" className="secondary-button google-signin" disabled={loading} onClick={()=>void signInGoogle()}>Continuar con Google</button>}
+        <p>{mode==='register'?'Crea tu cuenta con correo y contraseña. Puede que tengas que confirmar tu dirección mediante un enlace.':mode==='link'?'Recibe un enlace para iniciar sesión, sin contraseña.':mode==='forgot'?'Te enviaremos un enlace para cambiarla.':mode==='reset'||mode==='set-password'?'Elige una contraseña para tu cuenta.':'Entra con tu correo y contraseña.'}</p>
+        {(mode==='login'||mode==='register')&&import.meta.env.VITE_GOOGLE_OAUTH_ENABLED==='true'&&<button type="button" className="secondary-button google-signin" disabled={loading} onClick={()=>void signInGoogle()}>Continuar con Google</button>}
         {mode==='link'?<form onSubmit={e=>{e.preventDefault();void sendLink(email)}}>
           <label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>
           {error&&<div className="notice" role="alert">{error}</div>}
