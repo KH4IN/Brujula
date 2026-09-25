@@ -3,6 +3,9 @@ import { ArrowRight, X } from 'lucide-react';
 import { supabase } from '../data';
 import { authMessage } from '../auth';
 
+// Test project has no Google OAuth provider; keep the production flow untouched.
+const googleOAuthEnabled = false;
+
 export function Auth({onReady,onClose,recovering,managePassword}:{onReady:()=>void,onClose:()=>void,recovering:boolean,managePassword:boolean}){
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
@@ -94,7 +97,7 @@ export function Auth({onReady,onClose,recovering,managePassword}:{onReady:()=>vo
       </>:<>
         {mode!=='reset'&&mode!=='forgot'&&mode!=='set-password'&&<div className="auth-methods"><button type="button" className={mode==='register'?'':'active'} onClick={()=>switchMode('login')}>Iniciar sesión</button><button type="button" className={mode==='register'?'active':''} onClick={()=>switchMode('register')}>Registrarse</button></div>}
         <p>{mode==='register'?'Crea tu cuenta con correo y contraseña. Puede que tengas que confirmar tu dirección mediante un enlace.':mode==='link'?'Recibe un enlace para iniciar sesión, sin contraseña.':mode==='forgot'?'Te enviaremos un enlace para cambiarla.':mode==='reset'||mode==='set-password'?'Elige una contraseña para tu cuenta.':'Entra con tu correo y contraseña.'}</p>
-        {(mode==='login'||mode==='register')&&import.meta.env.VITE_GOOGLE_OAUTH_ENABLED==='true'&&<button type="button" className="secondary-button google-signin" disabled={loading} onClick={()=>void signInGoogle()}>Continuar con Google</button>}
+        {(mode==='login'||mode==='register')&&googleOAuthEnabled&&<button type="button" className="secondary-button google-signin" disabled={loading} onClick={()=>void signInGoogle()}>Continuar con Google</button>}
         {mode==='link'?<form onSubmit={e=>{e.preventDefault();void sendLink(email)}}>
           <label>Correo electrónico<input type="email" required autoComplete="email" placeholder="tu@correo.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}}/></label>
           {error&&<div className="notice" role="alert">{error}</div>}
