@@ -42,6 +42,7 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 - Supabase enumera cinco tablas financieras con RLS activado; esto por sí solo no demuestra aislamiento correcto de todas las políticas. El asesor de seguridad avisa de que la protección contra contraseñas filtradas está desactivada. El asesor de rendimiento señala un índice de fecha aún sin uso; no retirarlo sin mediciones.
 - En [PR #18](https://github.com/KH4IN/Brujula/pull/18) se corrigió el texto desactualizado de registro y se mostró Google también al crear cuenta. Fusionada en `staging` (`cd0e967`); 32 pruebas locales y build correctos, Vercel READY. Falta prueba manual del flujo con backend de pruebas.
+- La CSP bloqueaba el script incrustado que aplicaba el tema guardado antes de React. [PR #19](https://github.com/KH4IN/Brujula/pull/19) lo cambió en `staging` por un archivo local permitido; [PR #20](https://github.com/KH4IN/Brujula/pull/20) trasladó exclusivamente ese cambio a `main`. Build y tres casos de inicialización correctos; despliegue productivo en verificación.
 
 - El código de `main` usa `supabase.auth.signInWithOAuth({provider:'google'})`, `signInWithPassword`, `signUp` y enlaces por correo; no incorpora el SDK de Firebase. El fundador informa de que Google funciona en la web, lo cual es compatible con Google como proveedor de Supabase. Falta una prueba real de sesión y corregir el texto del registro que todavía dice que el correo del proyecto debe configurarse.
 - `src/ledger.ts` descarga las cinco tablas completas en páginas de 500 durante cada sincronización. Conviene medir antes de sustituirlo, como ya indica `ARCHITECTURE.md`.
@@ -99,6 +100,7 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 | Fecha | Cambio | Comprobación | Referencia |
 | --- | --- | --- | --- |
+| 2026-09-25 | Inicialización de tema compatible con CSP en staging y main | Build y tres casos de preferencia correctos; PR limitadas a dos archivos | [PR #19](https://github.com/KH4IN/Brujula/pull/19), [PR #20](https://github.com/KH4IN/Brujula/pull/20) |
 | 2026-09-25 | Proyecto gratuito «Brújula pruebas» y esquema aislado | Seis migraciones correctas; cinco tablas vacías y RLS activo; Vercel READY, portada 200; sesión pendiente | [STAGING.md](STAGING.md) |
 | 2026-09-25 | Corrección del registro en `staging` y consulta de asesores de Supabase | PR #18 fusionada; 32 pruebas locales y build correctos; autenticación manual pendiente | [PR #18](https://github.com/KH4IN/Brujula/pull/18) |
 | 2026-09-25 | Vista previa de `staging` y primeras comprobaciones de acceso/autenticación | Vercel READY; URL protegida por Vercel; modo local sin base de pruebas | [38bb5dd](https://github.com/KH4IN/Brujula/commit/38bb5dd4bc83709f2e9d788869b34486870f2b81) |
