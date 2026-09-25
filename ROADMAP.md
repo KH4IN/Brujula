@@ -18,13 +18,13 @@ Brújula es una PWA React + TypeScript + Vite con módulos de cuentas, importaci
 - [x] Crear una rama de trabajo estable para pruebas y definir qué cambios llegan a ella y cuándo pasan a `main`: `staging` recibe cambios mediante PR; tras pruebas y revisión, se llevan a `main` solo los commits/archivos de la funcionalidad mediante una PR específica. `.env.production`, `vercel.json` y la protección de `src/data.ts` propios de `staging` nunca se fusionan a `main`.
 - [ ] Configurar un despliegue de pruebas con URL fija y acceso para el fundador/equipo, manteniendo producción pública en su dirección habitual. Alias estable creado; falta probar el acceso completo.
 - [x] Aislar los datos de prueba: proyecto Supabase «Brújula pruebas» creado desde cero con coste comunicado de 0 €/mes; seis migraciones aplicadas, cinco tablas vacías con RLS. No se copiaron datos de producción. Véase `STAGING.md`.
-- [ ] Configurar y verificar la conexión del entorno de pruebas: URL y clave publicable de Supabase incorporadas a `staging`, CSP ajustada y Google OAuth desactivado. Faltan la configuración del retorno de correo/contraseña, la prueba de sesión/sincronización y comprobar el JavaScript publicado.
+- [ ] Configurar y verificar la conexión del entorno de pruebas: URL y clave publicable de Supabase fijadas en `staging` para impedir herencia de producción, CSP ajustada y Google OAuth desactivado. Faltan la configuración del retorno de correo/contraseña, la prueba de sesión/sincronización y comprobar el JavaScript publicado.
 - [ ] Registrar cómo volver al despliegue anterior y cómo comunicar un fallo al equipo.
 - **Criterio de cierre:** el equipo puede entrar a una URL de pruebas, iniciar sesión, crear datos ficticios y comprobar que producción no cambia.
 
 ### Estado de la fase 1 (25-09-2026)
 
-El fundador ha aprobado el proyecto separado gratuito, sin Google OAuth ni copias de datos ficticios. «Brújula pruebas» (`xxwtwlpgnkxfufywtxpt`) está activo, con esquema vacío y aislado. El despliegue de `staging` llegó a READY y su portada respondió 200 con CSP dirigida exclusivamente a la URL del nuevo Supabase. El panel web de Supabase solicitó una nueva sesión al intentar configurar Auth; esa comprobación sigue pendiente. Detalles en [STAGING.md](STAGING.md).
+El fundador ha aprobado el proyecto separado gratuito, sin Google OAuth ni copias de datos ficticios. «Brújula pruebas» (`xxwtwlpgnkxfufywtxpt`) está activo, con esquema vacío y aislado. El despliegue de `staging` llegó a READY y su portada respondió 200 con CSP dirigida exclusivamente a la URL del nuevo Supabase. El panel web de Supabase solicitó una nueva sesión al intentar configurar Auth; el acceso pasó a GitHub y la pestaña no quedó disponible para completar esos ajustes. Esa comprobación sigue pendiente. Detalles en [STAGING.md](STAGING.md).
 
 La vista previa de `staging` se construye correctamente y tiene alias estable `https://brujula-finanzas-git-staging-kh4ins-projects.vercel.app/`. Vercel exige su propio inicio de sesión en ese alias (respuesta 302 hacia `vercel.com/sso-api`). El fundador acepta ese acceso para las pruebas que hará personalmente; queda pendiente comprobar la entrada completa. El cliente de `staging` bloquea expresamente la URL de Supabase de producción; sin un proyecto aislado, funciona solo en modo local. La conexión Supabase ya enumera el proyecto productivo y ninguna rama de pruebas. El proyecto separado de coste comunicado 0 €/mes ya está creado en la organización `Brujula`, con las seis migraciones. Una rama con coste por hora se descartó. Falta configurar y probar el acceso con cuenta. No introducir credenciales de producción para saltarse este paso.
 
@@ -40,7 +40,7 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 ### Primeros hallazgos de la fase 2 (25-09-2026)
 
-- Supabase enumera cinco tablas financieras con RLS activado; esto por sí solo no demuestra aislamiento correcto de todas las políticas. El asesor de seguridad avisa de que la protección contra contraseñas filtradas está desactivada. El asesor de rendimiento señala un índice de fecha aún sin uso; no retirarlo sin mediciones.
+- Supabase enumera cinco tablas financieras con RLS activado. Se revisaron las 20 políticas en producción y pruebas: están dirigidas a `authenticated` y limitan cada operación a `auth.uid() = user_id`; en pruebas el rol `anon` no tiene SELECT. Falta una prueba real con dos sesiones de usuarios diferentes. El asesor de seguridad avisa de que la protección contra contraseñas filtradas está desactivada. El asesor de rendimiento señala un índice de fecha aún sin uso; no retirarlo sin mediciones.
 - En [PR #18](https://github.com/KH4IN/Brujula/pull/18) se corrigió el texto desactualizado de registro y se mostró Google también al crear cuenta. Fusionada en `staging` (`cd0e967`); 32 pruebas locales y build correctos, Vercel READY. Falta prueba manual del flujo con backend de pruebas.
 - La CSP bloqueaba el script incrustado que aplicaba el tema guardado antes de React. [PR #19](https://github.com/KH4IN/Brujula/pull/19) lo cambió en `staging` por un archivo local permitido; [PR #20](https://github.com/KH4IN/Brujula/pull/20) trasladó exclusivamente ese cambio a `main`. Build y tres casos de inicialización correctos; la URL pública de producción respondió 200 y sirvió el script externo; prueba visual de persistencia pendiente.
 
@@ -100,6 +100,7 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 | Fecha | Cambio | Comprobación | Referencia |
 | --- | --- | --- | --- |
+| 2026-09-25 | Aislamiento reforzado de staging y revisión de políticas | Vercel READY; 20 políticas inspeccionadas; anon sin SELECT; sesión real pendiente | [STAGING.md](STAGING.md) |
 | 2026-09-25 | Inicialización de tema compatible con CSP en staging y main | Build y tres casos de preferencia correctos; PR limitadas a dos archivos | [PR #19](https://github.com/KH4IN/Brujula/pull/19), [PR #20](https://github.com/KH4IN/Brujula/pull/20) |
 | 2026-09-25 | Proyecto gratuito «Brújula pruebas» y esquema aislado | Seis migraciones correctas; cinco tablas vacías y RLS activo; Vercel READY, portada 200; sesión pendiente | [STAGING.md](STAGING.md) |
 | 2026-09-25 | Corrección del registro en `staging` y consulta de asesores de Supabase | PR #18 fusionada; 32 pruebas locales y build correctos; autenticación manual pendiente | [PR #18](https://github.com/KH4IN/Brujula/pull/18) |
