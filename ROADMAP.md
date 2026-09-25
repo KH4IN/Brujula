@@ -16,7 +16,7 @@ Brújula es una PWA React + TypeScript + Vite con módulos de cuentas, importaci
 ## Fase 1 · Recuperar pruebas sin afectar a usuarios
 
 - [x] Crear una rama de trabajo estable para pruebas y definir qué cambios llegan a ella y cuándo pasan a `main`: `staging` recibe cambios mediante PR; tras pruebas y revisión, una PR de `staging` a `main` publica producción. La protección de conexión a la base productiva propia de `staging` no se fusiona a `main`.
-- [ ] Configurar un despliegue de pruebas con URL fija y acceso para el equipo, manteniendo producción pública en su dirección habitual.
+- [ ] Configurar un despliegue de pruebas con URL fija y acceso para el fundador/equipo, manteniendo producción pública en su dirección habitual. Alias estable creado; falta probar el acceso completo.
 - [ ] Aislar los datos de prueba: proyecto/base separados o una separación equivalente comprobable; nunca probar importaciones, borrados ni migraciones con datos financieros de usuarios.
 - [ ] Configurar las variables del entorno de pruebas y los dominios autorizados de OAuth para su URL. Probar inicio, cierre y retorno de sesión en móvil y escritorio.
 - [ ] Registrar cómo volver al despliegue anterior y cómo comunicar un fallo al equipo.
@@ -24,7 +24,7 @@ Brújula es una PWA React + TypeScript + Vite con módulos de cuentas, importaci
 
 ### Estado de la fase 1 (25-09-2026)
 
-La vista previa de `staging` se construye correctamente y tiene alias estable `https://brujula-finanzas-git-staging-kh4ins-projects.vercel.app/`. Vercel aún exige su propio inicio de sesión en ese alias (respuesta 302 hacia `vercel.com/sso-api`), por lo que todavía no sirve al equipo sin acceso a Vercel. El cliente de `staging` bloquea expresamente la URL de Supabase de producción; sin un proyecto aislado, funciona solo en modo local. La conexión Supabase disponible aquí no enumera proyectos, así que el alta/configuración del entorno aislado sigue pendiente. No introducir credenciales de producción para saltarse este paso.
+La vista previa de `staging` se construye correctamente y tiene alias estable `https://brujula-finanzas-git-staging-kh4ins-projects.vercel.app/`. Vercel exige su propio inicio de sesión en ese alias (respuesta 302 hacia `vercel.com/sso-api`). El fundador acepta ese acceso para las pruebas que hará personalmente; queda pendiente comprobar la entrada completa. El cliente de `staging` bloquea expresamente la URL de Supabase de producción; sin un proyecto aislado, funciona solo en modo local. La conexión Supabase ya enumera el proyecto productivo y ninguna rama de pruebas. Crear una rama Supabase tiene coste indicado de 0,01344 por hora (aprox. 9,80 por 30 días completos); la creación requiere conformidad expresa con ese coste y completar la configuración aislada. No introducir credenciales de producción para saltarse este paso.
 
 ## Fase 2 · Auditoría y correcciones de la base actual
 
@@ -37,6 +37,9 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 - **Criterio de cierre:** informe breve con hallazgos y riesgos pendientes, flujos críticos comprobados, y errores prioritarios corregidos.
 
 ### Primeros hallazgos de la fase 2 (25-09-2026)
+
+- Supabase enumera cinco tablas financieras con RLS activado; esto por sí solo no demuestra aislamiento correcto de todas las políticas. El asesor de seguridad avisa de que la protección contra contraseñas filtradas está desactivada. El asesor de rendimiento señala un índice de fecha aún sin uso; no retirarlo sin mediciones.
+- En [PR #18](https://github.com/KH4IN/Brujula/pull/18) se corrigió el texto desactualizado de registro y se mostró Google también al crear cuenta. Fusionada en `staging` (`cd0e967`); 32 pruebas locales y build correctos, Vercel READY. Falta prueba manual del flujo con backend de pruebas.
 
 - El código de `main` usa `supabase.auth.signInWithOAuth({provider:'google'})`, `signInWithPassword`, `signUp` y enlaces por correo; no incorpora el SDK de Firebase. El fundador informa de que Google funciona en la web, lo cual es compatible con Google como proveedor de Supabase. Falta una prueba real de sesión y corregir el texto del registro que todavía dice que el correo del proyecto debe configurarse.
 - `src/ledger.ts` descarga las cinco tablas completas en páginas de 500 durante cada sincronización. Conviene medir antes de sustituirlo, como ya indica `ARCHITECTURE.md`.
@@ -94,6 +97,7 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 | Fecha | Cambio | Comprobación | Referencia |
 | --- | --- | --- | --- |
+| 2026-09-25 | Corrección del registro en `staging` y consulta de asesores de Supabase | PR #18 fusionada; 32 pruebas locales y build correctos; autenticación manual pendiente | [PR #18](https://github.com/KH4IN/Brujula/pull/18) |
 | 2026-09-25 | Vista previa de `staging` y primeras comprobaciones de acceso/autenticación | Vercel READY; URL protegida por Vercel; modo local sin base de pruebas | [38bb5dd](https://github.com/KH4IN/Brujula/commit/38bb5dd4bc83709f2e9d788869b34486870f2b81) |
 | 2026-09-25 | Rama `staging` creada y protección frente a la base productiva en `src/data.ts` | Commit `38bb5dd` en `staging`; despliegue de vista previa en curso | [38bb5dd](https://github.com/KH4IN/Brujula/commit/38bb5dd4bc83709f2e9d788869b34486870f2b81) |
 | 2026-09-25 | Roadmap inicial y orden de trabajo acordado | Documento publicado; tareas funcionales pendientes de ejecución/verificación | Commit que crea este archivo |
