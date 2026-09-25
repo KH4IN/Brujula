@@ -18,8 +18,19 @@ La rama `staging` contiene su propia `.env.production` con URL y clave **publica
 - Supabase comunicó coste de **0 €/mes** para un nuevo proyecto en la organización `Brujula`; se eligió esa opción y no una rama con coste por hora.
 - Las seis migraciones finalizaron con éxito en el proyecto nuevo.
 - Las cinco tablas financieras estaban vacías, con RLS activo; cada una tiene políticas SELECT/INSERT/UPDATE/DELETE para `authenticated` con condición `auth.uid() = user_id`. El rol `anon` no tiene SELECT en esas tablas. El asesor de seguridad del proyecto de pruebas no devolvió avisos en ese momento.
-- Vercel generó despliegues `READY` para `0ce24c78`, el cambio de tema y la conexión fijada en `37a35c15`. La portada del alias respondió 200 con CSP del proyecto de pruebas antes del último commit; tras este, el acceso automatizado a la vista previa volvió a redirigir al SSO de Vercel. La prueba visual del último despliegue queda pendiente.
-- Aún **no se ha comprobado** el contenido del JavaScript publicado ni una sesión con sincronización: la lectura automatizada de los archivos protegidos redirige al SSO de Vercel. La configuración de redirecciones de Auth requiere abrir el panel de Supabase; el navegador disponible solicitó inicio de sesión.
+- Vercel generó despliegues `READY` para `0ce24c78`, el cambio de tema y la conexión fijada en `37a35c15`. La portada del alias respondió 200 con el último despliegue consultado. El archivo JavaScript protegido devolvió una redirección al SSO de Vercel; su contenido y el flujo visual siguen sin prueba completa.
+- Aún **no se ha comprobado** el contenido del JavaScript publicado ni una sesión con sincronización: la lectura automatizada de los archivos protegidos redirige al SSO de Vercel. El fundador informó que guardó Site URL y Redirect URL en Supabase Auth; falta comprobar un registro y retorno reales.
+
+
+## Publicación y vuelta atrás
+
+1. Anota en cada PR el commit de `staging` probado, el commit anterior de `main`, el despliegue `READY` anterior de producción y los pasos de comprobación. Comprueba el diff: no debe incluir los cuatro archivos de configuración exclusivos de pruebas.
+2. Publica en `main` solo después de probar la función en `staging`. Comprueba la URL pública, el acceso, una operación de lectura y escritura del flujo afectado y que la sincronización se recupera tras refrescar. Usa exclusivamente datos ficticios para las pruebas compartidas.
+3. Si falla el frontend en producción, identifica el último despliegue sano de `main` en Vercel y restaura ese despliegue mediante **Rollback**. Después prepara un `git revert` del commit o PR defectuoso en una rama y fusiónalo a `main` para que el siguiente despliegue automático no vuelva a publicar el fallo. Anota los identificadores reales del incidente; no uses la rama `staging` como artefacto de producción.
+4. Si el cambio incluye esquema o datos, no restaures a ciegas una versión de frontend incompatible ni reviertas migraciones destructivas en caliente. Primero comprueba compatibilidad con las dos versiones, conserva una copia cifrada verificable y prepara una migración correctiva o restauración ensayada en aislamiento.
+5. Comunica al equipo qué función falla, desde cuándo, el estado de las operaciones pendientes y cuándo se ha comprobado la recuperación. Evita capturas, logs o tickets con importes, descripciones, correos o CSV de usuarios.
+
+La URL de pruebas y la de producción son dominios distintos: sus datos locales no se comparten. Restaurar un despliegue no restaura automáticamente datos de Supabase ni los datos guardados en el navegador. Si hay escrituras locales pendientes, no borres el almacenamiento ni aconsejes reinstalar la PWA antes de recuperarlas.
 
 ## Uso y límites
 
