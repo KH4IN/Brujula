@@ -15,7 +15,7 @@ Brújula es una PWA React + TypeScript + Vite con módulos de cuentas, importaci
 
 ## Fase 1 · Recuperar pruebas sin afectar a usuarios
 
-- [ ] Crear una rama de trabajo estable para pruebas y definir qué cambios llegan a ella y cuándo pasan a `main`.
+- [x] Crear una rama de trabajo estable para pruebas y definir qué cambios llegan a ella y cuándo pasan a `main`: `staging` recibe cambios mediante PR; tras pruebas y revisión, una PR de `staging` a `main` publica producción. La protección de conexión a la base productiva propia de `staging` no se fusiona a `main`.
 - [ ] Configurar un despliegue de pruebas con URL fija y acceso para el equipo, manteniendo producción pública en su dirección habitual.
 - [ ] Aislar los datos de prueba: proyecto/base separados o una separación equivalente comprobable; nunca probar importaciones, borrados ni migraciones con datos financieros de usuarios.
 - [ ] Configurar las variables del entorno de pruebas y los dominios autorizados de OAuth para su URL. Probar inicio, cierre y retorno de sesión en móvil y escritorio.
@@ -84,4 +84,5 @@ Brújula es una PWA React + TypeScript + Vite con módulos de cuentas, importaci
 
 | Fecha | Cambio | Comprobación | Referencia |
 | --- | --- | --- | --- |
+| 2026-09-25 | Rama `staging` creada y protección frente a la base productiva en `src/data.ts` | Commit `38bb5dd` en `staging`; despliegue de vista previa en curso | [38bb5dd](https://github.com/KH4IN/Brujula/commit/38bb5dd4bc83709f2e9d788869b34486870f2b81) |
 | 2026-09-25 | Roadmap inicial y orden de trabajo acordado | Documento publicado; tareas funcionales pendientes de ejecución/verificación | Commit que crea este archivo |
