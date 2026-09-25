@@ -9,11 +9,10 @@ export type Budget = {id?:string; user_id?:string; category:Category; amount:num
 export type AccountSetting = {account:AccountType;opening_balance:number;name?:string;kind?:'bank'|'cash';cash_counts?:Record<string,number>;cash_counted_at?:string|null;user_id?:string};
 export type Goal = {id:string;user_id?:string;name:string;target_amount:number;saved_amount:number;due_on:string|null;created_at?:string};
 export type Investment = {id:string;user_id?:string;name:string;ticker:string;units:number;average_cost:number;current_price:number;asset_type?:'crypto'|'etf'|'stock'|'other';funding_account:AccountType|'outside';purchased_on:string|null;created_at?:string};
-const candidateUrl = import.meta.env.VITE_SUPABASE_URL;
-const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-// Staging must never connect to the production database, even if Vercel
-// inherits its environment variables or this branch's .env.production.
-const url = candidateUrl === 'https://nvbkftnithuduyazhidc.supabase.co' ? undefined : candidateUrl;
+// This branch always uses the isolated test project, even if Vercel has
+// environment variables configured for production at the project level.
+const url = 'https://xxwtwlpgnkxfufywtxpt.supabase.co';
+const key = 'sb_publishable_U9Ch6uvF50j5fciHxQTnKA_EkHMXkGr';
 export const configured = Boolean(url && key);
 export const supabase = configured ? createClient(url!, key) : null;
 const demoKey = 'brujula.demo.v1';
