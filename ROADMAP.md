@@ -22,6 +22,10 @@ Brújula es una PWA React + TypeScript + Vite con módulos de cuentas, importaci
 - [ ] Registrar cómo volver al despliegue anterior y cómo comunicar un fallo al equipo.
 - **Criterio de cierre:** el equipo puede entrar a una URL de pruebas, iniciar sesión, crear datos ficticios y comprobar que producción no cambia.
 
+### Estado de la fase 1 (25-09-2026)
+
+La vista previa de `staging` se construye correctamente y tiene alias estable `https://brujula-finanzas-git-staging-kh4ins-projects.vercel.app/`. Vercel aún exige su propio inicio de sesión en ese alias (respuesta 302 hacia `vercel.com/sso-api`), por lo que todavía no sirve al equipo sin acceso a Vercel. El cliente de `staging` bloquea expresamente la URL de Supabase de producción; sin un proyecto aislado, funciona solo en modo local. La conexión Supabase disponible aquí no enumera proyectos, así que el alta/configuración del entorno aislado sigue pendiente. No introducir credenciales de producción para saltarse este paso.
+
 ## Fase 2 · Auditoría y correcciones de la base actual
 
 - [ ] Revisar el flujo real de autenticación: proveedor utilizado en `main`, Google, correo/contraseña, recuperación, sesiones y vínculo de datos locales con la cuenta. Corregir la documentación desfasada.
@@ -31,6 +35,12 @@ Brújula es una PWA React + TypeScript + Vite con módulos de cuentas, importaci
 - [ ] Comprobar que las copias cifradas programadas se generan y que al menos una se puede restaurar en un entorno aislado; documentar frecuencia y retención sin exponer claves ni datos.
 - [ ] Corregir los defectos hallados en PR pequeñas con pruebas centradas en cada fallo.
 - **Criterio de cierre:** informe breve con hallazgos y riesgos pendientes, flujos críticos comprobados, y errores prioritarios corregidos.
+
+### Primeros hallazgos de la fase 2 (25-09-2026)
+
+- El código de `main` usa `supabase.auth.signInWithOAuth({provider:'google'})`, `signInWithPassword`, `signUp` y enlaces por correo; no incorpora el SDK de Firebase. El fundador informa de que Google funciona en la web, lo cual es compatible con Google como proveedor de Supabase. Falta una prueba real de sesión y corregir el texto del registro que todavía dice que el correo del proyecto debe configurarse.
+- `src/ledger.ts` descarga las cinco tablas completas en páginas de 500 durante cada sincronización. Conviene medir antes de sustituirlo, como ya indica `ARCHITECTURE.md`.
+- Las 32 pruebas y el build del snapshot local disponible pasaron; el snapshot puede estar por detrás de `main`, por lo que no se marca todavía la auditoría de `main` como terminada. El despliegue de `staging` para el commit `38bb5dd` terminó en estado READY.
 
 ## Fase 3 · Diseñar una experiencia más visual
 
@@ -84,5 +94,6 @@ Brújula es una PWA React + TypeScript + Vite con módulos de cuentas, importaci
 
 | Fecha | Cambio | Comprobación | Referencia |
 | --- | --- | --- | --- |
+| 2026-09-25 | Vista previa de `staging` y primeras comprobaciones de acceso/autenticación | Vercel READY; URL protegida por Vercel; modo local sin base de pruebas | [38bb5dd](https://github.com/KH4IN/Brujula/commit/38bb5dd4bc83709f2e9d788869b34486870f2b81) |
 | 2026-09-25 | Rama `staging` creada y protección frente a la base productiva en `src/data.ts` | Commit `38bb5dd` en `staging`; despliegue de vista previa en curso | [38bb5dd](https://github.com/KH4IN/Brujula/commit/38bb5dd4bc83709f2e9d788869b34486870f2b81) |
 | 2026-09-25 | Roadmap inicial y orden de trabajo acordado | Documento publicado; tareas funcionales pendientes de ejecución/verificación | Commit que crea este archivo |
