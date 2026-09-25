@@ -15,16 +15,18 @@ Brújula es una PWA React + TypeScript + Vite con módulos de cuentas, importaci
 
 ## Fase 1 · Recuperar pruebas sin afectar a usuarios
 
-- [x] Crear una rama de trabajo estable para pruebas y definir qué cambios llegan a ella y cuándo pasan a `main`: `staging` recibe cambios mediante PR; tras pruebas y revisión, una PR de `staging` a `main` publica producción. La protección de conexión a la base productiva propia de `staging` no se fusiona a `main`.
+- [x] Crear una rama de trabajo estable para pruebas y definir qué cambios llegan a ella y cuándo pasan a `main`: `staging` recibe cambios mediante PR; tras pruebas y revisión, se llevan a `main` solo los commits/archivos de la funcionalidad mediante una PR específica. `.env.production`, `vercel.json` y la protección de `src/data.ts` propios de `staging` nunca se fusionan a `main`.
 - [ ] Configurar un despliegue de pruebas con URL fija y acceso para el fundador/equipo, manteniendo producción pública en su dirección habitual. Alias estable creado; falta probar el acceso completo.
-- [ ] Aislar los datos de prueba: proyecto/base separados o una separación equivalente comprobable; nunca probar importaciones, borrados ni migraciones con datos financieros de usuarios.
-- [ ] Configurar las variables del entorno de pruebas y los dominios autorizados de OAuth para su URL. Probar inicio, cierre y retorno de sesión en móvil y escritorio.
+- [x] Aislar los datos de prueba: proyecto Supabase «Brújula pruebas» creado desde cero con coste comunicado de 0 €/mes; seis migraciones aplicadas, cinco tablas vacías con RLS. No se copiaron datos de producción. Véase `STAGING.md`.
+- [ ] Configurar y verificar la conexión del entorno de pruebas: URL y clave publicable de Supabase incorporadas a `staging`, CSP ajustada y Google OAuth desactivado. Faltan la configuración del retorno de correo/contraseña, la prueba de sesión/sincronización y comprobar el JavaScript publicado.
 - [ ] Registrar cómo volver al despliegue anterior y cómo comunicar un fallo al equipo.
 - **Criterio de cierre:** el equipo puede entrar a una URL de pruebas, iniciar sesión, crear datos ficticios y comprobar que producción no cambia.
 
 ### Estado de la fase 1 (25-09-2026)
 
-La vista previa de `staging` se construye correctamente y tiene alias estable `https://brujula-finanzas-git-staging-kh4ins-projects.vercel.app/`. Vercel exige su propio inicio de sesión en ese alias (respuesta 302 hacia `vercel.com/sso-api`). El fundador acepta ese acceso para las pruebas que hará personalmente; queda pendiente comprobar la entrada completa. El cliente de `staging` bloquea expresamente la URL de Supabase de producción; sin un proyecto aislado, funciona solo en modo local. La conexión Supabase ya enumera el proyecto productivo y ninguna rama de pruebas. La opción preferida es un segundo proyecto Supabase aislado: la consulta de costes devuelve 0 al mes para esta organización. Una rama de la base productiva costaría 0,01344 por hora (aprox. 9,80 por 30 días completos). Falta seleccionar la organización para crear el proyecto gratuito y completar sus migraciones/configuración. No introducir credenciales de producción para saltarse este paso.
+El fundador ha aprobado el proyecto separado gratuito, sin Google OAuth ni copias de datos ficticios. «Brújula pruebas» (`xxwtwlpgnkxfufywtxpt`) está activo, con esquema vacío y aislado. El despliegue de `staging` llegó a READY y su portada respondió 200 con CSP dirigida exclusivamente a la URL del nuevo Supabase. El panel web de Supabase solicitó una nueva sesión al intentar configurar Auth; esa comprobación sigue pendiente. Detalles en [STAGING.md](STAGING.md).
+
+La vista previa de `staging` se construye correctamente y tiene alias estable `https://brujula-finanzas-git-staging-kh4ins-projects.vercel.app/`. Vercel exige su propio inicio de sesión en ese alias (respuesta 302 hacia `vercel.com/sso-api`). El fundador acepta ese acceso para las pruebas que hará personalmente; queda pendiente comprobar la entrada completa. El cliente de `staging` bloquea expresamente la URL de Supabase de producción; sin un proyecto aislado, funciona solo en modo local. La conexión Supabase ya enumera el proyecto productivo y ninguna rama de pruebas. El proyecto separado de coste comunicado 0 €/mes ya está creado en la organización `Brujula`, con las seis migraciones. Una rama con coste por hora se descartó. Falta configurar y probar el acceso con cuenta. No introducir credenciales de producción para saltarse este paso.
 
 ## Fase 2 · Auditoría y correcciones de la base actual
 
@@ -97,6 +99,7 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 | Fecha | Cambio | Comprobación | Referencia |
 | --- | --- | --- | --- |
+| 2026-09-25 | Proyecto gratuito «Brújula pruebas» y esquema aislado | Seis migraciones correctas; cinco tablas vacías y RLS activo; Vercel READY, portada 200; sesión pendiente | [STAGING.md](STAGING.md) |
 | 2026-09-25 | Corrección del registro en `staging` y consulta de asesores de Supabase | PR #18 fusionada; 32 pruebas locales y build correctos; autenticación manual pendiente | [PR #18](https://github.com/KH4IN/Brujula/pull/18) |
 | 2026-09-25 | Vista previa de `staging` y primeras comprobaciones de acceso/autenticación | Vercel READY; URL protegida por Vercel; modo local sin base de pruebas | [38bb5dd](https://github.com/KH4IN/Brujula/commit/38bb5dd4bc83709f2e9d788869b34486870f2b81) |
 | 2026-09-25 | Rama `staging` creada y protección frente a la base productiva en `src/data.ts` | Commit `38bb5dd` en `staging`; despliegue de vista previa en curso | [38bb5dd](https://github.com/KH4IN/Brujula/commit/38bb5dd4bc83709f2e9d788869b34486870f2b81) |
