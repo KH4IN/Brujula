@@ -71,11 +71,11 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 ## Fase 3 · Diseñar una experiencia más visual
 
-- [x] Dibujar el mapa de navegación y preparar una portada breve en `staging`: resumen con patrimonio, cifras del mes, cuatro accesos y tres movimientos recientes; Análisis reúne gráficos y desgloses. Diseño documentado en `DESIGN_PHASE3.md` de `staging`. Producción espera revisión del fundador.
+- [x] Dibujar y publicar una portada breve: patrimonio, cifras del mes, cuatro accesos y tres movimientos recientes; Análisis reúne gráficos y desgloses. Diseño en `DESIGN_PHASE3.md` y producción aprobada por el fundador.
 - [ ] Diseñar pantallas y estados móviles primero (vacío, carga, error, sin conexión y datos abundantes). Usar Figma o una herramienta similar si acelera la revisión; conservar el diseño y sus decisiones en el repositorio.
 - [ ] Definir componentes visuales reutilizables para tarjetas, gráficos, explicaciones al pulsar y navegación, respetando los modos claro y oscuro (gris/negro, morado y dorado en oscuro).
-- [ ] Revisar el diseño con el fundador antes de sustituir la navegación principal.
-- [ ] Implementar por pantallas y comprobar que cada gráfico conduce a un desglose entendible y accesible.
+- [x] Revisar el diseño con el fundador antes de sustituir la portada principal: informó el 26-09 que iPhone y Análisis se ven bien; [PR #40](https://github.com/KH4IN/Brujula/pull/40) publicada en producción y Vercel READY.
+- [x] Separar portada breve y Análisis; el círculo filtra ingresos/gastos, las categorías abren su desglose y las barras llevan al día en Movimientos. Tests/build y revisión visual del fundador; quedan auditorías de accesibilidad completas.
 - **Criterio de cierre:** panel principal corto, rutas claras y detalles financieros comprensibles sin perder funciones actuales.
 
 ### Primera vista previa de la fase 3 (26-09-2026)
