@@ -1,0 +1,51 @@
+/* Visual layers. Low preserves the original layout and removes decorative motion. */
+:root[data-motion="low"] .dashboard-path:hover{transform:none;box-shadow:none}
+:root[data-motion="low"] .dashboard-path,:root[data-motion="low"] .daily-bar span,:root[data-motion="low"] .sidebar{transition:none}
+
+/* Medium: a clearer cockpit with stronger grouping and direct feedback. */
+:root[data-motion="medium"] .content,:root[data-motion="high"] .content{--motion-accent:#8262ac}
+:root[data-motion="medium"] .wealth-strip,:root[data-motion="high"] .wealth-strip{gap:10px;background:transparent;border:0;overflow:visible}
+:root[data-motion="medium"] .wealth-strip>div,:root[data-motion="medium"] .wealth-strip>button{border:1px solid #e2dbea;border-radius:16px;background:linear-gradient(135deg,#fff,#f5f0fa);box-shadow:0 8px 25px #3d28500c}
+:root[data-motion="medium"] .stat-grid{gap:12px}
+:root[data-motion="medium"] .stat{border-radius:20px;box-shadow:0 12px 32px #263a2810}
+:root[data-motion="medium"] .dashboard-paths{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+:root[data-motion="medium"] .dashboard-path{border-radius:20px;background:linear-gradient(135deg,#fff,#f7f2fc);min-height:122px}
+:root[data-motion="medium"] .dashboard-path.path-analysis{background:linear-gradient(135deg,#f0e8fb,#e7f2e6)}
+:root[data-motion="medium"] .dashboard-path:hover{transform:translateY(-3px);box-shadow:0 16px 32px #4c306025}
+:root[data-motion="medium"] .card{border-radius:20px}
+
+/* High: rich layered surfaces. All values and buttons remain in the same DOM. */
+:root[data-motion="high"] .main{background:radial-gradient(circle at 85% 5%,#e7d8f5 0,transparent 32%),radial-gradient(circle at 2% 55%,#e1efe6 0,transparent 36%),#f8f7fb}
+:root[data-motion="high"] .topbar{background:#ffffffd9;backdrop-filter:blur(16px)}
+:root[data-motion="high"] .page-heading h1{font-size:clamp(30px,4vw,48px);background:linear-gradient(100deg,#253d33,#7b56a2 75%);background-clip:text;color:transparent}
+:root[data-motion="high"] .wealth-strip{grid-template-columns:1.6fr repeat(3,1fr)}
+:root[data-motion="high"] .wealth-strip>div,:root[data-motion="high"] .wealth-strip>button{position:relative;overflow:hidden;border:1px solid #d9c9e9;border-radius:22px;background:linear-gradient(140deg,#322641,#563d71 60%,#75538a);color:#f2e9fc;box-shadow:0 18px 38px #4a306236}
+:root[data-motion="high"] .wealth-strip>div:after,:root[data-motion="high"] .wealth-strip>button:after{content:"";position:absolute;width:140px;height:140px;right:-60px;top:-80px;border-radius:50%;background:#ffffff1e;pointer-events:none}
+:root[data-motion="high"] .wealth-strip strong,:root[data-motion="high"] .wealth-strip>div>strong,:root[data-motion="high"] .wealth-strip small{color:#fff2c5}
+:root[data-motion="high"] .stat-grid{gap:18px}
+:root[data-motion="high"] .stat{border-radius:22px;box-shadow:0 15px 36px #39254c20}
+:root[data-motion="high"] .dashboard-paths{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+:root[data-motion="high"] .dashboard-path{position:relative;overflow:hidden;min-height:138px;border-radius:24px;border:1px solid #d2bbeb;background:linear-gradient(125deg,#fff9ff,#eae0f7 55%,#e0f0e5);box-shadow:0 14px 34px #4e2d7320}
+:root[data-motion="high"] .dashboard-path.path-analysis{background:linear-gradient(125deg,#efe2ff,#dbd0f3 55%,#dbeee3)}
+:root[data-motion="high"] .dashboard-path:hover{transform:translateY(-6px) scale(1.01);box-shadow:0 25px 42px #53347c38}
+:root[data-motion="high"] .dashboard-path:hover>.path-icon{transform:rotate(-8deg) scale(1.12)}
+:root[data-motion="high"] .dashboard-path>.path-icon{transition:transform .35s ease}
+:root[data-motion="high"] .card{border-radius:23px;box-shadow:0 16px 38px #32274714}
+:root[data-motion="high"] .flow-ring,:root[data-motion="high"] .donut{filter:drop-shadow(0 12px 16px #513d7130)}
+
+:root[data-theme="dark"][data-motion="medium"] .wealth-strip>div,:root[data-theme="dark"][data-motion="medium"] .wealth-strip>button,:root[data-theme="dark"][data-motion="medium"] .dashboard-path{background:linear-gradient(140deg,#30283d,#3c304a);border-color:#6a557d}
+:root[data-theme="dark"][data-motion="high"] .main{background:radial-gradient(circle at 85% 0%,#3d265e 0,transparent 38%),radial-gradient(circle at 5% 55%,#173c34 0,transparent 40%),#171720}
+:root[data-theme="dark"][data-motion="high"] .topbar{background:#201d2ddd}
+:root[data-theme="dark"][data-motion="high"] .page-heading h1{background:linear-gradient(90deg,#f0d38c,#d9b9f5);background-clip:text;color:transparent}
+:root[data-theme="dark"][data-motion="high"] .dashboard-path{background:linear-gradient(130deg,#3c2a51,#322945 60%,#203d38);border-color:#806399}
+:root[data-theme="dark"][data-motion="high"] .dashboard-path.path-analysis{background:linear-gradient(130deg,#533273,#372e56 60%,#24483d)}
+
+@media(max-width:750px){
+ :root[data-motion="medium"] .dashboard-paths,:root[data-motion="high"] .dashboard-paths{grid-template-columns:1fr}
+ :root[data-motion="high"] .dashboard-path{min-height:104px}
+ :root[data-motion="medium"] .wealth-strip,:root[data-motion="high"] .wealth-strip{gap:6px}
+}
+@media(prefers-reduced-motion:reduce){
+ :root[data-motion] .dashboard-path:hover{transform:none;box-shadow:none}
+ :root[data-motion] .dashboard-path>.path-icon{transition:none;transform:none}
+}
