@@ -73,7 +73,7 @@ export function importTransactions(scope:string,values:Transaction[]){const stat
 
 export function claimGuest(userId:string){
   const guest=readStore('guest'),state=readStore(userId);
-  if(!guest.transactions.length&&!guest.budgets.length&&!guest.goals.length&&!guest.investments.length&&!guest.account_settings.some(a=>a.opening_balance!==0||a.account!=='bank'&&a.account!=='cash'||a.name&&a.name!== (a.account==='cash'?'Efectivo':'Banco')))return 0;
+  if(!guest.transactions.length&&!guest.budgets.length&&!guest.goals.length&&!guest.investments.length&&!guest.account_settings.some(a=>a.opening_balance!==0||a.account!=='bank'&&a.account!=='cash'||a.name&&a.name!== (a.account==='cash'?'Efectivo':'Banco')||a.cash_counts))return 0;
   // A cloud snapshot must be loaded before this function is called. If two
   // versions of the same account or record differ, leave the entire guest
   // space intact for explicit reconciliation rather than losing a balance.
@@ -96,7 +96,7 @@ export function claimGuest(userId:string){
   }
   let transferred=0;
   for(const entity of ['transactions','budgets','goals','investments','account_settings'] as Entity[])for(const original of list(guest,entity)){
-    if(entity==='account_settings'&&(original as AccountSetting).opening_balance===0&&['bank','cash'].includes((original as AccountSetting).account)&&(!((original as AccountSetting).name)||(original as AccountSetting).name===((original as AccountSetting).account==='cash'?'Efectivo':'Banco')))continue;
+    if(entity==='account_settings'&&(original as AccountSetting).opening_balance===0&&!((original as AccountSetting).cash_counts)&&['bank','cash'].includes((original as AccountSetting).account)&&(!((original as AccountSetting).name)||(original as AccountSetting).name===((original as AccountSetting).account==='cash'?'Efectivo':'Banco')))continue;
     const item=entity==='transactions'&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test((original as Transaction).id)?{...original,id:crypto.randomUUID()} as Transaction:original;
     const id=key(entity,item);if(list(state,entity).some(existing=>key(entity,existing)===id)&&entity!=='account_settings')continue;
     put(state,entity,[item,...list(state,entity).filter(existing=>key(entity,existing)!==id)]);
