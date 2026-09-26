@@ -22,6 +22,8 @@ La rama `staging` contiene su propia `.env.production` con URL y clave **publica
 - El fundador informó que completó registro, confirmación y un movimiento ficticio. Consulta de recuentos en el proyecto aislado: **1 usuario, 1 correo confirmado, 1 movimiento y 1 propietario de movimientos**; no se consultaron correo, importe ni descripción. Esto comprueba llegada de datos a la base de pruebas, pero no prueba por sí solo que el navegador los recargue ni que otro dispositivo los vea. El JavaScript protegido sigue redirigiendo al SSO de Vercel y no se inspeccionó su contenido.
 
 
+- El fundador informó el 26-09-2026 que pudo iniciar sesión con una segunda cuenta y que la interfaz en iPhone y la importación de un CSV financiero sin red funcionaron. Esta es una comprobación manual reportada; no confirma aún lectura del mismo movimiento en dos dispositivos ni aislamiento entre dos cuentas reales. No se recopilaron contenidos financieros del CSV.
+
 ## Publicación y vuelta atrás
 
 1. Anota en cada PR el commit de `staging` probado, el commit anterior de `main`, el despliegue `READY` anterior de producción y los pasos de comprobación. Comprueba el diff: no debe incluir los cuatro archivos de configuración exclusivos de pruebas.

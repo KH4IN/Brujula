@@ -1,6 +1,6 @@
 # Roadmap de Brújula
 
-Documento vivo para ordenar el trabajo y registrar avances. Última revisión: 25 de septiembre de 2026.
+Documento vivo para ordenar el trabajo y registrar avances. Última revisión: 26 de septiembre de 2026.
 
 ## Cómo se usa
 
@@ -16,9 +16,9 @@ Brújula es una PWA React + TypeScript + Vite con módulos de cuentas, importaci
 ## Fase 1 · Recuperar pruebas sin afectar a usuarios
 
 - [x] Crear una rama de trabajo estable para pruebas y definir qué cambios llegan a ella y cuándo pasan a `main`: `staging` recibe cambios mediante PR; tras pruebas y revisión, se llevan a `main` solo los commits/archivos de la funcionalidad mediante una PR específica. `.env.production`, `vercel.json` y la protección de `src/data.ts` propios de `staging` nunca se fusionan a `main`.
-- [ ] Configurar un despliegue de pruebas con URL fija y acceso para el fundador/equipo, manteniendo producción pública en su dirección habitual. Alias estable creado; el fundador completó registro y creó un movimiento ficticio. Falta una comprobación independiente de la experiencia completa.
+- [x] Configurar un despliegue de pruebas con URL fija y acceso para el fundador/equipo, manteniendo producción pública en su dirección habitual. El fundador comprobó el acceso con otra cuenta, la importación sin red y la visualización en iPhone; falta verificar expresamente la sincronización cruzada en dos dispositivos.
 - [x] Aislar los datos de prueba: proyecto Supabase «Brújula pruebas» creado desde cero con coste comunicado de 0 €/mes; seis migraciones aplicadas, cinco tablas vacías con RLS. No se copiaron datos de producción. Véase `STAGING.md`.
-- [ ] Configurar y verificar la conexión del entorno de pruebas: URL y clave publicable de Supabase fijadas en `staging` para impedir herencia de producción, CSP ajustada y Google OAuth desactivado. Site URL y Redirect URL guardadas por el fundador; se observó una cuenta confirmada y un movimiento de su usuario en la base aislada. Falta comprobar el JavaScript publicado y una segunda sesión/dispositivo.
+- [x] Configurar y verificar la conexión del entorno de pruebas: URL y clave publicable de Supabase fijadas en `staging` para impedir herencia de producción, CSP ajustada y Google OAuth desactivado. El fundador informó que accedió con una segunda cuenta; se había observado una cuenta confirmada y un movimiento en la base aislada. Persisten las pruebas de aislamiento entre dos usuarios reales y sincronización cruzada.
 - [x] Registrar cómo volver al despliegue anterior y cómo comunicar un fallo al equipo. Procedimiento en `STAGING.md`; requiere anotar identificadores reales en cada incidente.
 - **Criterio de cierre:** el equipo puede entrar a una URL de pruebas, iniciar sesión, crear datos ficticios y comprobar que producción no cambia.
 
@@ -60,7 +60,11 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 - El importador limita archivos a 8 MB y la vista previa a 5.000 filas, procesa CSV/XLSX en el navegador y los 32 tests locales existentes pasaron. Siguen pendientes pruebas manuales con más formatos reales y mediciones con ficheros grandes; no se declara compatibilidad universal.
 - La regla de acciones visibles en pantallas táctiles se publicó en `main` mediante [PR #26](https://github.com/KH4IN/Brujula/pull/26); el despliegue quedó `READY`. No se comprobó visualmente en una tableta real.
 
-- El fundador se encargará de la comprobación visual en iPhone y de la importación CSV sin red, con datos ficticios; resultados pendientes de su informe.
+- El fundador informó el 26-09-2026 que la interfaz en iPhone, el inicio de sesión con una segunda cuenta y la importación de un CSV financiero sin red funcionaron sin problemas. No se recibieron capturas, datos del archivo ni pasos detallados; este resultado no valida todos los formatos, tamaños o un segundo dispositivo sincronizado.
+
+### Siguiente bloque de la fase 2 (26-09-2026)
+
+- Priorizar la auditoría de autenticación, persistencia y conflictos entre sesiones. Las pruebas del fundador cierran los tres casos observados, pero quedan escenarios de aislamiento, recuperación y sincronización por verificar antes de rediseñar la navegación.
 
 ## Fase 3 · Diseñar una experiencia más visual
 
