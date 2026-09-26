@@ -118,3 +118,15 @@ test('un recuento de efectivo de invitado se conserva al unirse a cuenta vacía'
   assert.equal(claimGuest('usuario-uno'),1);
   assert.deepEqual(readStore('usuario-uno').account_settings.find(a=>a.account==='cash').cash_counts,{'20':2});
 });
+
+
+test('la importación masiva conserva otras operaciones pendientes y sustituye la última versión por ID',()=>{
+  storage();
+  saveTransaction('usuario-uno',transaction);
+  saveBudget('usuario-uno',{month:'2026-09',category:'Alimentación',amount:100});
+  const next={...transaction,amount:12,import_key:'referencia-nueva'};
+  const store=importTransactions('usuario-uno',[next,{...next,amount:13,import_key:'otra-referencia'}]);
+  assert.equal(store.pending.length,2);
+  assert.equal(store.pending.find(p=>p.entity==='transactions').record.amount,13);
+  assert.equal(store.pending.find(p=>p.entity==='budgets').record.amount,100);
+});
