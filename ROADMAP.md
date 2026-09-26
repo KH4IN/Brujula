@@ -34,7 +34,7 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 - [ ] Auditar frontend en móvil y escritorio: navegación, accesibilidad, rendimiento, tema claro/oscuro, formularios con teclado de iPhone y estado sin conexión.
 - [ ] Auditar persistencia y sincronización: aislamiento por usuario, RLS, conflictos entre dispositivos, borrados, errores de red, límites de volumen y ausencia de secretos en cliente/logs.
 - [ ] Verificar importaciones CSV/XLSX con ejemplos sintéticos representativos, signos, cargo/abono, transferencias, duplicados y filas ambiguas. No prometer compatibilidad universal sin muestras reales.
-- [ ] Comprobar que las copias cifradas programadas se generan y que al menos una se puede restaurar en un entorno aislado; documentar frecuencia y retención sin exponer claves ni datos.
+- [x] Comprobar que las copias cifradas programadas se generan y restaurar la copia más antigua en Supabase local aislado; frecuencia diaria documentada. Retención y restauración remota completa siguen pendientes.
 - [ ] Corregir los defectos hallados en PR pequeñas con pruebas centradas en cada fallo.
 - **Criterio de cierre:** informe breve con hallazgos y riesgos pendientes, flujos críticos comprobados, y errores prioritarios corregidos.
 
@@ -56,9 +56,11 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 ### Comprobación de copias e importación (26-09-2026)
 
 - El repositorio de copias `KH4IN/Brujula-Copias-de-seguridad-` sigue privado. Contiene cinco archivos `.tar.gz.brujula` cifrados; las ejecuciones programadas del 22 al 25 de septiembre terminaron en éxito. El workflow exige dos secretos, exporta roles/esquema/datos, cifra con AES-GCM y comprueba descifrado y contenido antes del commit. No se descargó ni descifró ninguna copia con datos reales.
-- **Restauración aún sin verificar:** comprobar que el archivo se descifra en el runner y contiene tres SQL no demuestra que se restaure correctamente en un proyecto nuevo. El entorno «Brújula pruebas» contiene solo datos ficticios y no se usará para restaurar producción. Los objetos binarios de Storage y la configuración externa de OAuth quedan fuera del archivo, según el procedimiento documentado.
+- **Restauración local verificada el 26-09-2026:** [ejecución correcta](https://github.com/KH4IN/Brujula-Copias-de-seguridad-/actions/runs/36238277491) de la copia más antigua (22-09) en un runner aislado: 5 tablas públicas, 1 usuario y 20 políticas RLS. Se usaron los roles preexistentes de Supabase local, sin aplicar `roles.sql`; el archivo permanece en la copia. No se probó acceso de usuario en otro proyecto remoto ni se recuperaron objetos Storage u OAuth externo. El entorno «Brújula pruebas» sigue solo con datos ficticios.
 - El importador limita archivos a 8 MB y la vista previa a 5.000 filas, procesa CSV/XLSX en el navegador y los 32 tests locales existentes pasaron. Siguen pendientes pruebas manuales con más formatos reales y mediciones con ficheros grandes; no se declara compatibilidad universal.
 - La regla de acciones visibles en pantallas táctiles se publicó en `main` mediante [PR #26](https://github.com/KH4IN/Brujula/pull/26); el despliegue quedó `READY`. No se comprobó visualmente en una tableta real.
+
+- El fundador se encargará de la comprobación visual en iPhone y de la importación CSV sin red, con datos ficticios; resultados pendientes de su informe.
 
 ## Fase 3 · Diseñar una experiencia más visual
 
