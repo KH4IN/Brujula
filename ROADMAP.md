@@ -66,7 +66,8 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 - El código de `main` usa Supabase Auth para contraseña, enlace de correo y Google como proveedor OAuth; no usa Firebase Auth. El fundador comunicó un acceso satisfactorio con una segunda cuenta, sin precisar el entorno; la base «Brújula pruebas» tenía un solo usuario al comprobarla el 26-09. La documentación de inicio se corrigió. Quedan recuperación real y vinculación de datos de invitado por comprobar.
 - En la base aislada se ejecutó una transacción con rol `authenticated` y una identidad simulada ajena: SELECT devolvió cero; UPDATE y DELETE no afectaron filas; INSERT con propietario de otra identidad fue rechazado por RLS. La transacción se revirtió y los recuentos siguieron en 1 usuario y 1 movimiento. Falta una prueba entre dos cuentas reales y de conflictos entre dispositivos.
-- Priorizar la auditoría de persistencia y conflictos entre sesiones antes de rediseñar la navegación.
+- [PR #35](https://github.com/KH4IN/Brujula/pull/35) se probó en `staging`; [PR #36](https://github.com/KH4IN/Brujula/pull/36) publicó la corrección en `main` (Vercel READY). La cuenta se sincroniza antes de incorporar datos de invitado; si hay saldos o registros incompatibles, se conservan ambos espacios y aparece un aviso. 36 tests y build correctos. Queda pendiente una interfaz para conciliar esos conflictos sin exportación manual.
+- Continuar con conflictos entre dispositivos y una prueba real entre dos cuentas, sin mover datos de producción al proyecto de pruebas.
 
 ## Fase 3 · Diseñar una experiencia más visual
 
