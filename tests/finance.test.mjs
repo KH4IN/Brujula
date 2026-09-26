@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { accountBalances, cashOpeningForBalance, marketValue } from './.finance.bundle.mjs';
+import { accountBalances, cashOpeningForBalance, marketValue, monthSummary } from './.finance.bundle.mjs';
 
 test('dos bancos, efectivo y traspasos no duplican el patrimonio', () => {
   const settings=[{account:'bank',opening_balance:100},{account:'bank:df02134b-53c9-42ec-9437-c078965d0172',opening_balance:2350},{account:'cash',opening_balance:30}];
@@ -33,4 +33,22 @@ test('el importe directo de efectivo conserva los movimientos y los céntimos',(
   assert.ok(Math.abs(after.cash-50.2)<1e-9);
   assert.equal(cashOpeningForBalance(100,87.65,-1),null);
   assert.equal(cashOpeningForBalance(100,87.65,3.999),null);
+});
+
+
+test('el resumen mensual separa ingresos y gastos, excluye traspasos y agrupa categorías',()=>{
+  const rows=[
+    {occurred_on:'2026-09-01',kind:'income',amount:1000,category:'Otros'},
+    {occurred_on:'2026-09-02',kind:'expense',amount:30,category:'Alimentación'},
+    {occurred_on:'2026-09-03',kind:'expense',amount:20,category:'Alimentación'},
+    {occurred_on:'2026-09-04',kind:'transfer',amount:200,category:'Traspaso'},
+    {occurred_on:'2026-08-01',kind:'expense',amount:999,category:'Otros'}
+  ];
+  const summary=monthSummary(rows,[{month:'2026-09',category:'Alimentación',amount:100},{month:'2026-08',category:'Otros',amount:500}],'2026-09');
+  assert.equal(summary.monthly.length,4);
+  assert.equal(summary.income,1000);
+  assert.equal(summary.expenses,50);
+  assert.equal(summary.balance,950);
+  assert.deepEqual(summary.groups,[{category:'Alimentación',total:50}]);
+  assert.equal(summary.totalBudget,100);
 });
