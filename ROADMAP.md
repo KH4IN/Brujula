@@ -71,11 +71,11 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 ## Fase 3 · Diseñar una experiencia más visual
 
-- [x] Dibujar el mapa de navegación y preparar una portada breve en `staging`: resumen con patrimonio, cifras del mes, cuatro accesos y tres movimientos recientes; Análisis reúne gráficos y desgloses. Diseño documentado en `DESIGN_PHASE3.md` de `staging`. Producción espera revisión del fundador.
+- [x] Dibujar y publicar una portada breve: patrimonio, cifras del mes, cuatro accesos y tres movimientos recientes; Análisis reúne gráficos y desgloses. Diseño en `DESIGN_PHASE3.md` y producción aprobada por el fundador.
 - [ ] Diseñar pantallas y estados móviles primero (vacío, carga, error, sin conexión y datos abundantes). Usar Figma o una herramienta similar si acelera la revisión; conservar el diseño y sus decisiones en el repositorio.
 - [ ] Definir componentes visuales reutilizables para tarjetas, gráficos, explicaciones al pulsar y navegación, respetando los modos claro y oscuro (gris/negro, morado y dorado en oscuro).
-- [ ] Revisar el diseño con el fundador antes de sustituir la navegación principal.
-- [ ] Implementar por pantallas y comprobar que cada gráfico conduce a un desglose entendible y accesible.
+- [x] Revisar el diseño con el fundador antes de sustituir la portada principal: informó el 26-09 que iPhone y Análisis se ven bien; [PR #40](https://github.com/KH4IN/Brujula/pull/40) publicada en producción y Vercel READY.
+- [x] Separar portada breve y Análisis; el círculo filtra ingresos/gastos, las categorías abren su desglose y las barras llevan al día en Movimientos. Tests/build y revisión visual del fundador; quedan auditorías de accesibilidad completas.
 - **Criterio de cierre:** panel principal corto, rutas claras y detalles financieros comprensibles sin perder funciones actuales.
 
 ### Primera vista previa de la fase 3 (26-09-2026)
@@ -86,9 +86,15 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 - [ ] Separar con interfaces claras cálculos financieros, lectura de archivos, sincronización, autenticación y presentación; conservar formatos de datos y claves locales existentes.
 - [ ] Medir carga inicial y sincronización con cuentas de prueba pequeñas y grandes. Priorizar consultas paginadas/incrementales y los cuellos de botella medidos.
-- [ ] Comparar una evolución de Vite con una migración a Next.js según necesidades concretas: rutas, páginas públicas, funciones de servidor, despliegue y coste de mantenimiento. **Next.js no es requisito para usar Anime.js ni para animar React.**
+- [x] Comparar Vite y Next.js según rutas, páginas públicas, servidor, PWA local y coste de migración. Decisión provisional: conservar Vite mientras se miden cuellos de botella y se separan módulos; criterios de revisión en `ARCHITECTURE.md`. Next.js no es requisito para usar Anime.js.
 - [ ] Si se aprueba Next.js, migrar por etapas en pruebas. Conservar dominio, datos, PWA y sesiones; verificar OAuth, CSV, efectivo, presupuestos, sincronización y modo sin conexión antes de publicar.
 - **Criterio de cierre:** arquitectura modular documentada y decisión de framework basada en pruebas, con migración completada solo si aporta valor demostrado.
+
+### Primera iteración de la fase 4 (26-09-2026)
+
+- [PR #41](https://github.com/KH4IN/Brujula/pull/41) en pruebas y [PR #42](https://github.com/KH4IN/Brujula/pull/42) en producción: cola local para 5.000 filas sintéticas ~306 → ~18 ms en una corrida de Node. 37 pruebas y build; Vercel READY. No es tiempo de importación total ni una medición móvil.
+- [PR #43](https://github.com/KH4IN/Brujula/pull/43) en pruebas y [PR #44](https://github.com/KH4IN/Brujula/pull/44) en producción: resumen mensual puro en `finance.ts`, calculado una vez por cambio de movimientos, presupuestos o mes. 38 pruebas y build; Vercel READY. No cambió almacenamiento ni backend.
+- El JS principal local ronda 429 kB (~128 kB gzip); faltan arranque en teléfono y tiempos reales de sincronización. La cola sigue enviando cada registro por separado y leyendo todas las tablas del usuario. Comparación de framework y siguientes mediciones documentadas en `ARCHITECTURE.md`.
 
 ## Fase 5 · Tutorial y ayuda dentro de la app
 
