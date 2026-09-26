@@ -12,6 +12,10 @@ test('combina progreso local y de cuenta sin repetir puntos vistos',()=>{
   storage();localStorage.setItem('brujula.guide.v2.usuario',JSON.stringify({index:2,visited:['home','paths']}));
   assert.deepEqual(initialGuideProgress('usuario',{index:3,visited:['accounts']}),{index:3,visited:['home','paths','accounts'],completed:false});
 });
+test('reanuda el punto elegido aunque se haya saltado una sección',()=>{
+  storage();localStorage.setItem('brujula.guide.v2.usuario',JSON.stringify({index:6,visited:['home']}));
+  assert.equal(initialGuideProgress('usuario',null).index,6);
+});
 test('descarta progreso inválido y preserva solo identificadores conocidos',()=>{
   storage();assert.equal(validGuideProgress({index:999,visited:[]}),null);
   assert.deepEqual(validGuideProgress({index:0,visited:['home','home','desconocido']}),{index:0,visited:['home'],completed:false});
