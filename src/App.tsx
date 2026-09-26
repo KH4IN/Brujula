@@ -11,6 +11,7 @@ import { colorFor, symbolFor } from './features/presentation';
 import { BudgetLine, Stat } from './features/overview';
 import { Empty, TransactionList } from './features/TransactionList';
 import { Guide, validGuideProgress, type GuideProgress, type GuideSection } from './features/Guide';
+import { MotionExperience, type MotionLevel } from './features/MotionExperience';
 
 type Tab = 'dashboard'|'analysis'|'transactions'|'budgets'|'accounts'|'goals'|'investments';
 const emptyForm = () => ({amount:'',kind:'expense' as Transaction['kind'],category:'Alimentación' as Category,description:'',occurred_on:localDate(),account:'bank' as Transaction['account'],to_account:'cash' as Transaction['to_account']});
@@ -46,7 +47,7 @@ export default function App(){
   const [filter,setFilter]=useState<'all'|'income'|'expense'|'transfer'>('all');
   const [mobileOpen,setMobileOpen]=useState(false);
   const [dark,setDark]=useState(()=>document.documentElement.dataset.theme==='dark');
-  const [motion,setMotion]=useState<'low'|'medium'|'high'>(()=>{try{const value=localStorage.getItem('brujula.motion');return value==='low'||value==='high'?value:'medium'}catch{return 'medium'}});
+  const [motion,setMotion]=useState<MotionLevel>(()=>{try{const value=localStorage.getItem('brujula.motion');return value==='low'||value==='high'?value:'medium'}catch{return 'medium'}});
   const themeScope=useRef<string|null>(null);
   const scope=user?.id??'guest';
   const guideSync=useRef<Promise<unknown>>(Promise.resolve());
@@ -203,6 +204,7 @@ export default function App(){
 
   if(loadedScope!==scope)return <div className="app" role="status">Cargando tu espacio…</div>;
   return <div className="app">
+    <MotionExperience level={motion} section={tab}/>
     {mobileOpen&&<div className="mobile-scrim" onClick={()=>setMobileOpen(false)}/>}
     <aside className={`sidebar ${mobileOpen?'sidebar-open':''}`}>
       <div className="brand"><div className="brand-symbol">✳</div><div className="brand-name">brújula<span>.</span><small>FINANZAS PERSONALES</small></div></div>
