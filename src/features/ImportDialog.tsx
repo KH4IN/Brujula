@@ -12,7 +12,11 @@ export function ImportDialog({existing,accounts,onConfirm,onClose}:{existing:Tra
     try{const result=await parseFile(nextFile,existing,nextAccount,manual?{sheet,header,columns,signMode}:{});
       setPreview(result);setSelected(new Set(result.rows.filter(r=>r.selected).map(r=>r.id)));setCategoryEdits({});
       if(!manual){const first=result.sheets.find(s=>s.name===result.rows[0]?.sheet)??result.sheets[0];setSheet(first?.name??'');setHeader(first?.header??0);setColumns(first?.suggested??{});setSignMode('signed')}
-    }catch(reason){setPreview(null);setError(reason instanceof Error?reason.message:'No se pudo leer el archivo')}finally{setLoading(false)}
+    }catch(reason){
+      setPreview(null);
+      const message=reason instanceof Error?reason.message:'No se pudo leer el archivo';
+      setError(/dynamically imported module|failed to fetch|loading chunk|importing a module script/i.test(message)?'No se pudo cargar el lector de archivos. Si hay conexión, recarga Brújula y vuelve a elegir el CSV.':message);
+    }finally{setLoading(false)}
   }
   const ready=preview?.rows.filter(r=>selected.has(r.id)&&r.valid&&!r.duplicate)??[];
   const invalid=preview?.rows.filter(r=>!r.valid)??[],duplicates=preview?.rows.filter(r=>r.duplicate)??[];
