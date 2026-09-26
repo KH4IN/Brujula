@@ -71,12 +71,16 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 ## Fase 3 · Diseñar una experiencia más visual
 
-- [ ] Dibujar el mapa de navegación y reducir la longitud de la página principal: resumen breve con accesos claros a gastos, ingresos, cuentas, presupuestos, objetivos e inversiones.
+- [x] Dibujar el mapa de navegación y preparar una portada breve en `staging`: resumen con patrimonio, cifras del mes, cuatro accesos y tres movimientos recientes; Análisis reúne gráficos y desgloses. Diseño documentado en `DESIGN_PHASE3.md` de `staging`. Producción espera revisión del fundador.
 - [ ] Diseñar pantallas y estados móviles primero (vacío, carga, error, sin conexión y datos abundantes). Usar Figma o una herramienta similar si acelera la revisión; conservar el diseño y sus decisiones en el repositorio.
 - [ ] Definir componentes visuales reutilizables para tarjetas, gráficos, explicaciones al pulsar y navegación, respetando los modos claro y oscuro (gris/negro, morado y dorado en oscuro).
 - [ ] Revisar el diseño con el fundador antes de sustituir la navegación principal.
 - [ ] Implementar por pantallas y comprobar que cada gráfico conduce a un desglose entendible y accesible.
 - **Criterio de cierre:** panel principal corto, rutas claras y detalles financieros comprensibles sin perder funciones actuales.
+
+### Primera vista previa de la fase 3 (26-09-2026)
+
+[PR #38](https://github.com/KH4IN/Brujula/pull/38) fusionada a `staging`: 36 pruebas y build correctos, despliegue Vercel READY en la [URL fija de pruebas](https://brujula-finanzas-git-staging-kh4ins-projects.vercel.app/). El panel principal se acorta y «Análisis» conserva el círculo de ingresos/gastos, el reparto por categorías, los presupuestos y el gráfico diario. Cada categoría o día abre su detalle. Estilos de accesos adaptados a móvil y ambos temas; transiciones cosméticas respetan movimiento reducido. Falta revisión visual del fundador en iPhone/escritorio y los estados vacíos antes de trasladar el diseño a `main`; no se modificaron datos ni esquema.
 
 ## Fase 4 · Modularidad y decisión sobre Next.js
 
