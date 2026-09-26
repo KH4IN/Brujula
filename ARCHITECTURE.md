@@ -50,7 +50,9 @@ Se hizo una medición local con datos **sintéticos**, Node y el mismo bundle de
 
 El build local de esa versión produjo un archivo JS principal de ~429 kB sin comprimir (~128 kB gzip) y CSS de ~42 kB (~9 kB gzip); el módulo diferido de PapaParse fue ~19 kB (~7 kB gzip). Estas cifras de artefactos no miden tiempo de arranque en un teléfono ni coste de sincronización. Faltan mediciones con cuentas ficticias pequeñas y grandes en dispositivo real y con red lenta.
 
-`synchronize` de `ledger.ts` aún envía cada cambio pendiente con una llamada y después lee las cinco tablas del usuario en páginas de 500. Por inspección de código, una importación de miles de filas puede generar miles de escrituras HTTP; **no** se midió ese tiempo ni se cambió su semántica. Próximo experimento: observar latencia y errores agregados con usuarios ficticios; después evaluar lotes con manejo explícito de duplicados y reintentos, sin comprometer RLS ni la cola local.
+Desde [PR #47](https://github.com/KH4IN/Brujula/pull/47), la cola confirma movimientos en grupos de 25: con 1.000 filas sintéticas y emisor sin red, el trabajo local bajó de 3.987 ms y 1.000 escrituras a 278 ms y 40 escrituras. [PR #50](https://github.com/KH4IN/Brujula/pull/50) envía hasta 25 movimientos consecutivos por upsert; en la prueba simulada, 500 movimientos pasaron de 500 peticiones previstas a 20. Si el lote devuelve 23505, se reintenta por separado para aislar duplicados. Los borrados y otras entidades conservan su orden. Una transacción SQL de dos movimientos ficticios bajo RLS en la base de pruebas se revirtió y no dejó filas. Estas cifras no son latencia real del cliente HTTP.
+
+`synchronize` sigue leyendo las cinco tablas completas por páginas de 500 tras cada envío. No hay un cursor de cambios ni una forma de propagar borrados desde otros dispositivos sin volver a leer; una lectura incremental exige diseñar esa semántica antes de alterar tablas. Próximo experimento: medir duración y tamaño de esas lecturas con usuarios ficticios y red representativa, y probar conflictos entre dos dispositivos. No registrar importes ni descripciones en telemetría.
 
 ## Decisión provisional de framework
 
