@@ -162,28 +162,24 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 @media(max-width:650px){.dashboard-paths{grid-template-columns:1fr;gap:9px}.dashboard-path{min-height:84px;padding:13px 15px}.dashboard-path>.path-icon{width:40px;height:40px}.dashboard-path .path-copy strong{font-size:15px}}
 @media(prefers-reduced-motion:no-preference){.dashboard-path{transition:transform .18s ease,box-shadow .18s ease,background-color .18s ease}}
 
-/* Guía opcional: una idea por paso, sin obligar a crear datos. */
-.guide-backdrop{z-index:120}
-.guide-modal{width:min(520px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow-y:auto}
-.guide-top,.guide-actions,.guide-next{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.guide-progress{display:flex;gap:6px;margin:18px 0 26px}
-.guide-progress span{flex:1;height:5px;border-radius:10px;background:#e4e5e4}
-.guide-progress span.current{background:#7855a2}
-.guide-modal h2{font:800 clamp(21px,4vw,28px) 'Manrope',sans-serif;margin:0 0 12px}
-.guide-modal p{line-height:1.65;margin:0 0 18px}
-.guide-hint{padding:13px 15px;border-radius:12px;background:#f1eee8;color:#4f4658;font-size:13px;line-height:1.5}
-.guide-actions{margin-top:25px;flex-wrap:wrap}
-.guide-actions .subtle-action{display:inline-flex;align-items:center;gap:7px;min-height:44px}
-.guide-next .primary-button,.guide-next .secondary-button{min-height:44px}
-.guide-next .secondary-button:disabled{opacity:.4;cursor:default}
+/* Recorrido anclado a controles reales, con progreso y pausa. */
+.guide-shade{position:fixed;inset:0;z-index:100;background:#0c1427a8;pointer-events:none}
+.guide-highlight{position:relative;z-index:101;outline:3px solid #dcb979;outline-offset:5px;box-shadow:0 0 0 7px #7d5aa866;border-radius:12px}
+.guide-coach{position:fixed;z-index:102;width:350px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;padding:20px;border-radius:18px;border:1px solid #d9d0e3;background:#fff;color:#26382c;box-shadow:0 20px 60px #0f152450}
+.guide-top,.guide-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.guide-coach h2{font:800 21px 'Manrope',sans-serif;margin:16px 0 8px}
+.guide-coach h2:focus{outline:none}
+.guide-coach p{font-size:13px;line-height:1.55;margin:0 0 18px}
+.guide-progress{display:flex;gap:5px;margin-top:12px}
+.guide-progress button{height:7px;flex:1;min-width:8px;padding:0;border:0;border-radius:9px;background:#dbd9dc;cursor:pointer}
+.guide-progress button.visited{background:#8065a7}.guide-progress button.current{background:#bc9553;box-shadow:0 0 0 2px #d9ba77}
+.guide-actions .primary-button{display:flex;align-items:center;gap:8px;min-height:44px}
+.guide-actions .secondary-button{min-height:44px}.guide-actions button:disabled{opacity:.4}
 .guide-skip,.guide-help{border:0;background:none;text-decoration:underline;cursor:pointer}
-.guide-skip{margin-top:15px;color:#665c70;padding:7px 0}
-.guide-help{margin-top:6px;padding:6px 0;color:inherit;font-weight:700;text-align:left}
+.guide-skip{padding:10px 0 0;color:#665c70;font-size:12px}.guide-help{margin-top:6px;padding:6px 0;color:inherit;font-weight:700;text-align:left}
 .guide-top-button{color:#725499}
-:root[data-theme="dark"] .guide-progress span{background:#50495c}
-:root[data-theme="dark"] .guide-progress span.current{background:#dfbd74}
-:root[data-theme="dark"] .guide-modal h2{color:#f0edf7}
-:root[data-theme="dark"] .guide-modal p{color:#c8bdd2}
-:root[data-theme="dark"] .guide-hint{background:#392e48;color:#eddaaa}
+:root[data-theme="dark"] .guide-coach{background:#292533;border-color:#6f5b81;color:#f0edf7}
+:root[data-theme="dark"] .guide-coach h2{color:#f0edf7}
+:root[data-theme="dark"] .guide-coach p{color:#c8bdd2}
 :root[data-theme="dark"] .guide-skip,:root[data-theme="dark"] .guide-top-button{color:#dfbd74}
-@media(max-width:650px){.guide-actions{align-items:stretch;flex-direction:column}.guide-next{width:100%}.guide-next .primary-button{flex:1}}
+@media(max-width:750px){.guide-coach{left:12px!important;right:12px;bottom:12px;top:auto!important;width:auto;max-width:none;max-height:min(42dvh,360px);padding:16px}.guide-shade{background:#0c142760}.guide-highlight{outline-offset:2px}}
