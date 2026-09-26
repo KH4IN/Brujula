@@ -107,10 +107,10 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 - **Criterio de cierre:** una persona nueva puede registrar y entender sus primeros movimientos sin instrucciones externas.
 
 
-### Pruebas del fundador y primera guía (26-09-2026)
+### Pruebas del fundador y recorrido contextual (26-09-2026)
 
 - El fundador confirmó las cuatro pruebas manuales solicitadas: acceso con otra cuenta, importación en iPhone y sin red, importación del archivo sintético grande, y reimportación que identifica duplicados con sincronización casi instantánea. Son resultados comunicados por el fundador; no equivalen a una medida instrumental de latencia ni validan todos los formatos bancarios. El fallo de carga del módulo del importador se corrigió en staging (#52) y producción (#53), con 44 pruebas y build.
-- Primera guía opcional de seis pasos: se abre una vez por navegador, se omite sin crear datos y se repite desde el botón Ayuda. Cada paso puede llevar a la sección pertinente. 44 pruebas y build correctos; verificación manual en la vista de pruebas de avance, navegación y reapertura. Falta la prueba con una persona nueva y ampliar las explicaciones contextuales de saldos y gráficos.
+- El fundador rechazó la primera guía de seis pantallas porque no acompañaba dentro de la app ni guardaba lo visto. Se sustituye por un recorrido contextual de diez puntos que resalta elementos reales, navega entre secciones, permite pausa y conserva puntos vistos por cuenta en local y metadatos Auth. La guía anterior no es el diseño aprobado. Quedan comprobación visual del reemplazo y prueba con una persona nueva.
 - La separación de módulos, mediciones reales de carga y decisión final sobre Next.js de fase 4 siguen abiertas. La guía no depende de migrar el framework.
 
 ## Fase 6 · Movimiento visual adaptable
