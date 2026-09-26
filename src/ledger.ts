@@ -152,9 +152,28 @@ async function push(userId:string,item:Pending){
   }
   if(result.error)throw result.error;
 }
+// Remote writes are idempotent. Checkpoint confirmed tokens in groups to avoid
+// reserializing the entire local ledger after every individual request.
+export async function flushPending(userId:string,send:(item:Pending)=>Promise<void>){
+  const confirmed=new Set<string>();
+  const checkpoint=()=>{
+    if(!confirmed.size)return;
+    const current=readStore(userId);
+    current.pending=current.pending.filter(item=>!confirmed.has(item.token));
+    writeStore(userId,current);
+    confirmed.clear();
+  };
+  try{
+    for(const item of readStore(userId).pending){
+      await send(item);
+      confirmed.add(item.token);
+      if(confirmed.size===25)checkpoint();
+    }
+  }finally{checkpoint()}
+}
 export async function synchronize(userId:string):Promise<LocalStore>{
   if(!supabase||!navigator.onLine)return readStore(userId);
-  for(const item of readStore(userId).pending){await push(userId,item);const current=readStore(userId);current.pending=current.pending.filter(p=>p.token!==item.token);writeStore(userId,current)}
+  await flushPending(userId,item=>push(userId,item));
   const [transactions,budgets,goals,investments,settings]=await Promise.all([
     fetchAll<Transaction>('transactions',userId),fetchAll<Budget>('budgets',userId),fetchAll<Goal>('goals',userId),fetchAll<Investment>('investments',userId),fetchAll<AccountSetting>('account_settings',userId)
   ]);
