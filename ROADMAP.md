@@ -102,7 +102,7 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 - [x] Crear un recorrido interactivo opcional para primera visita: cuenta/efectivo, primer movimiento, importación con revisión, gráficos, presupuestos y objetivos. Guía de seis pasos en PR #54 (pruebas) y PR #55 (producción).
 - [x] Permitir omitirlo, repetirlo desde Ayuda y completarlo sin datos financieros reales.
-- [ ] Añadir explicaciones cortas junto a gráficos y casos delicados (saldo inicial, traspasos, inversiones y duplicados).
+- [x] Añadir explicaciones cortas junto a gráficos y casos delicados (saldo inicial, traspasos, inversiones y duplicados). El saldo, inversiones y gráficos ya tenían textos junto a los controles; PR #56 incorpora traspasos y duplicados.
 - [ ] Probarlo con alguien del equipo que no conozca la interfaz.
 - **Criterio de cierre:** una persona nueva puede registrar y entender sus primeros movimientos sin instrucciones externas.
 
