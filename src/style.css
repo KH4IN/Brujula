@@ -168,6 +168,7 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 .guide-coach{position:fixed;z-index:102;width:350px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;padding:20px;border-radius:18px;border:1px solid #d9d0e3;background:#fff;color:#26382c;box-shadow:0 20px 60px #0f152450}
 .guide-top,.guide-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .guide-coach h2{font:800 21px 'Manrope',sans-serif;margin:16px 0 8px}
+.guide-coach h2:focus{outline:none}
 .guide-coach p{font-size:13px;line-height:1.55;margin:0 0 18px}
 .guide-progress{display:flex;gap:5px;margin-top:12px}
 .guide-progress button{height:7px;flex:1;min-width:8px;padding:0;border:0;border-radius:9px;background:#dbd9dc;cursor:pointer}
