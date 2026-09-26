@@ -27,7 +27,9 @@ export function initialGuideProgress(scope:string,remote:unknown):GuideProgress{
   const cloud=validGuideProgress(remote);
   if(!local&&!cloud)return {index:0,visited:[]};
   const visited=[...new Set([...(local?.visited??[]),...(cloud?.visited??[])])];
-  const index=GUIDE_STEPS.findIndex(step=>!visited.includes(step.id));
+  const next=GUIDE_STEPS.findIndex(step=>!visited.includes(step.id));
+  const saved=local?.index??cloud?.index??0;
+  const index=visited.includes(GUIDE_STEPS[saved].id)?next:saved;
   return {index:index<0?0:index,visited,completed:visited.length===GUIDE_STEPS.length};
 }
 
