@@ -64,7 +64,9 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 ### Siguiente bloque de la fase 2 (26-09-2026)
 
-- Priorizar la auditoría de autenticación, persistencia y conflictos entre sesiones. Las pruebas del fundador cierran los tres casos observados, pero quedan escenarios de aislamiento, recuperación y sincronización por verificar antes de rediseñar la navegación.
+- El código de `main` usa Supabase Auth para contraseña, enlace de correo y Google como proveedor OAuth; no usa Firebase Auth. El fundador comunicó un acceso satisfactorio con una segunda cuenta, sin precisar el entorno; la base «Brújula pruebas» tenía un solo usuario al comprobarla el 26-09. La documentación de inicio se corrigió. Quedan recuperación real y vinculación de datos de invitado por comprobar.
+- En la base aislada se ejecutó una transacción con rol `authenticated` y una identidad simulada ajena: SELECT devolvió cero; UPDATE y DELETE no afectaron filas; INSERT con propietario de otra identidad fue rechazado por RLS. La transacción se revirtió y los recuentos siguieron en 1 usuario y 1 movimiento. Falta una prueba entre dos cuentas reales y de conflictos entre dispositivos.
+- Priorizar la auditoría de persistencia y conflictos entre sesiones antes de rediseñar la navegación.
 
 ## Fase 3 · Diseñar una experiencia más visual
 
