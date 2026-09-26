@@ -1,6 +1,6 @@
 # Roadmap de Brújula
 
-Documento vivo para ordenar el trabajo y registrar avances. Última revisión: 26 de septiembre de 2026.
+Documento vivo para ordenar el trabajo y registrar avances. Última revisión: 27 de septiembre de 2026.
 
 ## Cómo se usa
 
@@ -110,7 +110,7 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 ### Pruebas del fundador y recorrido contextual (26-09-2026)
 
 - El fundador confirmó las cuatro pruebas manuales solicitadas: acceso con otra cuenta, importación en iPhone y sin red, importación del archivo sintético grande, y reimportación que identifica duplicados con sincronización casi instantánea. Son resultados comunicados por el fundador; no equivalen a una medida instrumental de latencia ni validan todos los formatos bancarios. El fallo de carga del módulo del importador se corrigió en staging (#52) y producción (#53), con 44 pruebas y build.
-- El fundador rechazó la primera guía de seis pantallas porque no acompañaba dentro de la app ni guardaba lo visto. Se sustituye por un recorrido contextual de diez puntos que resalta elementos reales, navega entre secciones, permite pausa y conserva puntos vistos por cuenta en local y metadatos Auth. La guía anterior no es el diseño aprobado. Comprobación visual del reemplazo en staging: patrimonio resaltado, avance a cuentas, pausa y reanudación en 3/10 tras recarga; 48 pruebas y build correctos. Queda prueba con una persona nueva y comprobación en producción.
+- El fundador rechazó la primera guía de seis pantallas porque no acompañaba dentro de la app ni guardaba lo visto. Se sustituye por un recorrido contextual de diez puntos que resalta elementos reales, navega entre secciones, permite pausa y conserva puntos vistos por cuenta en local y metadatos Auth. La guía anterior no es el diseño aprobado. Comprobación visual del reemplazo en staging: patrimonio resaltado, avance a cuentas, pausa y reanudación en 3/10 tras recarga; 48 pruebas y build correctos. Queda prueba con una persona nueva y comprobación en producción. El 27-09, `main` sigue en `1481270` con el recorrido contextual incluido; Vercel sirve en producción `c44bf0a` y marca los commits posteriores con `build-rate-limit`. Esta PR documenta el estado y solicita un nuevo despliegue al volver a permitir compilaciones. No altera la configuración ni los datos de `staging` o producción.
 - La separación de módulos, mediciones reales de carga y decisión final sobre Next.js de fase 4 siguen abiertas. La guía no depende de migrar el framework.
 
 ## Fase 6 · Movimiento visual adaptable
