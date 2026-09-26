@@ -4,7 +4,7 @@ import type { User } from '@supabase/supabase-js';
 import { CATEGORIES, accountName, configured, localDate, money, monthLabel, monthOf, supabase, type AccountSetting, type Budget, type Category, type Goal, type Investment, type Transaction } from './data';
 import { claimGuest, emptyStore, readStore, recoverLegacyGuest, removeBudget as removeLocalBudget, removeTransaction as removeLocalTransaction, saveBudget as saveLocalBudget, saveTransaction as saveLocalTransaction, saveGoal, removeGoal, saveInvestment, removeInvestment, saveAccount, mergeUnusedBank, importTransactions, synchronize, type LocalStore } from './ledger';
 import { AccountsPanel, DailyChart, GoalsPanel, ImportDialog, InvestmentsPanel } from './features';
-import { accountBalances, marketValue } from './finance';
+import { accountBalances, marketValue, monthSummary } from './finance';
 import { Auth } from './features/Auth';
 import { merchantFor } from './categorize';
 import { colorFor, symbolFor } from './features/presentation';
@@ -137,13 +137,8 @@ export default function App(){
     return ()=>{window.removeEventListener('online',online);window.removeEventListener('offline',offline);document.removeEventListener('visibilitychange',visible)};
   },[user,syncNow]);
 
-  const monthly=useMemo(()=>items.filter(x=>x.occurred_on.startsWith(month)),[items,month]);
-  const income=monthly.filter(x=>x.kind==='income').reduce((s,x)=>s+Number(x.amount),0);
-  const expenses=monthly.filter(x=>x.kind==='expense').reduce((s,x)=>s+Number(x.amount),0);
-  const balance=income-expenses;
+  const {monthly,income,expenses,balance,groups,totalBudget}=useMemo(()=>monthSummary(items,budgets,month),[items,budgets,month]);
   const categories=[...new Set([...CATEGORIES,...items.map(t=>t.category),...budgets.map(b=>b.category)])];
-  const groups=[...new Set(monthly.filter(x=>x.kind==='expense').map(x=>x.category))].map(category=>({category,total:monthly.filter(x=>x.kind==='expense'&&x.category===category).reduce((s,x)=>s+Number(x.amount),0)})).sort((a,b)=>b.total-a.total);
-  const totalBudget=budgets.filter(b=>b.month===month).reduce((s,b)=>s+Number(b.amount),0);
   const merchants=[...new Set(monthly.map(x=>merchantFor(x.description)).filter((v):v is string=>Boolean(v)))].sort((a,b)=>a.localeCompare(b,'es'));
   const filtered=monthly.filter(x=>(filter==='all'||x.kind===filter)&&(merchantFilter==='all'||merchantFor(x.description)===merchantFilter)&&`${x.description} ${x.category} ${x.occurred_on}`.toLocaleLowerCase('es').includes(search.toLocaleLowerCase('es'))).sort((a,b)=>b.occurred_on.localeCompare(a.occurred_on));
   const spentFor=(category:Category)=>groups.find(g=>g.category===category)?.total??0;
