@@ -110,3 +110,11 @@ test('no mezcla datos de invitado con una cuenta que ya tiene movimientos en el 
   assert.equal(readStore('usuario-uno').transactions.length,1);
   assert.equal(readStore('guest').account_settings.find(a=>a.account==='bank').opening_balance,100);
 });
+
+
+test('un recuento de efectivo de invitado se conserva al unirse a cuenta vacía',()=>{
+  storage();
+  saveAccount('guest',{account:'cash',kind:'cash',opening_balance:0,name:'Efectivo',cash_counts:{'20':2}});
+  assert.equal(claimGuest('usuario-uno'),1);
+  assert.deepEqual(readStore('usuario-uno').account_settings.find(a=>a.account==='cash').cash_counts,{'20':2});
+});
