@@ -161,3 +161,29 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 :root[data-theme="dark"] .dashboard-path .path-copy span{color:#c3b9ce}
 @media(max-width:650px){.dashboard-paths{grid-template-columns:1fr;gap:9px}.dashboard-path{min-height:84px;padding:13px 15px}.dashboard-path>.path-icon{width:40px;height:40px}.dashboard-path .path-copy strong{font-size:15px}}
 @media(prefers-reduced-motion:no-preference){.dashboard-path{transition:transform .18s ease,box-shadow .18s ease,background-color .18s ease}}
+
+/* Guía opcional: una idea por paso, sin obligar a crear datos. */
+.guide-backdrop{z-index:120}
+.guide-modal{width:min(520px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow-y:auto}
+.guide-top,.guide-actions,.guide-next{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.guide-progress{display:flex;gap:6px;margin:18px 0 26px}
+.guide-progress span{flex:1;height:5px;border-radius:10px;background:#e4e5e4}
+.guide-progress span.current{background:#7855a2}
+.guide-modal h2{font:800 clamp(21px,4vw,28px) 'Manrope',sans-serif;margin:0 0 12px}
+.guide-modal p{line-height:1.65;margin:0 0 18px}
+.guide-hint{padding:13px 15px;border-radius:12px;background:#f1eee8;color:#4f4658;font-size:13px;line-height:1.5}
+.guide-actions{margin-top:25px;flex-wrap:wrap}
+.guide-actions .subtle-action{display:inline-flex;align-items:center;gap:7px;min-height:44px}
+.guide-next .primary-button,.guide-next .secondary-button{min-height:44px}
+.guide-next .secondary-button:disabled{opacity:.4;cursor:default}
+.guide-skip,.guide-help{border:0;background:none;text-decoration:underline;cursor:pointer}
+.guide-skip{margin-top:15px;color:#665c70;padding:7px 0}
+.guide-help{margin-top:6px;padding:6px 0;color:inherit;font-weight:700;text-align:left}
+.guide-top-button{color:#725499}
+:root[data-theme="dark"] .guide-progress span{background:#50495c}
+:root[data-theme="dark"] .guide-progress span.current{background:#dfbd74}
+:root[data-theme="dark"] .guide-modal h2{color:#f0edf7}
+:root[data-theme="dark"] .guide-modal p{color:#c8bdd2}
+:root[data-theme="dark"] .guide-hint{background:#392e48;color:#eddaaa}
+:root[data-theme="dark"] .guide-skip,:root[data-theme="dark"] .guide-top-button{color:#dfbd74}
+@media(max-width:650px){.guide-actions{align-items:stretch;flex-direction:column}.guide-next{width:100%}.guide-next .primary-button{flex:1}}
