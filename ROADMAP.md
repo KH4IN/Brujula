@@ -86,9 +86,15 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 - [ ] Separar con interfaces claras cálculos financieros, lectura de archivos, sincronización, autenticación y presentación; conservar formatos de datos y claves locales existentes.
 - [ ] Medir carga inicial y sincronización con cuentas de prueba pequeñas y grandes. Priorizar consultas paginadas/incrementales y los cuellos de botella medidos.
-- [ ] Comparar una evolución de Vite con una migración a Next.js según necesidades concretas: rutas, páginas públicas, funciones de servidor, despliegue y coste de mantenimiento. **Next.js no es requisito para usar Anime.js ni para animar React.**
+- [x] Comparar Vite y Next.js según rutas, páginas públicas, servidor, PWA local y coste de migración. Decisión provisional: conservar Vite mientras se miden cuellos de botella y se separan módulos; criterios de revisión en `ARCHITECTURE.md`. Next.js no es requisito para usar Anime.js.
 - [ ] Si se aprueba Next.js, migrar por etapas en pruebas. Conservar dominio, datos, PWA y sesiones; verificar OAuth, CSV, efectivo, presupuestos, sincronización y modo sin conexión antes de publicar.
 - **Criterio de cierre:** arquitectura modular documentada y decisión de framework basada en pruebas, con migración completada solo si aporta valor demostrado.
+
+### Primera iteración de la fase 4 (26-09-2026)
+
+- [PR #41](https://github.com/KH4IN/Brujula/pull/41) en pruebas y [PR #42](https://github.com/KH4IN/Brujula/pull/42) en producción: cola local para 5.000 filas sintéticas ~306 → ~18 ms en una corrida de Node. 37 pruebas y build; Vercel READY. No es tiempo de importación total ni una medición móvil.
+- [PR #43](https://github.com/KH4IN/Brujula/pull/43) en pruebas y [PR #44](https://github.com/KH4IN/Brujula/pull/44) en producción: resumen mensual puro en `finance.ts`, calculado una vez por cambio de movimientos, presupuestos o mes. 38 pruebas y build; Vercel READY. No cambió almacenamiento ni backend.
+- El JS principal local ronda 429 kB (~128 kB gzip); faltan arranque en teléfono y tiempos reales de sincronización. La cola sigue enviando cada registro por separado y leyendo todas las tablas del usuario. Comparación de framework y siguientes mediciones documentadas en `ARCHITECTURE.md`.
 
 ## Fase 5 · Tutorial y ayuda dentro de la app
 
