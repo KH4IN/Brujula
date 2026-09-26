@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {claimGuest, importTransactions, mergeUnusedBank, readStore, recoverLegacyGuest, saveAccount, saveBudget, saveTransaction, writeStore} from './.ledger.bundle.mjs';
+import {claimGuest, flushPending, importTransactions, mergeUnusedBank, readStore, recoverLegacyGuest, saveAccount, saveBudget, saveTransaction, writeStore} from './.ledger.bundle.mjs';
 
 function storage(){
   const values=new Map();
@@ -129,4 +129,21 @@ test('la importación masiva conserva otras operaciones pendientes y sustituye l
   assert.equal(store.pending.length,2);
   assert.equal(store.pending.find(p=>p.entity==='transactions').record.amount,13);
   assert.equal(store.pending.find(p=>p.entity==='budgets').record.amount,100);
+});
+
+test('la cola guarda el avance antes de propagar un fallo y conserva nuevos cambios locales',async()=>{
+  storage();
+  const original=Array.from({length:28},(_,i)=>({...transaction,id:`movimiento-${i}`,amount:i+1}));
+  importTransactions('usuario-uno',original);
+  let sent=0;
+  await assert.rejects(flushPending('usuario-uno',async()=>{
+    if(sent===27)throw new Error('Sin conexión');
+    sent++;
+    if(sent===2)saveTransaction('usuario-uno',{...transaction,id:'nuevo-durante-sync',amount:99});
+  }),/Sin conexión/);
+  const state=readStore('usuario-uno');
+  assert.equal(sent,27);
+  assert.deepEqual(state.pending.map(p=>p.id),['movimiento-27','nuevo-durante-sync']);
+  assert.equal(state.transactions.length,29);
+  assert.equal(state.transactions.find(t=>t.id==='nuevo-durante-sync').amount,99);
 });
