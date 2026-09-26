@@ -1,4 +1,4 @@
-import type { AccountSetting, AccountType, Goal, Investment, Transaction } from './data';
+import type { AccountSetting, AccountType, Budget, Goal, Investment, Transaction } from './data';
 
 export function accountBalances(transactions:Transaction[],settings:AccountSetting[],investments:Investment[]){
   const balances:Record<AccountType,number>={bank:0,cash:0};
@@ -17,4 +17,22 @@ export function cashOpeningForBalance(opening:number,current:number,target:numbe
   if(![opening,current,target].every(Number.isFinite)||target<0||target>9999999999.99||Math.abs(target*100-Math.round(target*100))>1e-5)return null;
   const cents=Math.round(opening*100)+Math.round(target*100)-Math.round(current*100);
   return Math.abs(cents)<=999999999999?cents/100:null;
+}
+
+/** Cifras de un mes; los traspasos cambian saldos, pero no ingresos ni gastos. */
+export function monthSummary(transactions:Transaction[],budgets:Budget[],month:string){
+  const monthly=transactions.filter(t=>t.occurred_on.startsWith(month));
+  let income=0,expenses=0;
+  const categories=new Map<string,number>();
+  for(const item of monthly){
+    const amount=Number(item.amount);
+    if(item.kind==='income')income+=amount;
+    if(item.kind==='expense'){
+      expenses+=amount;
+      categories.set(item.category,(categories.get(item.category)??0)+amount);
+    }
+  }
+  const groups=[...categories].map(([category,total])=>({category,total})).sort((a,b)=>b.total-a.total);
+  const totalBudget=budgets.filter(b=>b.month===month).reduce((sum,b)=>sum+Number(b.amount),0);
+  return {monthly,income,expenses,balance:income-expenses,groups,totalBudget};
 }
