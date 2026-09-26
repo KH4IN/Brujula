@@ -69,7 +69,26 @@ export function mergeUnusedBank(scope:string,sourceId:string,targetId:string){
   }
   writeStore(scope,state);return state;
 }
-export function importTransactions(scope:string,values:Transaction[]){const state=readStore(scope),seen=new Set(state.transactions.map(item=>item.import_key).filter(Boolean));for(const item of values){if(item.import_key&&seen.has(item.import_key))continue;state.transactions.push(item);if(item.import_key)seen.add(item.import_key);if(scope!=='guest')state.pending=queued(state.pending,{token:crypto.randomUUID(),entity:'transactions',method:'upsert',id:item.id,record:item})}writeStore(scope,state);return state}
+export function importTransactions(scope:string,values:Transaction[]){
+  const state=readStore(scope);
+  const seen=new Set(state.transactions.map(item=>item.import_key).filter(Boolean));
+  const additions=new Map<string,Pending>();
+  for(const item of values){
+    if(item.import_key&&seen.has(item.import_key))continue;
+    state.transactions.push(item);
+    if(item.import_key)seen.add(item.import_key);
+    if(scope!=='guest'){
+      additions.delete(item.id);
+      additions.set(item.id,{token:crypto.randomUUID(),entity:'transactions',method:'upsert',id:item.id,record:item});
+    }
+  }
+  if(additions.size)state.pending=[
+    ...state.pending.filter(entry=>entry.entity!=='transactions'||!additions.has(entry.id)),
+    ...additions.values()
+  ];
+  writeStore(scope,state);
+  return state;
+}
 
 export function claimGuest(userId:string){
   const guest=readStore('guest'),state=readStore(userId);
