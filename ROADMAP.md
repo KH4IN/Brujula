@@ -103,7 +103,7 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 - [x] Crear un recorrido interactivo opcional para primera visita: cuenta/efectivo, primer movimiento, importación con revisión, gráficos, presupuestos y objetivos. Guía de seis pasos en PR #54 (pruebas) y PR #55 (producción).
 - [x] Permitir omitirlo, repetirlo desde Ayuda y completarlo sin datos financieros reales.
 - [x] Añadir explicaciones cortas junto a gráficos y casos delicados (saldo inicial, traspasos, inversiones y duplicados). El saldo, inversiones y gráficos ya tenían textos junto a los controles; PR #56 incorpora traspasos y duplicados.
-- [ ] Probarlo con alguien del equipo que no conozca la interfaz.
+- [x] Probarlo con alguien del equipo que no conozca la interfaz. El fundador informó el 27-09-2026 que un amigo nuevo entendió el recorrido y pudo usar la web; no se recogieron tiempos ni pasos detallados.
 - **Criterio de cierre:** una persona nueva puede registrar y entender sus primeros movimientos sin instrucciones externas.
 
 
@@ -120,6 +120,10 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 - [ ] Ofrecer un ajuste manual y un valor inicial prudente; medir fluidez y consumo en teléfonos de distinta capacidad. No inferir potencia solo por el modelo o el navegador.
 - [ ] Comprobar que teclado, lectores de pantalla y contenido funcionan igual sin animaciones.
 - **Criterio de cierre:** los tres niveles son útiles, el modo reducido es accesible y la app sigue funcionando al desactivar JavaScript de animación.
+
+### Replanteamiento de la fase 6 (27-09-2026)
+
+El fundador rechazó la primera iteración de niveles, limitada a pequeñas transiciones. La fase permanece abierta. La nueva propuesta en PR #64 conserva el aspecto actual para Bajo, presenta una composición de paneles distinta en Medio y añade superficies y entradas escalonadas mediante Anime.js en Alto. Pendientes: revisión visual del fundador en pruebas, teclado/lector de pantalla, movimiento reducido y medición en teléfonos; no se declara la fase cerrada ni se lleva a producción antes de esa revisión.
 
 ## Fase 7 · Publicación gradual y crecimiento
 

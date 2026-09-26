@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './style.css';
+import './motion.css';
 
 window.addEventListener('vite:preloadError',event=>{
   // An open tab may still point to a chunk removed by a newer deployment.
