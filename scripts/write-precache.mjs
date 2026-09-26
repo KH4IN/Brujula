@@ -1,4 +1,5 @@
-import {readdir, writeFile} from 'node:fs/promises';
+import {readdir, readFile, writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {join, relative, sep} from 'node:path';
 
 const root = 'dist';
@@ -13,4 +14,9 @@ async function files(directory){
   return result;
 }
 const assets=(await files(join(root,'assets'))).sort();
-await writeFile(join(root,'asset-manifest.json'),JSON.stringify(assets));
+const manifest=JSON.stringify(assets);
+await writeFile(join(root,'asset-manifest.json'),manifest);
+const version=createHash('sha256').update(manifest).digest('hex').slice(0,12);
+const worker=await readFile(join(root,'sw.js'),'utf8');
+if(!worker.includes('__ASSET_MANIFEST_VERSION__'))throw Error('Falta el marcador de versión de la PWA.');
+await writeFile(join(root,'sw.js'),worker.replaceAll('__ASSET_MANIFEST_VERSION__',version));
