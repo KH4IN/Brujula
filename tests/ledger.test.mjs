@@ -147,3 +147,45 @@ test('la cola guarda el avance antes de propagar un fallo y conserva nuevos camb
   assert.equal(state.transactions.length,29);
   assert.equal(state.transactions.find(t=>t.id==='nuevo-durante-sync').amount,99);
 });
+
+test('quinientos movimientos se envían en veinte lotes y se confirman sin pérdidas',async()=>{
+  storage();
+  importTransactions('usuario-uno',Array.from({length:500},(_,i)=>({...transaction,id:`movimiento-${i}`,amount:i+1})));
+  let requests=0;
+  await flushPending('usuario-uno',async()=>{throw new Error('No debe enviar filas sueltas')},async items=>{
+    requests++;
+    assert.equal(items.length,25);
+  });
+  assert.equal(requests,20);
+  assert.equal(readStore('usuario-uno').pending.length,0);
+  assert.equal(readStore('usuario-uno').transactions.length,500);
+});
+
+test('un lote con referencia repetida reintenta filas por separado y respeta los borrados',async()=>{
+  storage();
+  importTransactions('usuario-uno',Array.from({length:3},(_,i)=>({...transaction,id:`movimiento-${i}`,import_key:`banco-${i}`})));
+  saveBudget('usuario-uno',{month:'2026-09',category:'Alimentación',amount:100});
+  const calls=[];
+  await flushPending('usuario-uno',async item=>{
+    calls.push(item.id);
+    if(item.id==='movimiento-1')return; // El servidor ya tenía esa referencia.
+  },async()=>{calls.push('lote');throw {code:'23505'}});
+  assert.deepEqual(calls,['lote','movimiento-0','movimiento-1','movimiento-2','2026-09:Alimentación']);
+  assert.equal(readStore('usuario-uno').pending.length,0);
+});
+
+test('un fallo de red en el segundo lote conserva el lote entero y los cambios concurrentes',async()=>{
+  storage();
+  importTransactions('usuario-uno',Array.from({length:52},(_,i)=>({...transaction,id:`movimiento-${i}`})));
+  let batches=0;
+  await assert.rejects(flushPending('usuario-uno',async()=>{},async()=>{
+    batches++;
+    if(batches===1)saveTransaction('usuario-uno',{...transaction,id:'nuevo-durante-sync'});
+    if(batches===2)throw new Error('Sin conexión');
+  }),/Sin conexión/);
+  assert.equal(batches,2);
+  const pending=readStore('usuario-uno').pending;
+  assert.equal(pending.length,28);
+  assert.equal(pending.filter(p=>p.id.startsWith('movimiento-')).length,27);
+  assert.equal(pending.some(p=>p.id==='nuevo-durante-sync'),true);
+});
