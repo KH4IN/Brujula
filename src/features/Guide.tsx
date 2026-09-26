@@ -1,28 +1,74 @@
-import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, ChevronLeft, X } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Check, ChevronLeft, X } from 'lucide-react';
 
-export type GuideSection='dashboard'|'accounts'|'transactions'|'analysis'|'budgets'|'goals';
-const steps:{section:GuideSection;title:string;description:string;hint:string}[]=[
-  {section:'dashboard',title:'Empieza por tu panorama',description:'Aquí ves lo esencial del mes. Las tarjetas te llevan al detalle sin llenar la portada de cifras.',hint:'Pulsa una tarjeta para explorar su sección.'},
-  {section:'accounts',title:'Dinos dónde está tu dinero',description:'Crea tus bancos y registra el efectivo. El recuento por billetes y monedas es opcional: también puedes poner el total directamente.',hint:'Puedes empezar con datos de prueba y cambiarlos después.'},
-  {section:'transactions',title:'Añade un ingreso o un gasto',description:'Registra la cantidad, fecha, cuenta y descripción. Un traspaso mueve dinero entre cuentas sin contarlo como gasto.',hint:'Prueba la pantalla sin guardar ningún movimiento.'},
-  {section:'transactions',title:'Importa con calma',description:'Descarga el CSV o Excel de tu banco y usa «Importar archivo». Brújula te enseña una vista previa para revisar fechas, importes, categorías y duplicados antes de confirmar.',hint:'El archivo se lee en tu dispositivo; solo se sincronizan los movimientos confirmados.'},
-  {section:'analysis',title:'Entiende tus gráficos',description:'Toca ingresos, gastos, una categoría o una barra diaria para abrir su desglose. Así puedes ver qué hay detrás de cada cifra.',hint:'Los gráficos se calculan con tus movimientos.'},
-  {section:'budgets',title:'Planifica sin complicarte',description:'Fija un límite mensual por categoría y comprueba cuánto llevas gastado. En Objetivos puedes seguir una meta de ahorro.',hint:'Puedes omitir estas opciones y volver cuando quieras.'},
+export type GuideSection='dashboard'|'accounts'|'transactions'|'analysis'|'budgets'|'goals'|'investments';
+export type GuideProgress={index:number;visited:string[];completed?:boolean};
+export const GUIDE_STEPS:{id:string;section:GuideSection;target:string;title:string;copy:string}[]=[
+  {id:'home',section:'dashboard',target:'home-summary',title:'Tu panorama',copy:'Aquí tienes patrimonio, ingresos y gastos del mes. Toca cualquier cifra para profundizar.'},
+  {id:'paths',section:'dashboard',target:'home-paths',title:'Explora sin perderte',copy:'Estas tarjetas abren las secciones de detalle. La portada se queda con lo esencial.'},
+  {id:'accounts',section:'accounts',target:'account-intro',title:'Tus bancos por separado',copy:'Añade cada banco con su saldo inicial. No necesitas conectar tu banco a Brújula.'},
+  {id:'cash',section:'accounts',target:'cash-account',title:'Tu efectivo',copy:'Introduce el total directamente. El desglose por billetes y monedas es opcional.'},
+  {id:'transactions',section:'transactions',target:'transaction-list',title:'Tus movimientos',copy:'Registra gastos, ingresos y traspasos; también puedes buscar y filtrar por comercio.'},
+  {id:'import',section:'transactions',target:'import-action',title:'Importa un extracto',copy:'Elige tu CSV o Excel, revisa la vista previa y confirma solo lo que quieras guardar. Los duplicados se señalan.'},
+  {id:'analysis',section:'analysis',target:'analysis-chart',title:'Gráficos que se pueden explorar',copy:'Toca ingresos, gastos, categorías o días para ver los movimientos detrás de cada cifra.'},
+  {id:'budgets',section:'budgets',target:'budget-intro',title:'Planifica el mes',copy:'Pon límites por categoría y consulta cuánto has gastado en cada una.'},
+  {id:'goals',section:'goals',target:'goal-intro',title:'Objetivos de ahorro',copy:'Marca una meta y actualiza tu progreso. El ahorro reservado no se suma dos veces al patrimonio.'},
+  {id:'investments',section:'investments',target:'investment-intro',title:'Inversiones manuales',copy:'Registra cripto o ETF y sus precios cuando quieras; Brújula no consulta mercados por ti.'},
 ];
+export function validGuideProgress(value:unknown):GuideProgress|null{
+  if(!value||typeof value!=='object')return null;
+  const p=value as Partial<GuideProgress>;
+  if(typeof p.index!=='number'||!Number.isInteger(p.index)||p.index<0||p.index>=GUIDE_STEPS.length||!Array.isArray(p.visited))return null;
+  return {index:p.index!,visited:[...new Set(p.visited.filter((id):id is string=>typeof id==='string'&&GUIDE_STEPS.some(s=>s.id===id)))],completed:p.completed===true};
+}
+export function initialGuideProgress(scope:string,remote:unknown):GuideProgress{
+  let local:GuideProgress|null=null;
+  try{local=validGuideProgress(JSON.parse(localStorage.getItem(`brujula.guide.v2.${scope}`)??'null'))}catch{/* Keep the tour available without storage. */}
+  const cloud=validGuideProgress(remote);
+  if(!local&&!cloud)return {index:0,visited:[]};
+  const visited=[...new Set([...(local?.visited??[]),...(cloud?.visited??[])])];
+  const next=GUIDE_STEPS.findIndex(step=>!visited.includes(step.id));
+  const saved=local?.index??cloud?.index??0;
+  const index=visited.includes(GUIDE_STEPS[saved].id)?next:saved;
+  return {index:index<0?0:index,visited,completed:visited.length===GUIDE_STEPS.length};
+}
 
-export function Guide({onClose,onNavigate}:{onClose:()=>void;onNavigate:(section:GuideSection)=>void}){
-  const [index,setIndex]=useState(0);
-  const closeRef=useRef<HTMLButtonElement>(null);
-  useEffect(()=>{closeRef.current?.focus();const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')onClose()};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[onClose]);
-  const step=steps[index];
-  return <div className="modal-backdrop guide-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)onClose()}}>
-    <div className="modal guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title" aria-describedby="guide-description">
-      <div className="guide-top"><span className="section-kicker">GUÍA DE BRÚJULA · {index+1} DE {steps.length}</span><button ref={closeRef} className="icon-button" aria-label="Cerrar guía" onClick={onClose}><X size={20}/></button></div>
-      <div className="guide-progress" aria-hidden="true">{steps.map((_,i)=><span key={i} className={i<=index?'current':''}/>)}</div>
-      <h2 id="guide-title">{step.title}</h2><p id="guide-description">{step.description}</p><div className="guide-hint">{step.hint}</div>
-      <div className="guide-actions"><button className="subtle-action" onClick={()=>onNavigate(step.section)}>Ver esta sección <ArrowRight size={15}/></button><div className="guide-next"><button className="secondary-button" onClick={()=>setIndex(i=>i-1)} disabled={index===0} aria-label="Paso anterior"><ChevronLeft size={18}/></button><button className="primary-button" onClick={()=>index===steps.length-1?onClose():setIndex(i=>i+1)}>{index===steps.length-1?'Terminar':'Siguiente'}</button></div></div>
-      <button className="guide-skip" onClick={onClose}>Omitir por ahora</button>
-    </div>
-  </div>
+export function Guide({scope,remote,tab,onNavigate,onSave,onClose}:{scope:string;remote:unknown;tab:GuideSection;onNavigate:(section:GuideSection)=>void;onSave:(progress:GuideProgress)=>void;onClose:()=>void}){
+  const [progress,setProgress]=useState(()=>initialGuideProgress(scope,remote));
+  const [rect,setRect]=useState<DOMRect|null>(null);
+  const requested=useRef<GuideSection|null>(null);
+  const heading=useRef<HTMLHeadingElement|null>(null);
+  const step=GUIDE_STEPS[progress.index];
+  useEffect(()=>{onSave(progress)},[progress,onSave]);
+  useEffect(()=>{heading.current?.focus({preventScroll:true})},[progress.index]);
+  useEffect(()=>{if(tab!==step.section){requested.current=step.section;onNavigate(step.section)}},[progress.index]);
+  useEffect(()=>{
+    if(requested.current){if(tab===requested.current)requested.current=null;return}
+    if(tab===step.section)return;
+    const next=GUIDE_STEPS.findIndex(s=>s.section===tab&&!progress.visited.includes(s.id));
+    const fallback=GUIDE_STEPS.findIndex(s=>s.section===tab);
+    if(next>=0||fallback>=0)setProgress(p=>({...p,index:next>=0?next:fallback}));
+  },[tab]);
+  useLayoutEffect(()=>{
+    const element=document.querySelector<HTMLElement>(`[data-guide="${step.target}"]`);
+    if(!element){setRect(null);return}
+    element.classList.add('guide-highlight');
+    element.scrollIntoView({block:'center',behavior:'instant'});
+    const update=()=>setRect(element.getBoundingClientRect());update();
+    window.addEventListener('resize',update);window.addEventListener('scroll',update,true);
+    return()=>{element.classList.remove('guide-highlight');window.removeEventListener('resize',update);window.removeEventListener('scroll',update,true)};
+  },[progress.index,tab]);
+  useEffect(()=>{const handler=(event:KeyboardEvent)=>{if(event.key==='Escape')onClose()};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler)},[onClose]);
+  function next(){const visited=[...new Set([...progress.visited,step.id])];if(progress.index===GUIDE_STEPS.length-1){onSave({index:0,visited,completed:true});onClose();return}setProgress({index:progress.index+1,visited})}
+  const place=rect&&window.innerWidth>750?{
+    top:Math.max(90,Math.min(window.innerHeight-270,rect.bottom+12+245<window.innerHeight?rect.bottom+12:rect.top-255)),
+    left:Math.max(16,Math.min(window.innerWidth-366,rect.left+Math.min(rect.width,180))),
+  }:undefined;
+  return <><div className="guide-shade" aria-hidden="true"/><div className="guide-coach" role="dialog" aria-modal="false" aria-labelledby="guide-title" style={place}>
+    <div className="guide-top"><span className="section-kicker">RECORRIDO · {progress.index+1} / {GUIDE_STEPS.length}</span><button className="icon-button" aria-label="Pausar guía" onClick={onClose}><X size={18}/></button></div>
+    <div className="guide-progress" aria-label={`${progress.visited.length} de ${GUIDE_STEPS.length} puntos vistos`}>{GUIDE_STEPS.map((s,i)=><button key={s.id} type="button" title={s.title} aria-label={`${s.title}${progress.visited.includes(s.id)?', visto':''}`} aria-current={i===progress.index?'step':undefined} className={`${i===progress.index?'current ':''}${progress.visited.includes(s.id)?'visited':''}`} onClick={()=>setProgress(p=>({...p,index:i}))}/>)}</div>
+    <h2 ref={heading} tabIndex={-1} id="guide-title">{step.title}</h2><p>{step.copy}</p>
+    <div className="guide-actions"><button className="secondary-button" aria-label="Punto anterior" disabled={progress.index===0} onClick={()=>setProgress(p=>({...p,index:p.index-1}))}><ChevronLeft size={17}/></button><button className="primary-button" onClick={next}>{progress.index===GUIDE_STEPS.length-1?'Terminar':'Entendido, siguiente'} <Check size={16}/></button></div>
+    <button className="guide-skip" onClick={onClose}>Pausar y seguir otro día</button>
+  </div></>;
 }
