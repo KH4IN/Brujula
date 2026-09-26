@@ -138,3 +138,26 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 
 /* En dispositivos táctiles, editar y borrar deben ser visibles sin pasar el ratón. */
 @media (hover: none){.transaction-actions{opacity:1}}
+
+/* Fase 3: caminos compactos desde la portada hacia secciones con detalle. */
+.dashboard-paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+.dashboard-path{display:flex;align-items:center;gap:15px;min-width:0;min-height:105px;padding:18px 20px;text-align:left;border:1px solid #e1e9dc;border-radius:17px;background:#fff;color:#284734;cursor:pointer;box-shadow:0 6px 22px #203b2710}
+.dashboard-path:hover{transform:translateY(-2px);border-color:#a2bba8;box-shadow:0 12px 26px #203b2719}
+.dashboard-path:focus-visible{outline:3px solid #9173bc;outline-offset:3px}
+.dashboard-path>.path-icon{width:46px;height:46px;flex:none;display:grid;place-items:center;border-radius:13px;background:#f0eee9;color:#71519a}
+.dashboard-path.path-analysis{background:#ecf0e8;border-color:#cfdccf}
+.dashboard-path.path-analysis>.path-icon{background:#dfd5e9}
+.dashboard-path>.path-copy{display:grid;gap:3px;flex:1;min-width:0}
+.dashboard-path .path-copy small{font-size:10px;font-weight:800;letter-spacing:.13em;color:#79628f}
+.dashboard-path .path-copy strong{font:800 17px 'Manrope',sans-serif;color:#294b35}
+.dashboard-path .path-copy span{font-size:12px;color:#617969;overflow-wrap:anywhere}
+.dashboard-path>svg:last-child{flex:none;color:#71519a}
+:root[data-theme="dark"] .dashboard-path{background:#282733;border-color:#514661;color:#e8dcf0}
+:root[data-theme="dark"] .dashboard-path.path-analysis{background:#382e4b;border-color:#735e8b}
+:root[data-theme="dark"] .dashboard-path:hover{background:#403650}
+:root[data-theme="dark"] .dashboard-path>.path-icon{background:#443956;color:#dfbd74}
+:root[data-theme="dark"] .dashboard-path .path-copy small,:root[data-theme="dark"] .dashboard-path>svg:last-child{color:#dfbd74}
+:root[data-theme="dark"] .dashboard-path .path-copy strong{color:#f0edf7}
+:root[data-theme="dark"] .dashboard-path .path-copy span{color:#c3b9ce}
+@media(max-width:650px){.dashboard-paths{grid-template-columns:1fr;gap:9px}.dashboard-path{min-height:84px;padding:13px 15px}.dashboard-path>.path-icon{width:40px;height:40px}.dashboard-path .path-copy strong{font-size:15px}}
+@media(prefers-reduced-motion:no-preference){.dashboard-path{transition:transform .18s ease,box-shadow .18s ease,background-color .18s ease}}
