@@ -89,3 +89,24 @@ test('una importación extensa reintentada conserva una sola copia local por cla
   assert.equal(again.transactions.length,501);
   assert.equal(again.pending.length,501);
 });
+
+
+test('un saldo de invitado no reemplaza un banco existente en la cuenta',()=>{
+  storage();
+  saveAccount('guest',{account:'bank',kind:'bank',opening_balance:100,name:'Banco'});
+  saveTransaction('guest',{...transaction,account:'bank'});
+  saveAccount('usuario-uno',{account:'bank',kind:'bank',opening_balance:2350,name:'Santander'});
+  assert.equal(claimGuest('usuario-uno'),-1);
+  assert.equal(readStore('usuario-uno').account_settings.find(a=>a.account==='bank').opening_balance,2350);
+  assert.equal(readStore('guest').account_settings.find(a=>a.account==='bank').opening_balance,100);
+  assert.equal(readStore('guest').transactions.length,1);
+});
+
+test('no mezcla datos de invitado con una cuenta que ya tiene movimientos en el mismo banco',()=>{
+  storage();
+  saveAccount('guest',{account:'bank',kind:'bank',opening_balance:100,name:'Banco'});
+  saveTransaction('usuario-uno',{...transaction,account:'bank'});
+  assert.equal(claimGuest('usuario-uno'),-1);
+  assert.equal(readStore('usuario-uno').transactions.length,1);
+  assert.equal(readStore('guest').account_settings.find(a=>a.account==='bank').opening_balance,100);
+});
