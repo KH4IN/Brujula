@@ -97,9 +97,16 @@ export default function App(){
     syncing.current=true;setSyncState('syncing');
     let completed=false;
     try{
-      const fresh=await synchronize(user.id);
+      await synchronize(user.id);
+      const moved=claimGuest(user.id);
+      const fresh=moved>0?await synchronize(user.id):readStore(user.id);
       completed=true;
-      if(scopeRef.current===user.id){applyLocal(fresh);setSyncState(fresh.pending.length?'pending':'synced');setNotice('')}
+      if(scopeRef.current===user.id){
+        setTransferred(moved>0?moved:0);
+        applyLocal(fresh);
+        setSyncState(fresh.pending.length?'pending':'synced');
+        setNotice(moved<0?'Tus datos de invitado siguen guardados en este dispositivo. Hay saldos o registros que coinciden con tu cuenta y no se han unido para evitar reemplazarlos.':'');
+      }
     }catch(error){
       if(scopeRef.current===user.id){setSyncState('pending');setNotice(`La sincronización está pendiente: ${error instanceof Error?error.message:'comprueba tu conexión'}`)}
     }finally{
@@ -115,7 +122,7 @@ export default function App(){
   useEffect(()=>{
     try{
       recoverLegacyGuest();
-      if(user)setTransferred(claimGuest(user.id));else setTransferred(0);
+      setTransferred(0);
       const local=readStore(scope);applyLocal(local);
       setLoadedScope(scope);
       setSyncState(user?(navigator.onLine?'pending':'offline'):'local');
