@@ -152,9 +152,14 @@ async function push(userId:string,item:Pending){
   }
   if(result.error)throw result.error;
 }
+async function pushTransactions(userId:string,items:Pending[]){
+  const records=items.map(item=>({...item.record,user_id:userId}));
+  const {error}=await supabase!.from('transactions').upsert(records,{onConflict:'id'});
+  if(error)throw error;
+}
 // Remote writes are idempotent. Checkpoint confirmed tokens in groups to avoid
 // reserializing the entire local ledger after every individual request.
-export async function flushPending(userId:string,send:(item:Pending)=>Promise<void>){
+export async function flushPending(userId:string,send:(item:Pending)=>Promise<void>,sendTransactions?:(items:Pending[])=>Promise<void>){
   const confirmed=new Set<string>();
   const checkpoint=()=>{
     if(!confirmed.size)return;
@@ -164,16 +169,31 @@ export async function flushPending(userId:string,send:(item:Pending)=>Promise<vo
     confirmed.clear();
   };
   try{
-    for(const item of readStore(userId).pending){
-      await send(item);
-      confirmed.add(item.token);
-      if(confirmed.size===25)checkpoint();
+    const pending=readStore(userId).pending;
+    for(let index=0;index<pending.length;){
+      const item=pending[index];
+      const batch:Pending[]=[];
+      if(sendTransactions&&item.entity==='transactions'&&item.method==='upsert'){
+        while(index<pending.length&&batch.length<25&&pending[index].entity==='transactions'&&pending[index].method==='upsert')batch.push(pending[index++]);
+      }else{batch.push(item);index++}
+      if(batch.length>1){
+        try{
+          await sendTransactions!(batch);
+          for(const entry of batch)confirmed.add(entry.token);
+        }catch(error){
+          // A duplicate bank reference rejects the whole batch. The existing
+          // single-row path can identify it without discarding the other rows.
+          if((error as {code?:string})?.code!=='23505')throw error;
+          for(const entry of batch){await send(entry);confirmed.add(entry.token);if(confirmed.size>=25)checkpoint()}
+        }
+      }else{await send(item);confirmed.add(item.token)}
+      if(confirmed.size>=25)checkpoint();
     }
   }finally{checkpoint()}
 }
 export async function synchronize(userId:string):Promise<LocalStore>{
   if(!supabase||!navigator.onLine)return readStore(userId);
-  await flushPending(userId,item=>push(userId,item));
+  await flushPending(userId,item=>push(userId,item),items=>pushTransactions(userId,items));
   const [transactions,budgets,goals,investments,settings]=await Promise.all([
     fetchAll<Transaction>('transactions',userId),fetchAll<Budget>('budgets',userId),fetchAll<Goal>('goals',userId),fetchAll<Investment>('investments',userId),fetchAll<AccountSetting>('account_settings',userId)
   ]);
