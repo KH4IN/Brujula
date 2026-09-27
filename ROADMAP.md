@@ -1,6 +1,6 @@
 # Roadmap de Brújula
 
-Documento vivo para ordenar el trabajo y registrar avances. Última revisión: 26 de septiembre de 2026.
+Documento vivo para ordenar el trabajo y registrar avances. Última revisión: 27 de septiembre de 2026.
 
 ## Cómo se usa
 
@@ -132,6 +132,12 @@ El fundador rechazó la primera iteración de niveles, limitada a pequeñas tran
 - [ ] Probar varios usuarios y dispositivos con datos ficticios; revisar índices/RLS y paginación cuando el volumen lo exija.
 - [ ] Valorar cotizaciones de cripto/ETF y nuevas integraciones como proyecto experimental separado, con fuente, coste, fiabilidad y privacidad definidos antes de incorporarlas.
 - **Criterio de cierre:** funcionalidades nuevas desplegadas sin pérdida de datos y con una ruta clara para resolver fallos.
+
+### Inicio controlado de la fase 7 (27-09-2026)
+
+- El fundador dio por válido provisionalmente el diseño Ultra en `staging`, con una corrección solicitada: no repetir el patrimonio en la navegación y en el resumen. La navegación muestra ahora «Tus cuentas» y el importe queda en «Patrimonio estimado». Ultra permanece beta y solo aparece en la URL fija de pruebas.
+- La CI se ejecuta también en cada push a `staging`. Registro de despliegue, comprobaciones y vuelta atrás en `PHASE7_RELEASE.md`. Esto inicia la fase 7 sin declarar completadas las mediciones, la accesibilidad ni el despliegue productivo de la fase 6.
+- No se incorpora telemetría de importes, descripciones, CSV, identificadores de cuenta ni saldos. La observación de tiempos en móviles y de errores de cliente requiere una solución agregada y revisión de privacidad antes de activarse.
 
 ## Decisiones abiertas
 

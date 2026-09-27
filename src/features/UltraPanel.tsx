@@ -6,13 +6,13 @@ type Zone = 'wealth' | 'flow' | 'plan' | 'explore';
 type Destination = 'accounts' | 'analysis' | 'budgets' | 'goals' | 'investments' | 'transactions';
 
 /** Experimental four-zone overview. No financial data is changed here. */
-export function UltraPanel({ wealth, income, expenses, budget, goals, onNavigate }: {
-  wealth: number; income: number; expenses: number; budget: number; goals: number;
+export function UltraPanel({ income, expenses, budget, goals, onNavigate }: {
+  income: number; expenses: number; budget: number; goals: number;
   onNavigate: (destination: Destination) => void;
 }) {
   const [active, setActive] = useState<Zone>('wealth');
   const zones = [
-    { key: 'wealth', eyebrow: '01 / POSICIÓN', title: 'Tu patrimonio', value: money(wealth), detail: 'Una vista de todo tu dinero', icon: Landmark, target: 'accounts' },
+    { key: 'wealth', eyebrow: '01 / POSICIÓN', title: 'Tus cuentas', value: 'Explorar saldos', detail: 'Bancos y efectivo por separado', icon: Landmark, target: 'accounts' },
     { key: 'flow', eyebrow: '02 / MOVIMIENTO', title: 'Pulso del mes', value: money(income - expenses), detail: `${money(income)} entran · ${money(expenses)} salen`, icon: Activity, target: 'analysis' },
     { key: 'plan', eyebrow: '03 / PLAN', title: 'Tu dirección', value: money(budget), detail: `${goals} objetivos en marcha`, icon: Target, target: 'budgets' },
     { key: 'explore', eyebrow: '04 / EXPLORAR', title: 'Lo que viene', value: 'Descubre más', detail: 'Movimientos, objetivos e inversiones', icon: TrendingUp, target: 'investments' },
