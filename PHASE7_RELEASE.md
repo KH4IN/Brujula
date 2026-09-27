@@ -18,3 +18,10 @@
 5. Registrar PR, SHA, CI, despliegue READY, revisión manual y reversión para cada publicación. Ultra beta no se promociona automáticamente.
 
 La fase 7 está iniciada. Estas puertas siguen pendientes y las fases 2, 3, 4 y 6 conservan sus tareas abiertas.
+
+## Tutorial de Ultra y decisión de niveles (27-09-2026)
+
+- El recorrido inicial en Ultra señalaba objetivos DOM exclusivos de la portada clásica. Se añaden objetivos equivalentes en el panel de cuatro zonas y el resumen patrimonial, con instrucciones específicas para Ultra y desplazamiento móvil que evita tapar la sección. La primera experiencia de `staging` selecciona Ultra si no existe preferencia guardada; quien ya eligió un nivel lo conserva.
+- El fundador prefiere Ultra como experiencia principal y plantea retirar Bajo y Medio. Decisión provisional: conservar los niveles configurables mientras se verifican fluidez en un teléfono modesto, movimiento reducido y tutorial en iPhone. No trasladar el valor por defecto ni eliminar niveles en producción hasta completar esas pruebas y una PR exclusiva desde `staging`.
+- Casos de aceptación pendientes: iniciar guía en Ultra con cuenta nueva, avanzar los diez puntos y volver atrás, reabrir a mitad de recorrido, cambiar de pestaña manualmente, repetir con datos vacíos y abundantes, lector de pantalla/teclado, iPhone con área segura y `prefers-reduced-motion`. Registrar SHA, dispositivo y resultados antes de marcar fases previas cerradas.
+- Las fases 2, 3, 4 y 6 mantienen casillas abiertas en `ROADMAP.md`; esta corrección no sustituye pruebas de dos cuentas/dispositivos ni mediciones móviles.
