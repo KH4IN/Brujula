@@ -11,12 +11,16 @@ import { colorFor, symbolFor } from './features/presentation';
 import { BudgetLine, Stat } from './features/overview';
 import { Empty, TransactionList } from './features/TransactionList';
 import { Guide, validGuideProgress, type GuideProgress, type GuideSection } from './features/Guide';
-import { MotionExperience, type MotionLevel } from './features/MotionExperience';
+import { MotionExperience } from './features/MotionExperience';
+import { Configuracion } from './features/Configuracion';
+import { Nuevo, type VistaNueva } from './nuevo/Nuevo';
+import { HojaMovimiento } from './nuevo/HojaMovimiento';
+import { temaGuardado, type Tema } from './nuevo/rumbo';
+import { cargarFuentesNuevas } from './nuevo/fuentes';
 import { UltraPanel } from './features/UltraPanel';
 import { UltraInsights } from './features/UltraInsights';
 
 type Tab = 'dashboard'|'analysis'|'transactions'|'budgets'|'accounts'|'goals'|'investments';
-const ultraAvailable = true;
 const emptyForm = () => ({amount:'',kind:'expense' as Transaction['kind'],category:'Alimentación' as Category,description:'',occurred_on:localDate(),account:'bank' as Transaction['account'],to_account:'cash' as Transaction['to_account']});
 function shiftMonth(month:string, amount:number) {const [y,m]=month.split('-').map(Number);const date=new Date(y,m-1+amount,1);return monthOf(date)}
 function csvCell(s:string|number,protect=true){let value=String(s);if(protect&&/^\s*[=+@-]/.test(value))value="'"+value;return `"${value.replaceAll('"','""')}"`}
@@ -57,9 +61,9 @@ export default function App(){
   },[mobileOpen]);
   const [settingsOpen,setSettingsOpen]=useState(false);
   const [dark,setDark]=useState(()=>document.documentElement.dataset.theme==='dark');
-  const [motion,setMotion]=useState<MotionLevel>(()=>{
-    try { const value=localStorage.getItem('brujula.motion'); return value==='low'||value==='medium'||value==='high'||(ultraAvailable&&value==='ultra')?value:ultraAvailable?'ultra':'low' } catch { return ultraAvailable?'ultra':'low' }
-  });
+  const [tema,setTema]=useState<Tema>(()=>{try{return temaGuardado(localStorage.getItem('brujula.tema'))}catch{return 'nuevo'}});
+  const [clasicoDescubierto,setClasicoDescubierto]=useState(()=>{try{return localStorage.getItem('brujula.clasico')==='1'}catch{return false}});
+  const ultra=tema==='antiguo';
   const themeScope=useRef<string|null>(null);
   const scope=user?.id??'guest';
   const guideSync=useRef<Promise<unknown>>(Promise.resolve());
@@ -83,8 +87,13 @@ export default function App(){
   const syncing=useRef(false);
   const syncRequested=useRef(false);
   const latestSync=useRef<()=>void>(()=>{});
-  useEffect(()=>{document.documentElement.dataset.motion=motion;try{localStorage.setItem('brujula.motion',motion)}catch{/* Preference still applies for this session. */}},[motion]);
-  useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('brujula.theme',dark?'dark':'light')}catch{/* The theme still works without storage. */}document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark?'#171720':'#173f32')},[dark]);
+  useEffect(()=>{
+    const root=document.documentElement;root.dataset.tema=tema;root.dataset.motion=tema==='antiguo'?'ultra':tema==='clasico'?'low':'nuevo';
+    if(tema==='nuevo')cargarFuentesNuevas();
+    try{localStorage.setItem('brujula.tema',tema);localStorage.removeItem('brujula.motion')}catch{/* Preference still applies for this session. */}
+  },[tema]);
+  useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('brujula.theme',dark?'dark':'light')}catch{/* The theme still works without storage. */}document.querySelector('meta[name="theme-color"]')?.setAttribute('content',tema==='nuevo'?(dark?'#0D1411':'#F2F3EE'):dark?'#171720':'#173f32')},[dark,tema]);
+  function descubrirClasico(){setClasicoDescubierto(true);try{localStorage.setItem('brujula.clasico','1')}catch{/* Visible during this session. */}}
   useEffect(()=>{
     if(!user){themeScope.current=null;return}
     if(themeScope.current===user.id)return;
@@ -94,8 +103,9 @@ export default function App(){
     saved??=user.user_metadata?.theme;
     if(saved==='dark'||saved==='light')setDark(saved==='dark');
   },[user]);
-  function changeTheme(){
-    const next=!dark;setDark(next);
+  function changeTheme(){setThemeMode(!dark)}
+  function setThemeMode(next:boolean){
+    if(next===dark)return;setDark(next);
     if(user)try{localStorage.setItem(`brujula.theme.user.${user.id}`,next?'dark':'light')}catch{/* Account setting can still synchronize. */}
     if(user&&supabase)void supabase.auth.updateUser({data:{theme:next?'dark':'light'}}).then(({error})=>{
       if(error)setNotice('El tema se cambió aquí, pero no se pudo guardar en tu cuenta. Revisa la conexión.');
@@ -215,8 +225,51 @@ export default function App(){
   function go(next:Tab){setTab(next);setMobileOpen(false);setNotice('');window.scrollTo({top:0,behavior:'auto'})}
 
   if(loadedScope!==scope)return <div className="app" role="status">Cargando tu espacio…</div>;
+  function closeModal(){setModal(null);setNotice('')}
+  function openBudget(category:Category='Alimentación',amount?:number){setBudgetForm({category,amount:amount===undefined?'':String(amount)});setModal('budget')}
+  const overlays=<>
+    {guideOpen&&<Guide key={scope} scope={scope} ultra={ultra} nuevo={tema==='nuevo'} remote={user?.user_metadata?.brujula_guide_v2} tab={tab} onSave={saveGuide} onClose={closeGuide} onNavigate={(section:GuideSection)=>go(section)}/>}
+    {settingsOpen&&<Configuracion tema={tema} dark={dark} clasicoDescubierto={clasicoDescubierto} onTema={setTema} onModo={setThemeMode} onDescubrir={descubrirClasico} onClose={()=>setSettingsOpen(false)}/>}
+    {categoryDetail&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setCategoryDetail(null)}}><div className="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div className="modal-heading"><div><span className="section-kicker">DESGLOSE DEL MES</span><h2 id="detail-title">{categoryDetail}</h2></div><button className="icon-button" onClick={()=>setCategoryDetail(null)}><X size={20}/></button></div><strong className="detail-total">{money(spentFor(categoryDetail))}</strong><p className="feature-copy">{expenses?Math.round(spentFor(categoryDetail)/expenses*100):0}% de tus gastos de {monthLabel(month)} · {monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail).length} movimientos.</p><TransactionList accountLabels={accounts} items={monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail)} onEdit={t=>{setCategoryDetail(null);openTransaction(t)}} onDelete={deleteTransaction} onAdd={()=>{setCategoryDetail(null);openTransaction()}}/></div></div>}
+    {importOpen&&<ImportDialog existing={items} accounts={accounts} onClose={()=>setImportOpen(false)} onConfirm={importRows}/>}
+    {authOpen&&<Auth recovering={passwordRecovery} managePassword={Boolean(user)} onReady={()=>{setAuthOpen(false);setPasswordRecovery(false)}} onClose={()=>{setAuthOpen(false);setPasswordRecovery(false)}}/>}
+    {modal==='transaction'&&tema==='nuevo'?<HojaMovimiento form={form} setForm={setForm} editing={editing} busy={busy} notice={notice} accounts={accounts} categories={categories} onSubmit={saveTransaction} onDelete={deleteTransaction} onClose={closeModal}/>:modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget){setModal(null);setNotice('')}}}>
+      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div className="modal-heading"><div><span className="section-kicker">{modal==='transaction'?'MOVIMIENTOS':'PLANIFICACIÓN'}</span><h2 id="modal-title">{modal==='transaction'?(editing?'Editar movimiento':'Nuevo movimiento'):'Presupuesto mensual'}</h2></div><button className="icon-button" onClick={()=>{setModal(null);setNotice('')}} aria-label="Cerrar"><X size={20}/></button></div>
+        {notice&&<div className="notice" role="alert">{notice}</div>}
+        {modal==='transaction'?<form onSubmit={saveTransaction}>
+          <div className="segmented"><button type="button" className={form.kind==='expense'?'selected':''} onClick={()=>setForm({...form,kind:'expense'})}><ArrowUpRight size={17}/> Gasto</button><button type="button" className={form.kind==='income'?'selected':''} onClick={()=>setForm({...form,kind:'income'})}><ArrowDownLeft size={17}/> Ingreso</button><button type="button" className={form.kind==='transfer'?'selected':''} onClick={()=>setForm({...form,kind:'transfer',description:form.description||'Traspaso entre cuentas'})}><ArrowRight size={17}/> Traspaso</button></div>
+          {form.kind==='transfer'&&<p className="form-hint">Un traspaso mueve dinero entre tus cuentas. No aumenta ingresos ni gastos del mes.</p>}
+          <label>Importe en euros<input type="number" inputMode="decimal" step="0.01" min="0.01" max="9999999999.99" required placeholder="0,00" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} autoFocus/></label>
+          <label>Descripción<input type="text" maxLength={120} required placeholder="Por ejemplo, compra semanal" value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label>
+          <div className="form-row"><label>{form.kind==='transfer'?'Desde':'Cuenta'}<select value={form.account} onChange={e=>setForm({...form,account:e.target.value as Transaction['account']})}>{accounts.map(a=><option key={a.account} value={a.account}>{accountName(a.account,accounts)}</option>)}</select></label>{form.kind==='transfer'?<label>Hacia<select value={form.to_account??'cash'} onChange={e=>setForm({...form,to_account:e.target.value as Transaction['to_account']})}>{accounts.map(a=><option key={a.account} value={a.account}>{accountName(a.account,accounts)}</option>)}</select></label>:<label>Fecha<input type="date" required value={form.occurred_on} onChange={e=>setForm({...form,occurred_on:e.target.value})}/></label>}</div>
+          {form.kind==='transfer'?<label>Fecha<input type="date" required value={form.occurred_on} onChange={e=>setForm({...form,occurred_on:e.target.value})}/></label>:<label>Categoría<input list="transaction-categories" maxLength={60} required value={form.category} onChange={e=>setForm({...form,category:e.target.value})}/><datalist id="transaction-categories">{categories.map(c=><option key={c} value={c}/>)}</datalist></label>}
+          <button className="primary-button form-submit" disabled={busy}><Check size={18}/>{busy?'Guardando…':'Guardar movimiento'}</button>
+        </form>:<form onSubmit={saveBudget}>
+          <label>Categoría<input list="budget-categories" maxLength={60} required value={budgetForm.category} onChange={e=>setBudgetForm({...budgetForm,category:e.target.value})}/><datalist id="budget-categories">{categories.map(c=><option key={c} value={c}/>)}</datalist></label>
+          <label>Límite mensual en euros<input type="number" inputMode="decimal" step="0.01" min="0.01" max="9999999999.99" required placeholder="Por ejemplo, 250" value={budgetForm.amount} onChange={e=>setBudgetForm({...budgetForm,amount:e.target.value})}/></label>
+          <p className="form-hint">Se aplicará a {monthLabel(month)}. Puedes modificarlo en cualquier momento.</p><button className="primary-button form-submit" disabled={busy}><Check size={18}/>{busy?'Guardando…':'Guardar presupuesto'}</button>
+        </form>}
+      </div>
+    </div>}
+  </>;
+  if(tema==='nuevo'){
+    const vista:VistaNueva={
+      tab,go,month,shiftMonth:(step)=>setMonth(shiftMonth(month,step)),
+      user,configured,syncState,pending,transferred,onSync:()=>void syncNow(),onAuth:()=>setAuthOpen(true),onSignOut:()=>{void supabase?.auth.signOut({scope:'local'})},
+      notice:modal?'':notice,clearNotice:()=>setNotice(''),busy,
+      items,monthly,filtered,income,expenses,balance,groups,totalBudget,
+      monthBudgets:budgets.filter(b=>b.month===month),goals,investments,accounts,balances,bankTotal,investmentValue:marketValue(investments),wealth,spentFor,
+      search,setSearch,filter,setFilter,merchants,merchantFilter,setMerchantFilter,
+      openTransaction,openBudget,deleteBudget,openCategory:setCategoryDetail,
+      exportCSV,openImport:()=>setImportOpen(true),openGuide:()=>setGuideOpen(true),openSettings:()=>setSettingsOpen(true),
+      onTransfer:()=>{openTransaction();setForm({...emptyForm(),kind:'transfer',description:'Traspaso entre cuentas'})},
+      saveAccount:saveAccountLocal,mergeBank:mergeBankLocal,saveGoal:saveGoalLocal,deleteGoal:deleteGoalLocal,saveInvestment:saveInvestmentLocal,deleteInvestment:deleteInvestmentLocal,
+    };
+    return <><Nuevo v={vista}/>{overlays}</>;
+  }
   return <div className="app">
-    <MotionExperience level={motion} section={tab}/>
+    <MotionExperience level={ultra?'ultra':'low'} section={tab}/>
     {mobileOpen&&<div className="mobile-scrim" onClick={()=>setMobileOpen(false)}/>}
     <aside className={`sidebar ${mobileOpen?'sidebar-open':''}`}>
       <div className="brand"><div className="brand-symbol">✳</div><div className="brand-name">brújula<span>.</span><small>FINANZAS PERSONALES</small></div></div>
@@ -240,13 +293,13 @@ export default function App(){
     </aside>
     <main className="main">
       <header className="topbar"><button className="mobile-menu icon-button" aria-label="Abrir menú" onClick={()=>setMobileOpen(true)}><Menu size={23}/></button><div className="breadcrumb"><strong>{({dashboard:'Vista general',analysis:'Análisis',transactions:'Movimientos',budgets:'Presupuestos',accounts:'Cuentas y efectivo',goals:'Objetivos',investments:'Inversiones'} as Record<Tab,string>)[tab]}</strong></div><div className="topbar-right"><button className="icon-button guide-top-button" aria-label="Abrir guía de Brújula" title="Guía de Brújula" onClick={()=>setGuideOpen(true)}><CircleHelp size={19}/></button><button className="icon-button theme-toggle" aria-label={dark?'Activar modo claro':'Activar modo oscuro'} title={dark?'Modo claro':'Modo oscuro'} aria-pressed={dark} onClick={changeTheme}>{dark?<Sun size={19}/>:<Moon size={19}/>}</button><details className="top-account-menu"><summary aria-label="Abrir menú de cuenta"><span className="top-avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</span><ChevronDown size={15}/></summary><div className="top-account-actions"><strong>{user?.email??'Solo en este dispositivo'}</strong><button onClick={event=>{event.currentTarget.closest('details')?.removeAttribute('open');setSettingsOpen(true)}}><Settings2 size={16}/> Configuración</button>{user?<><button onClick={()=>setAuthOpen(true)}>Gestionar acceso</button><button onClick={()=>{void supabase?.auth.signOut({scope:'local'})}}>Cerrar sesión</button></>:configured&&<button onClick={()=>setAuthOpen(true)}>Iniciar sesión</button>}</div></details></div></header>
-      <div className="content" data-ultra-section={motion==='ultra'&&ultraAvailable?tab:undefined}>
+      <div className="content" data-ultra-section={ultra?tab:undefined}>
         <div className="demo-banner" role="status"><span className="demo-badge">{user?'SYNC':'LOCAL'}</span><span>{user?syncState==='synced'?transferred?`${transferred} registros locales incorporados a tu cuenta. Todo sincronizado.`:'Todo sincronizado en tus dispositivos.':syncState==='syncing'?'Sincronizando cambios…':syncState==='offline'?`Sin conexión. ${pending} cambios pendientes; aún no aparecen en otros dispositivos.`:`${pending} cambios pendientes de sincronizar; aún no aparecen en otros dispositivos.`:'Tus datos se guardan en este dispositivo. Inicia sesión para sincronizarlos con otros.'}</span>{user&&<button className="sync-button" onClick={()=>void syncNow()} disabled={syncState==='syncing'}>Sincronizar ahora</button>}{!user&&configured&&<button className="sync-button" onClick={()=>setAuthOpen(true)}>Activar sincronización</button>}</div>
         <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line"/> TU PANORAMA FINANCIERO</div><h1>{({dashboard:'Tu dinero, con claridad.',analysis:'Explora tus números.',transactions:'Tus movimientos.',budgets:'Presupuestos a tu medida.',accounts:'Tus cuentas, siempre claras.',goals:'Tus objetivos.',investments:'Tu cartera de inversión.'} as Record<Tab,string>)[tab]}</h1><p>{({dashboard:'Lo esencial de tu mes. Entra en cada sección para ver los detalles.',analysis:'Descubre cuándo y en qué se mueve tu dinero.',transactions:'Cada movimiento cuenta una parte de la historia.',budgets:'Pon un límite a cada categoría y sigue tu progreso.',accounts:'Cada banco, efectivo y cartera, por separado.',goals:'Pequeños pasos hacia algo grande.',investments:'Tus posiciones y precios, actualizados por ti.'} as Record<Tab,string>)[tab]}</p></div><div className="heading-actions"><div className="month-picker"><button aria-label="Mes anterior" onClick={()=>setMonth(shiftMonth(month,-1))}><ChevronLeft size={17}/></button><span><CalendarDays size={16}/>{monthLabel(month)}</span><button aria-label="Mes siguiente" onClick={()=>setMonth(shiftMonth(month,1))}><ChevronRight size={17}/></button></div><button data-guide="import-action" className="secondary-button import-button" onClick={()=>setImportOpen(true)}><FileSpreadsheet size={17}/> Importar archivo</button><button className="primary-button" onClick={()=>openTransaction()}><Plus size={18}/> Añadir movimiento</button></div></div>
         {notice&&!modal&&<div className="notice" role="alert">{notice}<button onClick={()=>setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
         {busy&&<div className="loading-line"/>}
-        {motion==='ultra'&&ultraAvailable&&tab!=='dashboard'&&<UltraInsights section={tab} monthly={monthly} budgets={budgets.filter(b=>b.month===month)} accounts={accounts} balances={balances} goals={goals} investments={investments} income={income} expenses={expenses} onFilter={(kind)=>{setFilter(kind);go('transactions')}}/>}
-        {tab==='dashboard'&&(motion==='ultra'&&ultraAvailable?<><UltraPanel income={income} expenses={expenses} budget={totalBudget} goals={goals.length} onNavigate={go}/><div className="ultra-detail-label"><span>DE UN VISTAZO / {monthLabel(month).toUpperCase()}</span><strong>Todo tu dinero, sin buscarlo</strong></div><div data-guide="home-summary" className="wealth-strip"><div><span>PATRIMONIO ESTIMADO</span><strong>{money(wealth)}</strong><small>Bancos + efectivo + cripto + inversiones</small></div><button onClick={()=>go('accounts')}>Bancos <strong>{money(bankTotal)}</strong></button><button onClick={()=>go('accounts')}>Efectivo <strong>{money(balances.cash)}</strong></button><button onClick={()=>go('investments')}>Cripto <strong>{money(cryptoValue)}</strong><small>Inversiones: {money(marketValue(investments))}</small></button></div><div className="stat-grid"><Stat label="Balance del mes" value={balance} icon={<Wallet size={20}/>} tone="dark" foot="Ingresos menos gastos"/><Stat label="Ingresos" value={income} icon={<ArrowDownLeft size={20}/>} tone="green" foot="Este mes"/><Stat label="Gastos" value={expenses} icon={<ArrowUpRight size={20}/>} tone="peach" foot="Este mes"/></div><section className="card recent"><div className="card-heading"><div><span className="section-kicker">ACTIVIDAD RECIENTE</span><h2>Últimos movimientos</h2></div><button className="text-link" onClick={()=>go('transactions')}>Ver todos <ArrowRight size={16}/></button></div><TransactionList accountLabels={accounts} items={monthly.slice().sort((a,b)=>b.occurred_on.localeCompare(a.occurred_on)).slice(0,3)} onEdit={openTransaction} onDelete={deleteTransaction} onAdd={()=>openTransaction()}/></section></>:<>
+        {ultra&&tab!=='dashboard'&&<UltraInsights section={tab} monthly={monthly} budgets={budgets.filter(b=>b.month===month)} accounts={accounts} balances={balances} goals={goals} investments={investments} income={income} expenses={expenses} onFilter={(kind)=>{setFilter(kind);go('transactions')}}/>}
+        {tab==='dashboard'&&(ultra?<><UltraPanel income={income} expenses={expenses} budget={totalBudget} goals={goals.length} onNavigate={go}/><div className="ultra-detail-label"><span>DE UN VISTAZO / {monthLabel(month).toUpperCase()}</span><strong>Todo tu dinero, sin buscarlo</strong></div><div data-guide="home-summary" className="wealth-strip"><div><span>PATRIMONIO ESTIMADO</span><strong>{money(wealth)}</strong><small>Bancos + efectivo + cripto + inversiones</small></div><button onClick={()=>go('accounts')}>Bancos <strong>{money(bankTotal)}</strong></button><button onClick={()=>go('accounts')}>Efectivo <strong>{money(balances.cash)}</strong></button><button onClick={()=>go('investments')}>Cripto <strong>{money(cryptoValue)}</strong><small>Inversiones: {money(marketValue(investments))}</small></button></div><div className="stat-grid"><Stat label="Balance del mes" value={balance} icon={<Wallet size={20}/>} tone="dark" foot="Ingresos menos gastos"/><Stat label="Ingresos" value={income} icon={<ArrowDownLeft size={20}/>} tone="green" foot="Este mes"/><Stat label="Gastos" value={expenses} icon={<ArrowUpRight size={20}/>} tone="peach" foot="Este mes"/></div><section className="card recent"><div className="card-heading"><div><span className="section-kicker">ACTIVIDAD RECIENTE</span><h2>Últimos movimientos</h2></div><button className="text-link" onClick={()=>go('transactions')}>Ver todos <ArrowRight size={16}/></button></div><TransactionList accountLabels={accounts} items={monthly.slice().sort((a,b)=>b.occurred_on.localeCompare(a.occurred_on)).slice(0,3)} onEdit={openTransaction} onDelete={deleteTransaction} onAdd={()=>openTransaction()}/></section></>:<>
           <div data-guide="home-summary" className="wealth-strip"><div><span>PATRIMONIO ESTIMADO</span><strong>{money(wealth)}</strong><small>Bancos + efectivo + cripto + inversiones</small></div><button onClick={()=>go('accounts')}>Bancos <strong>{money(bankTotal)}</strong></button><button onClick={()=>go('accounts')}>Efectivo <strong>{money(balances.cash)}</strong></button><button onClick={()=>go('investments')}>Cripto <strong>{money(cryptoValue)}</strong><small>Inversiones totales: {money(marketValue(investments))}</small></button></div><div className="stat-grid"><Stat label="Balance del mes" value={balance} icon={<Wallet size={20}/>} tone="dark" foot={balance>=0?'Vas por buen camino':'Tus gastos superan tus ingresos'}/><Stat label="Ingresos" value={income} icon={<ArrowDownLeft size={20}/>} tone="green" foot={`${monthly.filter(x=>x.kind==='income').length} movimientos este mes`}/><Stat label="Gastos" value={expenses} icon={<ArrowUpRight size={20}/>} tone="peach" foot={`${monthly.filter(x=>x.kind==='expense').length} movimientos este mes`}/></div>
           
           <nav data-guide="home-paths" className="dashboard-paths" aria-label="Explorar tus finanzas">
@@ -273,29 +326,6 @@ export default function App(){
         <footer className="page-footer">Brújula · Una forma sencilla de entender tus finanzas <span>Hecho para ir paso a paso.</span></footer>
       </div>
     </main>
-    {guideOpen&&<Guide key={scope} scope={scope} ultra={motion==='ultra'&&ultraAvailable} remote={user?.user_metadata?.brujula_guide_v2} tab={tab} onSave={saveGuide} onClose={closeGuide} onNavigate={(section:GuideSection)=>go(section)}/>}
-    {settingsOpen&&<div className="modal-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)setSettingsOpen(false)}}><div className="modal visual-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title"><div className="modal-heading"><div><span className="section-kicker">TU EXPERIENCIA</span><h2 id="settings-title">Configuración</h2></div><button className="icon-button" aria-label="Cerrar configuración" onClick={()=>setSettingsOpen(false)}><X size={20}/></button></div><fieldset className="visual-settings-options"><legend>Diseño y animaciones</legend><p>Elige cómo quieres recorrer Brújula. Este ajuste se guarda en este dispositivo.</p>{([{value:'ultra',title:'Ultra',detail:'La experiencia principal: cuatro perspectivas y detalles visuales.'},{value:'high',title:'Alto',detail:'Paneles expresivos y transiciones amplias.'},{value:'medium',title:'Medio',detail:'Paneles más visuales y pequeñas interacciones.'},{value:'low',title:'Bajo',detail:'Diseño clásico. Respuesta inmediata y sin movimiento decorativo.'}] as const).map(option=><label key={option.value} className={motion===option.value?'selected':''}><input type="radio" name="motion-level" value={option.value} checked={motion===option.value} onChange={()=>setMotion(option.value)}/><span><strong>{option.title}</strong><small>{option.detail}</small></span></label>)}</fieldset><p className="visual-settings-note">Si tu dispositivo pide reducir el movimiento, Brújula respeta esa preferencia en cualquier nivel.</p></div></div>}
-    {categoryDetail&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setCategoryDetail(null)}}><div className="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div className="modal-heading"><div><span className="section-kicker">DESGLOSE DEL MES</span><h2 id="detail-title">{categoryDetail}</h2></div><button className="icon-button" onClick={()=>setCategoryDetail(null)}><X size={20}/></button></div><strong className="detail-total">{money(spentFor(categoryDetail))}</strong><p className="feature-copy">{expenses?Math.round(spentFor(categoryDetail)/expenses*100):0}% de tus gastos de {monthLabel(month)} · {monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail).length} movimientos.</p><TransactionList accountLabels={accounts} items={monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail)} onEdit={t=>{setCategoryDetail(null);openTransaction(t)}} onDelete={deleteTransaction} onAdd={()=>{setCategoryDetail(null);openTransaction()}}/></div></div>}
-    {importOpen&&<ImportDialog existing={items} accounts={accounts} onClose={()=>setImportOpen(false)} onConfirm={importRows}/>}
-    {authOpen&&<Auth recovering={passwordRecovery} managePassword={Boolean(user)} onReady={()=>{setAuthOpen(false);setPasswordRecovery(false)}} onClose={()=>{setAuthOpen(false);setPasswordRecovery(false)}}/>}
-    {modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget){setModal(null);setNotice('')}}}>
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <div className="modal-heading"><div><span className="section-kicker">{modal==='transaction'?'MOVIMIENTOS':'PLANIFICACIÓN'}</span><h2 id="modal-title">{modal==='transaction'?(editing?'Editar movimiento':'Nuevo movimiento'):'Presupuesto mensual'}</h2></div><button className="icon-button" onClick={()=>{setModal(null);setNotice('')}} aria-label="Cerrar"><X size={20}/></button></div>
-        {notice&&<div className="notice" role="alert">{notice}</div>}
-        {modal==='transaction'?<form onSubmit={saveTransaction}>
-          <div className="segmented"><button type="button" className={form.kind==='expense'?'selected':''} onClick={()=>setForm({...form,kind:'expense'})}><ArrowUpRight size={17}/> Gasto</button><button type="button" className={form.kind==='income'?'selected':''} onClick={()=>setForm({...form,kind:'income'})}><ArrowDownLeft size={17}/> Ingreso</button><button type="button" className={form.kind==='transfer'?'selected':''} onClick={()=>setForm({...form,kind:'transfer',description:form.description||'Traspaso entre cuentas'})}><ArrowRight size={17}/> Traspaso</button></div>
-          {form.kind==='transfer'&&<p className="form-hint">Un traspaso mueve dinero entre tus cuentas. No aumenta ingresos ni gastos del mes.</p>}
-          <label>Importe en euros<input type="number" inputMode="decimal" step="0.01" min="0.01" max="9999999999.99" required placeholder="0,00" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} autoFocus/></label>
-          <label>Descripción<input type="text" maxLength={120} required placeholder="Por ejemplo, compra semanal" value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label>
-          <div className="form-row"><label>{form.kind==='transfer'?'Desde':'Cuenta'}<select value={form.account} onChange={e=>setForm({...form,account:e.target.value as Transaction['account']})}>{accounts.map(a=><option key={a.account} value={a.account}>{accountName(a.account,accounts)}</option>)}</select></label>{form.kind==='transfer'?<label>Hacia<select value={form.to_account??'cash'} onChange={e=>setForm({...form,to_account:e.target.value as Transaction['to_account']})}>{accounts.map(a=><option key={a.account} value={a.account}>{accountName(a.account,accounts)}</option>)}</select></label>:<label>Fecha<input type="date" required value={form.occurred_on} onChange={e=>setForm({...form,occurred_on:e.target.value})}/></label>}</div>
-          {form.kind==='transfer'?<label>Fecha<input type="date" required value={form.occurred_on} onChange={e=>setForm({...form,occurred_on:e.target.value})}/></label>:<label>Categoría<input list="transaction-categories" maxLength={60} required value={form.category} onChange={e=>setForm({...form,category:e.target.value})}/><datalist id="transaction-categories">{categories.map(c=><option key={c} value={c}/>)}</datalist></label>}
-          <button className="primary-button form-submit" disabled={busy}><Check size={18}/>{busy?'Guardando…':'Guardar movimiento'}</button>
-        </form>:<form onSubmit={saveBudget}>
-          <label>Categoría<input list="budget-categories" maxLength={60} required value={budgetForm.category} onChange={e=>setBudgetForm({...budgetForm,category:e.target.value})}/><datalist id="budget-categories">{categories.map(c=><option key={c} value={c}/>)}</datalist></label>
-          <label>Límite mensual en euros<input type="number" inputMode="decimal" step="0.01" min="0.01" max="9999999999.99" required placeholder="Por ejemplo, 250" value={budgetForm.amount} onChange={e=>setBudgetForm({...budgetForm,amount:e.target.value})}/></label>
-          <p className="form-hint">Se aplicará a {monthLabel(month)}. Puedes modificarlo en cualquier momento.</p><button className="primary-button form-submit" disabled={busy}><Check size={18}/>{busy?'Guardando…':'Guardar presupuesto'}</button>
-        </form>}
-      </div>
-    </div>}
+    {overlays}
   </div>
 }
