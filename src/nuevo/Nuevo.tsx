@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Activity, ArrowRight, CalendarClock, ChevronLeft, ChevronRight, CircleHelp, Download, FileSpreadsheet, Landmark, LogIn, LogOut, MoreHorizontal, Plus, RefreshCw, Search, Settings2, Target, Trash2, TrendingUp, Wallet, X } from 'lucide-react';
+import { Activity, ArrowRight, CalendarClock, Flag, ChevronLeft, ChevronRight, CircleHelp, Download, FileSpreadsheet, Landmark, LogIn, LogOut, MoreHorizontal, Plus, RefreshCw, Search, Settings2, Target, Trash2, TrendingUp, Wallet, X } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import { accountName, formatDate, money, monthLabel, type AccountSetting, type Budget, type Goal, type Investment, type Transaction } from '../data';
 import { merchantFor } from '../categorize';
@@ -133,6 +133,7 @@ export function Nuevo({ v }: { v: VistaNueva }) {
       </nav>
       <span className="r-riel-rotulo">CONEXIONES</span>
       <a className="r-conexion" href="https://kairos-kh.vercel.app/"><CalendarClock size={17}/><span>Kairós<small>Recibos y vencimientos</small></span><ArrowRight size={15} aria-hidden="true"/></a>
+      <a className="r-conexion" href="https://faro-kh.vercel.app/"><Flag size={17}/><span>Faro<small>Metas y proyectos</small></span><ArrowRight size={15} aria-hidden="true"/></a>
       <div className="r-riel-hueco"/>
       <div className="r-riel-pie">
         {cuenta}
@@ -227,6 +228,7 @@ export function Nuevo({ v }: { v: VistaNueva }) {
           {EN_MAS.map((s) => { const Icono = ICONOS[s]; return <button key={s} className={v.tab === s ? 'activa' : ''} onClick={() => ir(s)}><Icono size={20}/><span className="r-num">{TITULOS[s][0]}</span>{TITULOS[s][1]}</button>; })}
         </div>
         <a className="r-conexion" href="https://kairos-kh.vercel.app/"><CalendarClock size={17}/><span>Kairós<small>Recibos y vencimientos</small></span><ArrowRight size={15} aria-hidden="true"/></a>
+      <a className="r-conexion" href="https://faro-kh.vercel.app/"><Flag size={17}/><span>Faro<small>Metas y proyectos</small></span><ArrowRight size={15} aria-hidden="true"/></a>
         <div className="r-mas-lista">
           <button onClick={() => { setMas(false); v.openImport(); }}><FileSpreadsheet size={18}/> Importar un extracto</button>
           <button onClick={() => { setMas(false); v.openGuide(); }}><CircleHelp size={18}/> Ver guía de Brújula</button>
