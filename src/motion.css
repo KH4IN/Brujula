@@ -84,3 +84,12 @@
 :root[data-theme="dark"][data-motion="high"] .page-heading{background:radial-gradient(circle at 92% 18%,#583773 0,transparent 38%),linear-gradient(125deg,#31243d,#203a31);border-color:#745889}
 @media(max-width:650px){:root[data-motion="medium"] .page-heading{padding:19px}:root[data-motion="high"] .page-heading{padding:22px}:root[data-motion="high"] .page-heading:after{font-size:130px;bottom:-35px}}
 @media(prefers-reduced-motion:reduce){:root[data-motion] .card,:root[data-motion] .account-tile,:root[data-motion] .goal-tile,:root[data-motion] .transaction{transition:none!important;transform:none!important}}
+
+/* Feature pages mount on navigation, so these entrances apply to every section. */
+@keyframes panel-arrive{from{opacity:.65;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+:root[data-motion="medium"] .content>.feature-intro,:root[data-motion="medium"] .content>.feature-grid,:root[data-motion="medium"] .content>.budget-summary,:root[data-motion="medium"] .content>.budget-grid,:root[data-motion="medium"] .content>.investment-list{animation:panel-arrive .35s ease-out both}
+:root[data-motion="medium"] .feature-grid>.card,:root[data-motion="medium"] .budget-grid>.card,:root[data-motion="medium"] .investment-list>.card{transition:transform .25s ease,box-shadow .25s ease}
+:root[data-motion="high"] .feature-grid>.card:hover .feature-icon,:root[data-motion="high"] .budget-grid>.card:hover .category-icon{transform:rotate(-8deg) scale(1.12)}
+:root[data-motion="high"] .feature-icon,:root[data-motion="high"] .category-icon{transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+:root[data-motion="high"] .goal-progress span,:root[data-motion="high"] .budget-tile .progress span{transition:width .8s cubic-bezier(.2,.8,.2,1)}
+@media(prefers-reduced-motion:reduce){:root[data-motion] .content>.feature-intro,:root[data-motion] .content>.feature-grid,:root[data-motion] .content>.budget-summary,:root[data-motion] .content>.budget-grid,:root[data-motion] .content>.investment-list{animation:none!important}:root[data-motion] .feature-icon,:root[data-motion] .category-icon,:root[data-motion] .goal-progress span,:root[data-motion] .budget-tile .progress span{transition:none!important;transform:none!important}}

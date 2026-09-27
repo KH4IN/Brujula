@@ -9,15 +9,23 @@ export function MotionExperience({ level, section }: { level: MotionLevel; secti
     let disposed = false;
     let animation: { cancel: () => void } | undefined;
     const frame = requestAnimationFrame(() => {
-      const targets = Array.from(document.querySelectorAll<HTMLElement>('.content > .page-heading, .content > .wealth-strip, .content > .stat-grid, .content > .dashboard-paths, .content > .card, .content > .dashboard-grid'));
+      // Animate a bounded set of page panels, including those rendered by feature components.
+      // Avoid animating transaction rows or every imported holding in a large account.
+      const targets = Array.from(document.querySelectorAll<HTMLElement>([
+        '.content > .page-heading', '.content > .wealth-strip', '.content > .stat-grid',
+        '.content > .dashboard-paths', '.content > .card', '.content > .dashboard-grid',
+        '.content > .budget-summary', '.content > .budget-grid',
+        '.content > .feature-intro', '.content > .feature-grid',
+        '.content > .investment-list',
+      ].join(', '))).slice(0, 12);
       if (!targets.length) return;
       void import('animejs/animation').then(({ animate }) => {
         if (disposed || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         animation = animate(targets, {
           opacity: { from: 0, to: 1 },
-          translateY: { from: '14px', to: '0px' },
-          duration: 540,
-          delay: (_, index) => Math.min((index ?? 0) * 65, 300),
+          translateY: { from: '28px', to: '0px' },
+          duration: 760,
+          delay: (_, index) => Math.min((index ?? 0) * 115, 460),
           ease: 'outCubic',
         });
       }).catch(() => { /* The interface remains usable if the optional module is unavailable. */ });
