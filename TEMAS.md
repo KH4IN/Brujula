@@ -8,7 +8,7 @@ En **Configuración → Tema** se elige cómo se ve Brújula. Los datos, la sinc
 
 | Tema | Qué es | Cómo se elige |
 | --- | --- | --- |
-| Tema nuevo («Rumbo») | Diseño hecho de cero. Una esfera de brújula marca el rumbo del mes: norte si ahorras, este si gastas lo que entra, sur si gastas de más. El anillo exterior reparte los gastos por categoría. Barra inferior en el móvil y riel lateral en el escritorio. Modo día y noche. | Opción por defecto para todo el mundo. |
+| Tema nuevo («Rumbo») | Diseño hecho de cero. Una esfera de brújula marca el rumbo del mes: norte si ahorras, este si gastas lo que entra, sur si gastas de más. El anillo exterior reparte los gastos por categoría. Conexiones con Kairós y Faro. Barra inferior en el móvil y riel lateral en el escritorio. Modo día y noche. | Opción por defecto para todo el mundo. |
 | Tema antiguo | El diseño Ultra de antes, sin cambios. | Visible en Configuración. |
 | Diseño clásico | El primer diseño de Brújula (antes, nivel «Bajo»). | Oculto: se desbloquea tocando 7 veces «BRÚJULA · 2026.09» al pie de Configuración. |
 

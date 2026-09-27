@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Activity, ArrowDownLeft, ArrowRight, ArrowUpRight, CalendarClock, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Download, FileSpreadsheet, Landmark, LayoutDashboard, LogOut, Menu, Moon, Plus, Search, Settings2, SlidersHorizontal, Sun, Target, Trash2, TrendingUp, Wallet, X } from 'lucide-react';
+import { Activity, ArrowDownLeft, Flag, ArrowRight, ArrowUpRight, CalendarClock, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Download, FileSpreadsheet, Landmark, LayoutDashboard, LogOut, Menu, Moon, Plus, Search, Settings2, SlidersHorizontal, Sun, Target, Trash2, TrendingUp, Wallet, X } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import { CATEGORIES, accountName, configured, localDate, money, monthLabel, monthOf, supabase, type AccountSetting, type Budget, type Category, type Goal, type Investment, type Transaction } from './data';
 import { claimGuest, emptyStore, readStore, recoverLegacyGuest, removeBudget as removeLocalBudget, removeTransaction as removeLocalTransaction, saveBudget as saveLocalBudget, saveTransaction as saveLocalTransaction, saveGoal, removeGoal, saveInvestment, removeInvestment, saveAccount, mergeUnusedBank, importTransactions, synchronize, type LocalStore } from './ledger';
@@ -286,6 +286,7 @@ export default function App(){
       <div className="nav-label connections-label">CONEXIONES</div>
       <nav className="nav connections-nav" aria-label="Aplicaciones del entorno KH">
         <a href="https://kairos-kh.vercel.app/" onClick={()=>setMobileOpen(false)}><CalendarClock size={19}/><span>Kairós<small>Recibos y vencimientos</small></span><ArrowRight size={15} aria-hidden="true"/></a>
+        <a href="https://faro-kh.vercel.app/" onClick={()=>setMobileOpen(false)}><Flag size={19}/><span>Faro<small>Metas y proyectos</small></span><ArrowRight size={15} aria-hidden="true"/></a>
       </nav>
       <div className="sidebar-spacer"/>
       <div className="sidebar-tip"><div className="tip-icon"><CircleHelp size={20}/></div><strong>Una visión más clara.</strong><p>Registra tus movimientos para ver adónde va cada euro.</p><button className="guide-help" onClick={()=>{setMobileOpen(false);setGuideOpen(true)}}>Ver guía de Brújula</button></div>
