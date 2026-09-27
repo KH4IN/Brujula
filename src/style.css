@@ -184,10 +184,22 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 :root[data-theme="dark"] .guide-skip,:root[data-theme="dark"] .guide-top-button{color:#dfbd74}
 @media(max-width:750px){.guide-coach{left:12px!important;right:12px;bottom:12px;top:auto!important;width:auto;max-width:none;max-height:min(42dvh,360px);padding:16px}.guide-shade{background:#0c142760}.guide-highlight{outline-offset:2px}}
 
-/* Cosmetic motion never changes financial values or navigation. */
+/* Fase 6: efectos decorativos; el contenido y los controles no dependen de ellos. */
 .motion-control{display:inline-flex;align-items:center;gap:6px;font-size:11px;white-space:nowrap}.motion-control select{max-width:82px;border:1px solid #d9e2d9;border-radius:7px;background:transparent;color:inherit;padding:5px;font-size:11px}
 :root[data-theme="dark"] .motion-control select{border-color:#756184;background:#2b2936;color:#f0edf7}
 @media(max-width:600px){.motion-control{font-size:0;gap:0}.motion-control select{font-size:11px;max-width:69px}}
+.top-account-actions button{display:flex;align-items:center;gap:9px}
+.visual-settings{width:min(100%,520px);max-height:calc(100dvh - 32px);overflow:auto}
+.visual-settings-options{border:0;padding:0;margin:0;min-width:0}
+.visual-settings-options legend{font-size:13px;font-weight:800;color:inherit}
+.visual-settings-options>p,.visual-settings-note{font-size:12px;line-height:1.55;color:#738575}
+.visual-settings-options label{display:flex;align-items:flex-start;gap:12px;border:1px solid #dfe6df;border-radius:13px;padding:15px;margin:10px 0;cursor:pointer;background:#fff}
+.visual-settings-options label.selected{border-color:#8055a4;background:#f7f0fc;box-shadow:0 0 0 2px #8055a422}
+.visual-settings-options input{width:18px;height:18px;flex:none;accent-color:#8055a4;margin:2px 0 0}
+.visual-settings-options label span{display:grid;gap:4px}.visual-settings-options label strong{font-size:13px}.visual-settings-options label small{font-size:11px;line-height:1.5;color:#6f8073}
+:root[data-theme="dark"] .visual-settings-options label{background:#2b2936;border-color:#554b60;color:#f0edf7}
+:root[data-theme="dark"] .visual-settings-options label.selected{background:#40314e;border-color:#b18bd1}
+:root[data-theme="dark"] .visual-settings-options>p,:root[data-theme="dark"] .visual-settings-note,:root[data-theme="dark"] .visual-settings-options label small{color:#c4bbce}
 @media(prefers-reduced-motion:no-preference){
  :root[data-motion="low"] .dashboard-path,:root[data-motion="low"] .daily-bar span,:root[data-motion="low"] .sidebar{transition:none}
  :root[data-motion="high"] .dashboard-path{transition:transform .28s ease,box-shadow .28s ease,background-color .28s ease}
