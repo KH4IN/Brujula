@@ -2,105 +2,14 @@
 :root[data-motion="low"] .dashboard-path:hover{transform:none;box-shadow:none}
 :root[data-motion="low"] .dashboard-path,:root[data-motion="low"] .daily-bar span,:root[data-motion="low"] .sidebar{transition:none}
 
-/* Medium: a clearer cockpit with stronger grouping and direct feedback. */
-:root[data-motion="medium"] .content,:root[data-motion="high"] .content{--motion-accent:#8262ac}
-:root[data-motion="medium"] .wealth-strip,:root[data-motion="high"] .wealth-strip{gap:10px;background:transparent;border:0;overflow:visible}
-:root[data-motion="medium"] .wealth-strip>div,:root[data-motion="medium"] .wealth-strip>button{border:1px solid #e2dbea;border-radius:16px;background:linear-gradient(135deg,#fff,#f5f0fa);box-shadow:0 8px 25px #3d28500c}
-:root[data-motion="medium"] .stat-grid{gap:12px}
-:root[data-motion="medium"] .stat{border-radius:20px;box-shadow:0 12px 32px #263a2810}
-:root[data-motion="medium"] .dashboard-paths{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-:root[data-motion="medium"] .dashboard-path{border-radius:20px;background:linear-gradient(135deg,#fff,#f7f2fc);min-height:122px}
-:root[data-motion="medium"] .dashboard-path.path-analysis{background:linear-gradient(135deg,#f0e8fb,#e7f2e6)}
-:root[data-motion="medium"] .dashboard-path:hover{transform:translateY(-3px);box-shadow:0 16px 32px #4c306025}
-:root[data-motion="medium"] .card{border-radius:20px}
-:root[data-motion="medium"] .flow-card,:root[data-motion="medium"] .budget-summary,:root[data-motion="medium"] .feature-intro{background:linear-gradient(125deg,#f5f0fa,#eaf2e9);border:1px solid #e4dced;border-radius:20px;box-shadow:0 10px 30px #3d28500c}
-:root[data-motion="medium"] .budget-tile,:root[data-motion="medium"] .account-tile,:root[data-motion="medium"] .goal-tile,:root[data-motion="medium"] .holding{border-radius:18px}
-:root[data-motion="medium"] .full-card .transaction:hover,:root[data-motion="medium"] .investment-list .holding:hover{background:#f7f2fb}
-
-/* High: rich layered surfaces. All values and buttons remain in the same DOM. */
-:root[data-motion="high"] .main{background:radial-gradient(circle at 85% 5%,#e7d8f5 0,transparent 32%),radial-gradient(circle at 2% 55%,#e1efe6 0,transparent 36%),#f8f7fb}
-:root[data-motion="high"] .topbar{background:#ffffffd9;backdrop-filter:blur(16px)}
-:root[data-motion="high"] .page-heading h1{font-size:clamp(30px,4vw,48px);background:linear-gradient(100deg,#253d33,#7b56a2 75%);background-clip:text;color:transparent}
-:root[data-motion="high"] .wealth-strip{grid-template-columns:1.6fr repeat(3,1fr)}
-:root[data-motion="high"] .wealth-strip>div,:root[data-motion="high"] .wealth-strip>button{position:relative;overflow:hidden;border:1px solid #d9c9e9;border-radius:22px;background:linear-gradient(140deg,#322641,#563d71 60%,#75538a);color:#f2e9fc;box-shadow:0 18px 38px #4a306236}
-:root[data-motion="high"] .wealth-strip>div:after,:root[data-motion="high"] .wealth-strip>button:after{content:"";position:absolute;width:140px;height:140px;right:-60px;top:-80px;border-radius:50%;background:#ffffff1e;pointer-events:none}
-:root[data-motion="high"] .wealth-strip strong,:root[data-motion="high"] .wealth-strip>div>strong,:root[data-motion="high"] .wealth-strip small{color:#fff2c5}
-:root[data-motion="high"] .stat-grid{gap:18px}
-:root[data-motion="high"] .stat{border-radius:22px;box-shadow:0 15px 36px #39254c20}
-:root[data-motion="high"] .dashboard-paths{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-:root[data-motion="high"] .dashboard-path{position:relative;overflow:hidden;min-height:138px;border-radius:24px;border:1px solid #d2bbeb;background:linear-gradient(125deg,#fff9ff,#eae0f7 55%,#e0f0e5);box-shadow:0 14px 34px #4e2d7320}
-:root[data-motion="high"] .dashboard-path.path-analysis{background:linear-gradient(125deg,#efe2ff,#dbd0f3 55%,#dbeee3)}
-:root[data-motion="high"] .dashboard-path:hover{transform:translateY(-6px) scale(1.01);box-shadow:0 25px 42px #53347c38}
-:root[data-motion="high"] .dashboard-path:hover>.path-icon{transform:rotate(-8deg) scale(1.12)}
-:root[data-motion="high"] .dashboard-path>.path-icon{transition:transform .35s ease}
-:root[data-motion="high"] .card{border-radius:23px;box-shadow:0 16px 38px #32274714}
-:root[data-motion="high"] .flow-ring,:root[data-motion="high"] .donut{filter:drop-shadow(0 12px 16px #513d7130)}
-:root[data-motion="high"] .flow-card,:root[data-motion="high"] .budget-summary,:root[data-motion="high"] .feature-intro{background:linear-gradient(125deg,#f5eaff,#e8e0f6 55%,#e1f0e7);border:1px solid #d8c4eb;border-radius:24px;box-shadow:0 18px 40px #513d7120}
-:root[data-motion="high"] .budget-tile,:root[data-motion="high"] .account-tile,:root[data-motion="high"] .goal-tile,:root[data-motion="high"] .investment-summary,:root[data-motion="high"] .holding{border:1px solid #dfd0ed;border-radius:22px;background:linear-gradient(145deg,#fff,#faf5ff);box-shadow:0 12px 30px #513d7118}
-:root[data-motion="high"] .full-card .transaction:hover,:root[data-motion="high"] .investment-list .holding:hover{background:#f3eafc}
-:root[data-motion="high"] .progress span,:root[data-motion="high"] .goal-progress span{box-shadow:0 0 12px #a879d777}
-
-:root[data-theme="dark"][data-motion="medium"] .wealth-strip>div,:root[data-theme="dark"][data-motion="medium"] .wealth-strip>button,:root[data-theme="dark"][data-motion="medium"] .dashboard-path{background:linear-gradient(140deg,#30283d,#3c304a);border-color:#6a557d}
-:root[data-theme="dark"][data-motion="high"] .main{background:radial-gradient(circle at 85% 0%,#3d265e 0,transparent 38%),radial-gradient(circle at 5% 55%,#173c34 0,transparent 40%),#171720}
-:root[data-theme="dark"][data-motion="high"] .topbar{background:#201d2ddd}
-:root[data-theme="dark"][data-motion="high"] .page-heading h1{background:linear-gradient(90deg,#f0d38c,#d9b9f5);background-clip:text;color:transparent}
-:root[data-theme="dark"][data-motion="high"] .dashboard-path{background:linear-gradient(130deg,#3c2a51,#322945 60%,#203d38);border-color:#806399}
-:root[data-theme="dark"][data-motion="high"] .dashboard-path.path-analysis{background:linear-gradient(130deg,#533273,#372e56 60%,#24483d)}
-:root[data-theme="dark"][data-motion="medium"] .flow-card,:root[data-theme="dark"][data-motion="medium"] .budget-summary,:root[data-theme="dark"][data-motion="medium"] .feature-intro,:root[data-theme="dark"][data-motion="high"] .flow-card,:root[data-theme="dark"][data-motion="high"] .budget-summary,:root[data-theme="dark"][data-motion="high"] .feature-intro{background:linear-gradient(130deg,#332841,#253b36);border-color:#6a557d}
-:root[data-theme="dark"][data-motion="high"] .budget-tile,:root[data-theme="dark"][data-motion="high"] .account-tile,:root[data-theme="dark"][data-motion="high"] .goal-tile,:root[data-theme="dark"][data-motion="high"] .investment-summary,:root[data-theme="dark"][data-motion="high"] .holding{background:linear-gradient(140deg,#30283d,#292d39);border-color:#665477}
-:root[data-theme="dark"][data-motion="medium"] .full-card .transaction:hover,:root[data-theme="dark"][data-motion="medium"] .investment-list .holding:hover,:root[data-theme="dark"][data-motion="high"] .full-card .transaction:hover,:root[data-theme="dark"][data-motion="high"] .investment-list .holding:hover{background:#443654}
-
-@media(max-width:1000px){
- :root[data-motion="high"] .wealth-strip{grid-template-columns:repeat(3,minmax(0,1fr))}
-}
-
-@media(max-width:750px){
- :root[data-motion="medium"] .dashboard-paths,:root[data-motion="high"] .dashboard-paths{grid-template-columns:1fr}
- :root[data-motion="high"] .dashboard-path{min-height:104px}
- :root[data-motion="medium"] .wealth-strip,:root[data-motion="high"] .wealth-strip{gap:6px}
- :root[data-motion="high"] .wealth-strip>button{min-width:0;overflow-wrap:anywhere}
-}
 @media(prefers-reduced-motion:reduce){
  :root[data-motion] .dashboard-path:hover{transform:none;box-shadow:none}
  :root[data-motion] .dashboard-path>.path-icon{transition:none;transform:none}
 }
 
-/* Page-wide visual systems. The classic layout stays untouched at low. */
-:root[data-motion="medium"] .page-heading{padding:24px;border:1px solid #e5daec;border-radius:22px;background:linear-gradient(110deg,#faf7ff,#f0f6ef);margin-bottom:20px}
-:root[data-motion="medium"] .dashboard-grid,:root[data-motion="medium"] .budget-grid,:root[data-motion="medium"] .feature-grid{gap:20px}
-:root[data-motion="medium"] .card,:root[data-motion="medium"] .account-tile,:root[data-motion="medium"] .goal-tile{transition:box-shadow .24s ease,transform .24s ease}
-:root[data-motion="medium"] .card:hover,:root[data-motion="medium"] .account-tile:hover,:root[data-motion="medium"] .goal-tile:hover{box-shadow:0 16px 38px #39274b22;transform:translateY(-2px)}
-:root[data-motion="medium"] .transaction{transition:background .18s ease,padding .18s ease}
-:root[data-motion="medium"] .transaction:hover{padding-inline:8px}
-:root[data-motion="high"] .page-heading{position:relative;overflow:hidden;padding:clamp(24px,4vw,50px);border:1px solid #dcc7eb;border-radius:28px;background:radial-gradient(circle at 92% 18%,#d9bdeb 0,transparent 32%),linear-gradient(125deg,#fdfaff,#e8f2ec);box-shadow:0 25px 55px #44285c20;margin-bottom:24px}
-:root[data-motion="high"] .page-heading:after{content:"✳";position:absolute;right:4%;bottom:-65px;font-size:210px;line-height:1;color:#70508a12;pointer-events:none}
-:root[data-motion="high"] .heading-actions{position:relative;z-index:1}
-:root[data-motion="high"] .dashboard-grid,:root[data-motion="high"] .budget-grid,:root[data-motion="high"] .feature-grid{gap:24px}
-:root[data-motion="high"] .card,:root[data-motion="high"] .account-tile,:root[data-motion="high"] .goal-tile{transition:box-shadow .4s ease,transform .4s cubic-bezier(.2,.8,.2,1)}
-:root[data-motion="high"] .card:hover,:root[data-motion="high"] .account-tile:hover,:root[data-motion="high"] .goal-tile:hover{transform:translateY(-5px);box-shadow:0 28px 55px #49316035}
-:root[data-motion="high"] .transaction{transition:background .25s ease,transform .3s ease}
-:root[data-motion="high"] .transaction:hover{transform:translateX(6px)}
-:root[data-theme="dark"][data-motion="medium"] .page-heading{background:linear-gradient(110deg,#30283d,#25362f);border-color:#59476c}
-:root[data-theme="dark"][data-motion="high"] .page-heading{background:radial-gradient(circle at 92% 18%,#583773 0,transparent 38%),linear-gradient(125deg,#31243d,#203a31);border-color:#745889}
-@media(max-width:650px){:root[data-motion="medium"] .page-heading{padding:19px}:root[data-motion="high"] .page-heading{padding:22px}:root[data-motion="high"] .page-heading:after{font-size:130px;bottom:-35px}}
 @media(prefers-reduced-motion:reduce){:root[data-motion] .card,:root[data-motion] .account-tile,:root[data-motion] .goal-tile,:root[data-motion] .transaction{transition:none!important;transform:none!important}}
 
-/* Feature pages mount on navigation, so these entrances apply to every section. */
-@keyframes panel-arrive{from{opacity:.65;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-:root[data-motion="medium"] .content>.feature-intro,:root[data-motion="medium"] .content>.feature-grid,:root[data-motion="medium"] .content>.budget-summary,:root[data-motion="medium"] .content>.budget-grid,:root[data-motion="medium"] .content>.investment-list{animation:panel-arrive .35s ease-out both}
-:root[data-motion="medium"] .feature-grid>.card,:root[data-motion="medium"] .budget-grid>.card,:root[data-motion="medium"] .investment-list>.card{transition:transform .25s ease,box-shadow .25s ease}
-:root[data-motion="high"] .feature-grid>.card:hover .feature-icon,:root[data-motion="high"] .budget-grid>.card:hover .category-icon{transform:rotate(-8deg) scale(1.12)}
-:root[data-motion="high"] .feature-icon,:root[data-motion="high"] .category-icon{transition:transform .4s cubic-bezier(.2,.8,.2,1)}
-:root[data-motion="high"] .goal-progress span,:root[data-motion="high"] .budget-tile .progress span{transition:width .8s cubic-bezier(.2,.8,.2,1)}
 @media(prefers-reduced-motion:reduce){:root[data-motion] .content>.feature-intro,:root[data-motion] .content>.feature-grid,:root[data-motion] .content>.budget-summary,:root[data-motion] .content>.budget-grid,:root[data-motion] .content>.investment-list{animation:none!important}:root[data-motion] .feature-icon,:root[data-motion] .category-icon,:root[data-motion] .goal-progress span,:root[data-motion] .budget-tile .progress span{transition:none!important;transform:none!important}}
-
-/* High colors every main panel, including analysis and transaction history. */
-:root[data-motion="high"] .distribution,:root[data-motion="high"] .daily-card,:root[data-motion="high"] .recent,:root[data-motion="high"] .full-card,:root[data-motion="high"] .dashboard-grid>.card{background:linear-gradient(145deg,#fff8ff,#f0e6f8 58%,#e7f3eb);border-color:#d7c2ea}
-:root[data-theme="dark"][data-motion="high"] .distribution,:root[data-theme="dark"][data-motion="high"] .daily-card,:root[data-theme="dark"][data-motion="high"] .recent,:root[data-theme="dark"][data-motion="high"] .full-card,:root[data-theme="dark"][data-motion="high"] .dashboard-grid>.card{background:linear-gradient(145deg,#34273f,#292a3e 60%,#213c34);border-color:#725586}
-:root[data-motion="medium"] .dashboard-paths{grid-template-columns:repeat(2,minmax(0,1fr))}
-:root[data-motion="medium"] .page-heading{background:#f1f5f1;border-color:#dce8dd;box-shadow:none}
-:root[data-motion="medium"] .card,:root[data-motion="medium"] .feature-intro,:root[data-motion="medium"] .budget-summary{box-shadow:none}
-@media(max-width:750px){:root[data-motion="medium"] .dashboard-paths{grid-template-columns:1fr}}
 
 /* Ultra is a staging-only experimental visual layer. */
 :root[data-motion="ultra"] .main{background:radial-gradient(circle at 90% 10%,#503269 0,transparent 36%),radial-gradient(circle at 4% 65%,#245a52 0,transparent 38%),#131824;color:#f7f1ff}

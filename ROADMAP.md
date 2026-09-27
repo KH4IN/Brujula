@@ -121,6 +121,9 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 - [ ] Comprobar que teclado, lectores de pantalla y contenido funcionan igual sin animaciones.
 - **Criterio de cierre:** los tres niveles son útiles, el modo reducido es accesible y la app sigue funcionando al desactivar JavaScript de animación.
 
+### Temas (27-09-2026)
+
+27-09-2026: el fundador pide sustituir los niveles por temas. Se retiran Alto y Medio. Ultra pasa a ser el «Tema antiguo», se crea un «Tema nuevo» desde cero (por defecto) y Bajo queda como diseño clásico oculto. Detalle en `TEMAS.md`; pendiente de prueba en staging.
 ## Fase 7 · Publicación gradual y crecimiento
 
 - [ ] Pasar cada bloque por pruebas, revisión y despliegue controlado; anotar commit, resultado y forma de revertirlo.

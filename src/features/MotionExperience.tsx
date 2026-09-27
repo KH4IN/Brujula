@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 
-export type MotionLevel = 'low' | 'medium' | 'high' | 'ultra';
+export type MotionLevel = 'low' | 'ultra';
 
 /** Decorative choreography only. Content and controls exist before this effect runs. */
 export function MotionExperience({ level, section }: { level: MotionLevel; section: string }) {
   useEffect(() => {
-    if ((level !== 'high' && level !== 'ultra') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (level !== 'ultra' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let disposed = false;
     let animation: { cancel: () => void } | undefined;
     const frame = requestAnimationFrame(() => {
@@ -24,9 +24,9 @@ export function MotionExperience({ level, section }: { level: MotionLevel; secti
         if (disposed || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         animation = animate(targets, {
           opacity: { from: 0, to: 1 },
-          translateY: { from: level === 'ultra' ? '54px' : '28px', to: '0px' },
-          duration: level === 'ultra' ? 1100 : 760,
-          delay: (_, index) => Math.min((index ?? 0) * (level === 'ultra' ? 160 : 115), 640),
+          translateY: { from: '54px', to: '0px' },
+          duration: 1100,
+          delay: (_, index) => Math.min((index ?? 0) * 160, 640),
           ease: 'outCubic',
         });
       }).catch(() => { /* The interface remains usable if the optional module is unavailable. */ });
