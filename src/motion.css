@@ -163,3 +163,41 @@
 :root[data-motion="ultra"] .ultra-quadrant:nth-child(2){animation-delay:.12s}:root[data-motion="ultra"] .ultra-quadrant:nth-child(3){animation-delay:.24s}:root[data-motion="ultra"] .ultra-quadrant:nth-child(4){animation-delay:.36s}
 @media(max-width:750px){:root[data-motion="ultra"] .feature-grid.two,:root[data-motion="ultra"] .feature-grid.three,:root[data-motion="ultra"] .budget-grid,:root[data-motion="ultra"] .investment-list{grid-template-columns:1fr}:root[data-motion="ultra"] .content>.page-heading{padding:16px}:root[data-motion="ultra"] .full-card{padding:18px}:root[data-motion="ultra"] .ultra-section-stage .ultra-quadrant{min-height:150px}}
 @media(prefers-reduced-motion:reduce){:root[data-motion="ultra"] .ultra-quadrant{animation:none!important}}
+
+/* Ultra overview: a compact navigator followed by real financial totals. */
+:root[data-motion="ultra"] .content[data-ultra-section="dashboard"]>.ultra-stage{padding:20px 24px}
+:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-stage-heading{margin-bottom:12px}
+:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-stage-heading strong{font-size:clamp(19px,2.4vw,26px)}
+:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-quadrant{min-height:124px;padding:16px;gap:3px}
+:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-quadrant svg{width:19px;height:19px}
+:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-quadrant strong{font-size:17px}
+:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-quadrant b{font-size:20px}
+:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-quadrant small{display:none}
+:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-inspector{padding:10px 14px;margin-top:10px}
+:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-inspector strong{font-size:14px;margin:3px 0}
+:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-inspector p{display:none}
+:root[data-motion="ultra"] .wealth-strip{display:grid;grid-template-columns:1.5fr repeat(3,minmax(0,1fr));gap:10px;border:0;background:transparent;overflow:visible}
+:root[data-motion="ultra"] .wealth-strip>div,:root[data-motion="ultra"] .wealth-strip>button{border:1px solid #aa8ec0;border-radius:18px;background:linear-gradient(130deg,#44325d,#24475a);color:#f4dcff;box-shadow:0 14px 35px #080c2555}
+:root[data-motion="ultra"] .wealth-strip>button:nth-child(2){background:linear-gradient(130deg,#41387b,#2e4670)}
+:root[data-motion="ultra"] .wealth-strip>button:nth-child(3){background:linear-gradient(130deg,#146067,#2d4261)}
+:root[data-motion="ultra"] .wealth-strip>button:nth-child(4){background:linear-gradient(130deg,#5e425c,#3a4666)}
+:root[data-motion="ultra"] .wealth-strip strong,:root[data-motion="ultra"] .wealth-strip small{color:#fff1d5}
+:root[data-motion="ultra"] .stat-grid{gap:12px}
+:root[data-motion="ultra"] .stat{background:linear-gradient(135deg,#3a315e,#253e52);color:#fff3db;border:1px solid #8766a7;border-radius:18px;box-shadow:0 15px 35px #080c2555}
+:root[data-motion="ultra"] .stat strong,:root[data-motion="ultra"] .stat span{color:#fff3db}
+:root[data-motion="ultra"] .stat:nth-child(2){background:linear-gradient(135deg,#1c685b,#244659)}
+:root[data-motion="ultra"] .stat:nth-child(3){background:linear-gradient(135deg,#765040,#513956)}
+
+/* In the detail pages, a chart replaces the repeated navigation panel. */
+.ultra-insights{display:grid;grid-template-columns:minmax(210px,.85fr) minmax(0,1.4fr);gap:22px;padding:26px;margin:0 0 25px;border:1px solid #9b79ba;border-radius:25px;background:linear-gradient(135deg,#392b58,#1b4b51);color:#fff3e8;box-shadow:0 24px 55px #0c112b77}
+.ultra-insights-intro{align-self:center}.ultra-insights-intro span{font-size:10px;letter-spacing:.18em;font-weight:800;color:#e6baf8}.ultra-insights-intro h2{font:800 clamp(23px,3vw,36px) 'Manrope',sans-serif;line-height:1.13;margin:14px 0;color:#fff0d4}.ultra-insights-intro p{font-size:13px;line-height:1.6;color:#e0d4e9}
+.ultra-insights-visual{background:#111c32a8;border:1px solid #b492cc77;border-radius:19px;padding:22px;min-width:0}.ultra-data-bars{display:grid;gap:15px;max-height:400px;overflow:auto}.ultra-data-row>div:first-child{display:flex;justify-content:space-between;gap:12px;font-size:12px}.ultra-data-row span{overflow:hidden;text-overflow:ellipsis}.ultra-data-row strong{white-space:nowrap;color:#ffecc7}.ultra-data-track{height:13px;background:#ffffff21;border-radius:15px;overflow:hidden;margin-top:8px}.ultra-data-track span{display:block;height:100%;border-radius:15px;background:linear-gradient(90deg,#a47bdc,#f1c788);transition:width .7s ease}.ultra-data-row:nth-child(2) .ultra-data-track span{background:linear-gradient(90deg,#338f92,#7addbf)}.ultra-data-row:nth-child(3) .ultra-data-track span{background:linear-gradient(90deg,#ae6e69,#edbc90)}.ultra-data-row button{border:0;background:none;padding:5px 0;color:#d6b6f6;text-decoration:underline;font-size:11px}.ultra-insights-empty{font-size:13px;color:#e6dce9;line-height:1.6}
+:root[data-motion="ultra"] .ultra-insights-analysis{background:linear-gradient(135deg,#493378,#125f67)}
+:root[data-motion="ultra"] .ultra-insights-transactions{background:linear-gradient(135deg,#325f6a,#32375b)}
+:root[data-motion="ultra"] .ultra-insights-budgets{background:linear-gradient(135deg,#674260,#645045)}
+:root[data-motion="ultra"] .ultra-insights-accounts{background:linear-gradient(135deg,#4b3c79,#217061)}
+:root[data-motion="ultra"] .ultra-insights-goals{background:linear-gradient(135deg,#345f5c,#664365)}
+:root[data-motion="ultra"] .ultra-insights-investments{background:linear-gradient(135deg,#383b76,#316261)}
+@media(max-width:900px){.ultra-insights{grid-template-columns:1fr}:root[data-motion="ultra"] .wealth-strip{grid-template-columns:repeat(3,minmax(0,1fr))}:root[data-motion="ultra"] .wealth-strip>div{grid-column:1/-1}}
+@media(max-width:650px){.ultra-insights{padding:18px;gap:10px}.ultra-insights-visual{padding:16px}:root[data-motion="ultra"] .content[data-ultra-section="dashboard"]>.ultra-stage{padding:15px}:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-quadrant{min-height:108px;padding:12px}:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-quadrant strong{font-size:15px}:root[data-motion="ultra"] .content[data-ultra-section="dashboard"] .ultra-quadrant b{font-size:16px}:root[data-motion="ultra"] .wealth-strip>button{padding:12px 8px}:root[data-motion="ultra"] .wealth-strip>button strong{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.ultra-data-track span{transition:none!important}}
