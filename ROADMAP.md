@@ -125,6 +125,8 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 El fundador rechazó la primera iteración de niveles, limitada a pequeñas transiciones. La fase permanece abierta. La nueva propuesta en PR #64 conserva el aspecto actual para Bajo, presenta una composición de paneles distinta en Medio y añade superficies y entradas escalonadas mediante Anime.js en Alto. Pendientes: revisión visual del fundador en pruebas, teclado/lector de pantalla, movimiento reducido y medición en teléfonos; no se declara la fase cerrada ni se lleva a producción antes de esa revisión.
 
+27-09-2026: el fundador pide sustituir los niveles por temas. Se retiran Alto y Medio. Ultra pasa a ser el «Tema antiguo», se crea un «Tema nuevo» desde cero (por defecto) y Bajo queda como diseño clásico oculto. Detalle en `TEMAS.md`; pendiente de prueba en staging.
+
 ## Fase 7 · Publicación gradual y crecimiento
 
 - [ ] Pasar cada bloque por pruebas, revisión y despliegue controlado; anotar commit, resultado y forma de revertirlo.

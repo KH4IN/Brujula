@@ -212,9 +212,6 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 :root[data-theme="dark"] .visual-settings-options>p,:root[data-theme="dark"] .visual-settings-note,:root[data-theme="dark"] .visual-settings-options label small{color:#c4bbce}
 @media(prefers-reduced-motion:no-preference){
  :root[data-motion="low"] .dashboard-path,:root[data-motion="low"] .daily-bar span,:root[data-motion="low"] .sidebar{transition:none}
- :root[data-motion="high"] .dashboard-path{transition:transform .28s ease,box-shadow .28s ease,background-color .28s ease}
- :root[data-motion="high"] .dashboard-path:hover{transform:translateY(-3px)}
- :root[data-motion="high"] .content>.page-heading,:root[data-motion="high"] .content>.card,:root[data-motion="high"] .content>.dashboard-paths{animation:motion-enter .3s ease-out both}
  @keyframes motion-enter{from{opacity:.65;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
