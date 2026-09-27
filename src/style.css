@@ -182,7 +182,7 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
 :root[data-theme="dark"] .guide-coach h2{color:#f0edf7}
 :root[data-theme="dark"] .guide-coach p{color:#c8bdd2}
 :root[data-theme="dark"] .guide-skip,:root[data-theme="dark"] .guide-top-button{color:#dfbd74}
-@media(max-width:750px){.guide-coach{left:12px!important;right:12px;bottom:12px;top:auto!important;width:auto;max-width:none;max-height:min(42dvh,360px);padding:16px}.guide-shade{background:#0c142760}.guide-highlight{outline-offset:2px}}
+@media(max-width:750px){.guide-coach{left:12px!important;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));top:auto!important;width:auto;max-width:none;max-height:min(42dvh,360px);padding:16px}.guide-shade{background:#0c142760}.guide-highlight{outline-offset:2px}}
 
 /* Fase 6: efectos decorativos; el contenido y los controles no dependen de ellos. */
 .motion-control{display:inline-flex;align-items:center;gap:6px;font-size:11px;white-space:nowrap}.motion-control select{max-width:82px;border:1px solid #d9e2d9;border-radius:7px;background:transparent;color:inherit;padding:5px;font-size:11px}
