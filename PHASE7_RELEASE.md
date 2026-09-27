@@ -1,10 +1,17 @@
 # Fase 7 · Registro de publicación gradual
 
+## Decisión de producto · 27-09-2026
+
+- Ultra pasa a ser el nivel inicial en todos los entornos. Bajo, Medio y Alto siguen disponibles en Configuración y se respetan las elecciones guardadas. El fundador informa de buen funcionamiento de Ultra en su Redmi Note 11S; esto no sustituye una medición instrumentada ni una prueba de iPhone.
+- Brújula entra en mantenimiento y mejoras de calidad, sin ampliar su alcance funcional. El menú Conexiones enlaza Kairós, aplicación publicada de recibos y vencimientos. Cada aplicación gestiona su propia sesión; el enlace no transmite identidad ni datos financieros.
+- Astrolabio figura como futura vista del entorno KH en las ideas del proyecto; no se presenta como aplicación disponible hasta que se publique y exista una integración definida.
+- Este cambio no cierra automáticamente las comprobaciones de accesibilidad, dos cuentas y dos dispositivos, rendimiento ni revisión en iPhone que siguen abajo. Registrar resultados antes de cerrar esas casillas.
+
 ## Versión de pruebas del 27-09-2026
 
 - **Rama:** `staging`. Versión anterior verificada: `3b806e064c2aa85e31e533f1e3f25e46a6077cb2` (despliegue `dpl_HqXeqRuGLiy7qZmygwvTdvx4FZvg`, READY).
 - **Cambio:** navegación Ultra sin cifra de patrimonio repetida; CI también en cada push a `staging`.
-- **Entorno:** URL fija de pruebas con protección de acceso de Vercel y Supabase de pruebas aislado. Ultra solo se ofrece en la URL `-git-staging-`; en producción no se ofrece aunque el código llegue allí.
+- **Entorno histórico:** URL fija de pruebas con protección de acceso de Vercel y Supabase de pruebas aislado. En esta versión Ultra solo se ofrecía en la URL `-git-staging-`; la decisión posterior de producto lo habilita en todos los entornos cuando se publique.
 - **Verificación previa:** `npm test`, `npm run build`; comprobar CI y que el despliegue nuevo alcance READY y tenga el SHA esperado antes de pedir revisión visual.
 - **Revisión del fundador:** Vista general y Ultra provisionalmente aceptados antes de este ajuste. Queda revisar esta corrección en iPhone y recorrer las secciones con datos ficticios.
 - **Vuelta atrás:** crear un commit que revierta este cambio en `staging`, ejecutar CI y verificar el nuevo despliegue READY. Si el incidente es solo de hosting, volver temporalmente al despliegue anterior desde Vercel y después alinear GitHub. Ninguna de estas acciones revierte datos guardados; no hay cambio de esquema en esta entrega.
