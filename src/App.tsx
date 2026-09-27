@@ -49,6 +49,12 @@ export default function App(){
   const [merchantFilter,setMerchantFilter]=useState('all');
   const [filter,setFilter]=useState<'all'|'income'|'expense'|'transfer'>('all');
   const [mobileOpen,setMobileOpen]=useState(false);
+  useEffect(()=>{
+    if(!mobileOpen)return;
+    const previous=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    return()=>{document.body.style.overflow=previous};
+  },[mobileOpen]);
   const [settingsOpen,setSettingsOpen]=useState(false);
   const [dark,setDark]=useState(()=>document.documentElement.dataset.theme==='dark');
   const [motion,setMotion]=useState<MotionLevel>(()=>{
