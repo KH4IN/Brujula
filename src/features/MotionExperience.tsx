@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 
-export type MotionLevel = 'low' | 'medium' | 'high';
+export type MotionLevel = 'low' | 'medium' | 'high' | 'ultra';
 
 /** Decorative choreography only. Content and controls exist before this effect runs. */
 export function MotionExperience({ level, section }: { level: MotionLevel; section: string }) {
   useEffect(() => {
-    if (level !== 'high' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if ((level !== 'high' && level !== 'ultra') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let disposed = false;
     let animation: { cancel: () => void } | undefined;
     const frame = requestAnimationFrame(() => {
@@ -17,15 +17,16 @@ export function MotionExperience({ level, section }: { level: MotionLevel; secti
         '.content > .budget-summary', '.content > .budget-grid',
         '.content > .feature-intro', '.content > .feature-grid',
         '.content > .investment-list',
+        '.content > .ultra-stage',
       ].join(', '))).slice(0, 12);
       if (!targets.length) return;
       void import('animejs/animation').then(({ animate }) => {
         if (disposed || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         animation = animate(targets, {
           opacity: { from: 0, to: 1 },
-          translateY: { from: '28px', to: '0px' },
-          duration: 760,
-          delay: (_, index) => Math.min((index ?? 0) * 115, 460),
+          translateY: { from: level === 'ultra' ? '54px' : '28px', to: '0px' },
+          duration: level === 'ultra' ? 1100 : 760,
+          delay: (_, index) => Math.min((index ?? 0) * (level === 'ultra' ? 160 : 115), 640),
           ease: 'outCubic',
         });
       }).catch(() => { /* The interface remains usable if the optional module is unavailable. */ });
