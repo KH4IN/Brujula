@@ -101,7 +101,9 @@ y las otras apps nunca escriben en las de Brújula.
 Es posible que se pida **planificar o implementar un cobro** por un servicio más
 avanzado. Reglas:
 
-1. **Primero el plan**: propuesta en `docs/PREMIUM.md` (qué es gratis y qué premium,
+1. **Primero el plan**: propuesta en `docs/premium/PLAN.md` del repositorio
+   `KH4IN/Ideas-de-aplicaciones-de-entorno-kh` (el encargo común está en
+   `docs/premium/ENCARGO.md`) (qué es gratis y qué premium,
    proveedor, precios, IVA, reembolsos, cancelación, pagos fallidos) y espera
    aprobación humana. Precios y textos legales los decide el humano.
 2. **Pasarela alojada con redirección** (p. ej. Stripe Checkout y portal de
