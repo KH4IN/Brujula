@@ -16,6 +16,13 @@ test('cerrar sesión borra la copia limpia y protege cambios pendientes',async()
   assert.ok(localStorage.getItem('brujula.local.v2.'+id));
   await cerrarCuentaLocal(id,'borrar',async()=>({error:null}),async()=>readStore(id));
   assert.equal(localStorage.getItem('brujula.local.v2.'+id),null);
+  saveTransaction(id,transaction);
+  await cerrarCuentaLocal(id,'sincronizar',async()=>({error:null}),async()=>{
+    const limpio={...readStore(id),pending:[]};
+    writeStore(id,limpio);
+    return limpio;
+  });
+  assert.equal(localStorage.getItem('brujula.local.v2.'+id),null);
 });
 
 function storage(){
