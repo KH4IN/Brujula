@@ -1,7 +1,7 @@
-/** Aspecto elegido en Configuración. «clasico» es el diseño original, oculto hasta descubrirlo. */
-export type Tema = 'nuevo' | 'antiguo' | 'clasico';
+/** Aspecto elegido en Configuración. «clasico» es el diseño original, oculto hasta descubrirlo. «carta» es la página única en pruebas. */
+export type Tema = 'nuevo' | 'antiguo' | 'clasico' | 'carta';
 
-export const TEMAS: readonly Tema[] = ['nuevo', 'antiguo', 'clasico'];
+export const TEMAS: readonly Tema[] = ['nuevo', 'antiguo', 'clasico', 'carta'];
 export const esTema = (valor: unknown): valor is Tema => typeof valor === 'string' && (TEMAS as readonly string[]).includes(valor);
 
 /** Sin preferencia guardada, todo el mundo empieza en el tema nuevo. */

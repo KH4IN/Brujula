@@ -16,6 +16,8 @@ import { Configuracion } from './features/Configuracion';
 import { Nuevo, type VistaNueva } from './nuevo/Nuevo';
 import { HojaMovimiento } from './nuevo/HojaMovimiento';
 import { temaGuardado, type Tema } from './nuevo/rumbo';
+import { Carta } from './carta/Carta';
+import { cargarFuentesCarta } from './carta/fuentes';
 import { cargarFuentesNuevas } from './nuevo/fuentes';
 import { UltraPanel } from './features/UltraPanel';
 import { UltraInsights } from './features/UltraInsights';
@@ -64,6 +66,8 @@ export default function App(){
   const [tema,setTema]=useState<Tema>(()=>{try{return temaGuardado(localStorage.getItem('brujula.tema'))}catch{return 'nuevo'}});
   const [clasicoDescubierto,setClasicoDescubierto]=useState(()=>{try{return localStorage.getItem('brujula.clasico')==='1'}catch{return false}});
   const ultra=tema==='antiguo';
+  // «Carta» se apoya en el tema nuevo para hojas y paneles; solo cambia la página y la paleta.
+  const conRumbo=tema==='nuevo'||tema==='carta';
   const themeScope=useRef<string|null>(null);
   const scope=user?.id??'guest';
   const guideSync=useRef<Promise<unknown>>(Promise.resolve());
@@ -88,11 +92,12 @@ export default function App(){
   const syncRequested=useRef(false);
   const latestSync=useRef<()=>void>(()=>{});
   useEffect(()=>{
-    const root=document.documentElement;root.dataset.tema=tema;root.dataset.motion=tema==='antiguo'?'ultra':tema==='clasico'?'low':'nuevo';
-    if(tema==='nuevo')cargarFuentesNuevas();
+    const root=document.documentElement;root.dataset.tema=conRumbo?'nuevo':tema;root.dataset.motion=tema==='antiguo'?'ultra':tema==='clasico'?'low':'nuevo';
+    if(tema==='carta'){root.dataset.carta='';cargarFuentesCarta()}else delete root.dataset.carta;
+    if(conRumbo)cargarFuentesNuevas();
     try{localStorage.setItem('brujula.tema',tema);localStorage.removeItem('brujula.motion')}catch{/* Preference still applies for this session. */}
   },[tema]);
-  useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('brujula.theme',dark?'dark':'light')}catch{/* The theme still works without storage. */}document.querySelector('meta[name="theme-color"]')?.setAttribute('content',tema==='nuevo'?(dark?'#0D1411':'#F2F3EE'):dark?'#171720':'#173f32')},[dark,tema]);
+  useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('brujula.theme',dark?'dark':'light')}catch{/* The theme still works without storage. */}document.querySelector('meta[name="theme-color"]')?.setAttribute('content',tema==='carta'?(dark?'#0A0E17':'#F3EDE0'):tema==='nuevo'?(dark?'#0D1411':'#F2F3EE'):dark?'#171720':'#173f32')},[dark,tema]);
   function descubrirClasico(){setClasicoDescubierto(true);try{localStorage.setItem('brujula.clasico','1')}catch{/* Visible during this session. */}}
   useEffect(()=>{
     if(!user){themeScope.current=null;return}
@@ -228,12 +233,12 @@ export default function App(){
   function closeModal(){setModal(null);setNotice('')}
   function openBudget(category:Category='Alimentación',amount?:number){setBudgetForm({category,amount:amount===undefined?'':String(amount)});setModal('budget')}
   const overlays=<>
-    {guideOpen&&<Guide key={scope} scope={scope} ultra={ultra} nuevo={tema==='nuevo'} remote={user?.user_metadata?.brujula_guide_v2} tab={tab} onSave={saveGuide} onClose={closeGuide} onNavigate={(section:GuideSection)=>go(section)}/>}
+    {guideOpen&&<Guide key={scope} scope={scope} ultra={ultra} nuevo={conRumbo} remote={user?.user_metadata?.brujula_guide_v2} tab={tab} onSave={saveGuide} onClose={closeGuide} onNavigate={(section:GuideSection)=>go(section)}/>}
     {settingsOpen&&<Configuracion tema={tema} dark={dark} clasicoDescubierto={clasicoDescubierto} onTema={setTema} onModo={setThemeMode} onDescubrir={descubrirClasico} onClose={()=>setSettingsOpen(false)}/>}
     {categoryDetail&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setCategoryDetail(null)}}><div className="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div className="modal-heading"><div><span className="section-kicker">DESGLOSE DEL MES</span><h2 id="detail-title">{categoryDetail}</h2></div><button className="icon-button" onClick={()=>setCategoryDetail(null)}><X size={20}/></button></div><strong className="detail-total">{money(spentFor(categoryDetail))}</strong><p className="feature-copy">{expenses?Math.round(spentFor(categoryDetail)/expenses*100):0}% de tus gastos de {monthLabel(month)} · {monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail).length} movimientos.</p><TransactionList accountLabels={accounts} items={monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail)} onEdit={t=>{setCategoryDetail(null);openTransaction(t)}} onDelete={deleteTransaction} onAdd={()=>{setCategoryDetail(null);openTransaction()}}/></div></div>}
     {importOpen&&<ImportDialog existing={items} accounts={accounts} onClose={()=>setImportOpen(false)} onConfirm={importRows}/>}
     {authOpen&&<Auth recovering={passwordRecovery} managePassword={Boolean(user)} onReady={()=>{setAuthOpen(false);setPasswordRecovery(false)}} onClose={()=>{setAuthOpen(false);setPasswordRecovery(false)}}/>}
-    {modal==='transaction'&&tema==='nuevo'?<HojaMovimiento form={form} setForm={setForm} editing={editing} busy={busy} notice={notice} accounts={accounts} categories={categories} onSubmit={saveTransaction} onDelete={deleteTransaction} onClose={closeModal}/>:modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget){setModal(null);setNotice('')}}}>
+    {modal==='transaction'&&conRumbo?<HojaMovimiento form={form} setForm={setForm} editing={editing} busy={busy} notice={notice} accounts={accounts} categories={categories} onSubmit={saveTransaction} onDelete={deleteTransaction} onClose={closeModal}/>:modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget){setModal(null);setNotice('')}}}>
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div className="modal-heading"><div><span className="section-kicker">{modal==='transaction'?'MOVIMIENTOS':'PLANIFICACIÓN'}</span><h2 id="modal-title">{modal==='transaction'?(editing?'Editar movimiento':'Nuevo movimiento'):'Presupuesto mensual'}</h2></div><button className="icon-button" onClick={()=>{setModal(null);setNotice('')}} aria-label="Cerrar"><X size={20}/></button></div>
         {notice&&<div className="notice" role="alert">{notice}</div>}
@@ -253,7 +258,7 @@ export default function App(){
       </div>
     </div>}
   </>;
-  if(tema==='nuevo'){
+  if(conRumbo){
     const vista:VistaNueva={
       tab,go,month,shiftMonth:(step)=>setMonth(shiftMonth(month,step)),
       user,configured,syncState,pending,transferred,onSync:()=>void syncNow(),onAuth:()=>setAuthOpen(true),onSignOut:()=>{void supabase?.auth.signOut({scope:'local'})},
@@ -266,7 +271,7 @@ export default function App(){
       onTransfer:()=>{openTransaction();setForm({...emptyForm(),kind:'transfer',description:'Traspaso entre cuentas'})},
       saveAccount:saveAccountLocal,mergeBank:mergeBankLocal,saveGoal:saveGoalLocal,deleteGoal:deleteGoalLocal,saveInvestment:saveInvestmentLocal,deleteInvestment:deleteInvestmentLocal,
     };
-    return <><Nuevo v={vista}/>{overlays}</>;
+    return <>{tema==='carta'?<Carta v={vista}/>:<Nuevo v={vista}/>}{overlays}</>;
   }
   return <div className="app">
     <MotionExperience level={ultra?'ultra':'low'} section={tab}/>

@@ -5,6 +5,7 @@ import type { Tema } from '../nuevo/rumbo';
 const TOQUES_SECRETO = 7;
 
 const OPCIONES: { valor: Tema; titulo: string; detalle: string }[] = [
+  { valor: 'carta', titulo: 'Carta (en pruebas)', detalle: 'Toda Brújula en una sola página: una carta náutica que se recorre.' },
   { valor: 'nuevo', titulo: 'Tema nuevo', detalle: 'Rumbo: una brújula que marca hacia dónde va tu mes.' },
   { valor: 'antiguo', titulo: 'Tema antiguo', detalle: 'El diseño Ultra de siempre, con sus cuatro perspectivas.' },
   { valor: 'clasico', titulo: 'Diseño clásico', detalle: 'La primera Brújula. Sin movimiento decorativo.' },
