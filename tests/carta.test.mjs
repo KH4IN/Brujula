@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rutaDelMes, diasRecorridos, previsionGasto, mesDeLlegada, mesesEntre, rumboDelPuntero, diasDelMes} from './.carta.bundle.mjs';
+import {rutaDelMes, diasRecorridos, previsionGasto, mesDeLlegada, mesesEntre, rumboDelPuntero, diasDelMes, esCampoDeEdicion} from './.carta.bundle.mjs';
+
+test('los atajos globales no se activan al escribir en formularios', () => {
+  for (const etiqueta of ['INPUT', 'TEXTAREA', 'SELECT']) assert.equal(esCampoDeEdicion(etiqueta, false), true);
+  assert.equal(esCampoDeEdicion('SPAN', true), true);
+  assert.equal(esCampoDeEdicion('BUTTON', false), false);
+});
 
 test('la ruta del mes acumula ingresos y gastos día a día sin contar traspasos', () => {
   const ruta = rutaDelMes([
