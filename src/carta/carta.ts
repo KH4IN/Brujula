@@ -1,6 +1,10 @@
 /* Cálculos de presentación del tema «Carta». Solo leen cifras ya guardadas; nunca cambian datos. */
 import type { Transaction } from '../data';
 
+/** Los atajos globales no interrumpen un campo en el que se está escribiendo. */
+export const esCampoDeEdicion = (etiqueta: string | undefined, editable: boolean): boolean =>
+  editable || etiqueta === 'INPUT' || etiqueta === 'TEXTAREA' || etiqueta === 'SELECT';
+
 export const diasDelMes = (mes: string) => new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate();
 
 export type Dia = { dia: number; fecha: string; entra: number; sale: number; acumulado: number };
