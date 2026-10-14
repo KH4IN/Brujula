@@ -353,3 +353,9 @@
 .tema-muestra-corriente i:nth-child(1){left:6px;top:14px;width:40px;transform:rotate(-12deg)}
 .tema-muestra-corriente i:nth-child(2){left:6px;top:23px;width:46px}
 .tema-muestra-corriente i:nth-child(3){left:20px;top:32px;width:34px;background:#9CC7B3;transform:rotate(10deg)}
+/* Movimientos y presupuestos se pueden tocar para editarlos (en la maqueta eran solo lectura). */
+:root[data-tema="corriente"] .c-app .mov-editar{width:100%;text-align:left;border-radius:0}
+:root[data-tema="corriente"] .c-app .mov-editar:hover b{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--perla-3)}
+:root[data-tema="corriente"] .c-app .presu-acciones{grid-column:1/-1;display:flex;gap:18px;font-size:13px;color:var(--perla-2)}
+:root[data-tema="corriente"] .c-app .presu-acciones button{min-height:32px}
+:root[data-tema="corriente"] .c-app .presu-acciones button:hover{color:var(--perla)}
