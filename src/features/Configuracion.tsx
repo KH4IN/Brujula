@@ -42,11 +42,11 @@ export function Configuracion({ tema, dark, clasicoDescubierto, onTema, onModo, 
         </label>)}
         {hallazgo && <p className="tema-hallazgo" role="status">Has encontrado el diseño clásico, el primero de Brújula. Ya puedes elegirlo.</p>}
       </fieldset>
-      <fieldset className="visual-settings-options modo-opciones">
+      {tema !== 'antiguo' && <fieldset className="visual-settings-options modo-opciones">
         <legend>Modo</legend>
         <label className={!dark ? 'selected' : ''}><input type="radio" name="modo" checked={!dark} onChange={() => onModo(false)}/><span><strong><Sun size={15}/> Día</strong></span></label>
         <label className={dark ? 'selected' : ''}><input type="radio" name="modo" checked={dark} onChange={() => onModo(true)}/><span><strong><Moon size={15}/> Noche</strong></span></label>
-      </fieldset>
+      </fieldset>}
       <p className="visual-settings-note">Si tu dispositivo pide reducir el movimiento, Brújula lo respeta en cualquier tema.</p>
       <button type="button" className="version-brujula" onClick={tocarVersion} aria-label="Versión de Brújula">BRÚJULA · 2026.09</button>
     </div>
