@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 
 const { outputFiles: [salida] } = await build({ entryPoints: [new URL('../src/monolito/puntos.ts', import.meta.url).pathname], bundle: true, write: false, format: 'esm', platform: 'node' });
-const { cienPuntos, medidorPresupuesto, digitos, unidadPuntos } = await import('data:text/javascript;base64,' + Buffer.from(salida.text).toString('base64'));
+const { cienPuntos, medidorPresupuesto, digitos, unidadPuntos, unidadDeposito } = await import('data:text/javascript;base64,' + Buffer.from(salida.text).toString('base64'));
 
 test('cien puntos: siempre suman cien y respetan la proporción', () => {
   const r = cienPuntos([{ v: 780 }, { v: 190 }, { v: 120 }, { v: 140 }, { v: 70 }, { v: 212 }, { v: 968 }]);
@@ -25,4 +25,11 @@ test('cuentas: un punto vale lo justo para que el patrimonio quepa', () => {
   assert.equal(unidadPuntos(15000), 200);
   assert.equal(unidadPuntos(250000), 5000);
   assert.equal(unidadPuntos(0), 100);
+});
+
+test('metas: un punto vale 50 € salvo que la meta mayor no quepa', () => {
+  assert.equal(unidadDeposito(6000), 50);
+  assert.equal(unidadDeposito(15000), 100);
+  assert.equal(unidadDeposito(30000), 200);
+  assert.equal(unidadDeposito(100000), 1000);
 });

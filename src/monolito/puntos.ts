@@ -28,3 +28,8 @@ export const digitos = (n: number) => String(Math.round(Math.abs(n)));
 export function unidadPuntos(total: number, max = 120) {
   for (let base = 100; ; base *= 10) for (const m of [1, 2, 5]) if (total / (base * m) <= max) return base * m;
 }
+
+/** Cuánto vale un punto en los depósitos de metas (50 € en la maqueta) para que la meta mayor no pase de 160 puntos. */
+export function unidadDeposito(mayor: number) {
+  for (let base = 50; ; base *= 10) for (const m of [1, 2, 4]) if (mayor / (base * m) <= 160) return base * m;
+}

@@ -5,7 +5,11 @@ import { HojaCuenta, useModulos, type Modulo } from '../corriente/Corriente';
 import { corrienteDelMes, cifra, ritmos } from '../corriente/datos';
 import { ICONOS } from '../corriente/iconos';
 import { Hoja } from '../corriente/piezas';
+import { Metas } from '../corriente/Metas';
+import { Recibos } from '../corriente/Recibos';
 import { Cuentas } from './Cuentas';
+import { MetasVistaM } from './Metas';
+import { RecibosVistaM } from './Recibos';
 import { Movimientos } from './Movimientos';
 import { cienPuntos, digitos } from './puntos';
 import { el, encima, Glifo, Presupuesto, quieto } from './piezas';
@@ -144,14 +148,6 @@ function Rumbo({ v, ir, modulos, activar }: { v: VistaNueva; ir: (d: Destino) =>
   </section>;
 }
 
-// shortcut: Recibos y Metas aún no tienen su vista de Monolito; llegan en B9c.
-function EnCamino({ id, titulo }: { id: Destino; titulo: string }) {
-  return <section className="vista" id={id} aria-labelledby={`h-${id}`}>
-    <div className="vcab"><div><h1 id={`h-${id}`} tabIndex={-1}>{titulo}</h1>
-      <p className="sub">Este destino llega a Monolito en el siguiente paso. Mientras tanto, lo tienes en el tema Corriente (Tu espacio → Configuración).</p></div></div>
-  </section>;
-}
-
 const DESTINO: Record<VistaNueva['tab'], Exclude<Destino, 'recibos'>> = {
   dashboard: 'rumbo', analysis: 'rumbo', transactions: 'movimientos', budgets: 'movimientos', accounts: 'cuentas', investments: 'cuentas', goals: 'metas',
 };
@@ -172,8 +168,9 @@ export function Monolito({ v }: { v: VistaNueva }) {
   const pedido = DESTINO[v.tab];
   const destino: Destino = enRecibos && modulos.recibos ? 'recibos' : pedido === 'metas' && !modulos.metas ? 'rumbo' : pedido;
   const [cuenta, setCuenta] = useState(false), [que, setQue] = useState(false);
+  const [nuevo, setNuevo] = useState<Modulo | null>(null);
   const ir = (d: Destino) => { setEnRecibos(d === 'recibos'); if (d !== 'recibos') v.go(SECCION[d]); scrollTo(0, 0); requestAnimationFrame(() => document.getElementById(`h-${d}`)?.focus({ preventScroll: true })); };
-  const elegir = (k: 'mov' | Modulo) => { setQue(false); if (k === 'mov') return v.openTransaction(); if (!modulos[k]) activar(k); ir(k); };
+  const elegir = (k: 'mov' | Modulo) => { setQue(false); if (k === 'mov') return v.openTransaction(); if (!modulos[k]) activar(k); setNuevo(k); ir(k); };
   useEffect(() => { if (!v.notice) return; const t = setTimeout(v.clearNotice, 2600); return () => clearTimeout(t); }, [v.notice, v.clearNotice]);
   const [y] = v.month.split('-');
   const mes = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(new Date(`${v.month}-01T12:00:00`));
@@ -204,7 +201,8 @@ export function Monolito({ v }: { v: VistaNueva }) {
         <div key={`${destino}-${v.month}`}>
           {destino === 'rumbo' ? <Rumbo v={v} ir={ir} modulos={modulos} activar={activar}/>
             : destino === 'movimientos' ? <Movimientos v={v}/> : destino === 'cuentas' ? <Cuentas v={v}/>
-            : <EnCamino id={destino} titulo={NOMBRES.find(([d]) => d === destino)![1]}/>}
+            : destino === 'recibos' ? <Recibos key={v.user?.id ?? 'invitado'} v={v} nuevo={nuevo === 'recibos'} onNuevo={() => setNuevo(null)} Vista={RecibosVistaM} clase="vista"/>
+            : <Metas key={v.user?.id ?? 'invitado'} v={v} nuevo={nuevo === 'metas'} onNuevo={() => setNuevo(null)} Vista={MetasVistaM} clase="vista"/>}
         </div>
       </main>
     </div>

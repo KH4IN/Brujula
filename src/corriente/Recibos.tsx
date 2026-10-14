@@ -156,7 +156,8 @@ export function RecibosVista({ elementos, cobros, hoy, onEditar, cobro }: { elem
 
 type Carga = { estado: 'cargando' } | { estado: 'error' } | { estado: 'listo'; elementos: Elemento[]; cobros: Cobro[] };
 
-export function Recibos({ v, nuevo, onNuevo }: { v: VistaNueva; nuevo?: boolean; onNuevo?: () => void }) {
+// La carga, el guardado y «¿Se cobró?» son los mismos en Corriente y en Monolito; cada tema pone su vista y su clase.
+export function Recibos({ v, nuevo, onNuevo, Vista = RecibosVista, clase = 'vista marco' }: { v: VistaNueva; nuevo?: boolean; onNuevo?: () => void; Vista?: typeof RecibosVista; clase?: string }) {
   const [carga, setCarga] = useState<Carga>({ estado: 'cargando' });
   const [hoja, setHoja] = useState<Elemento | null | false>(false);
   const [vuelta, setVuelta] = useState(0);
@@ -219,11 +220,11 @@ export function Recibos({ v, nuevo, onNuevo }: { v: VistaNueva; nuevo?: boolean;
     : carga.estado === 'cargando' ? 'Cargando tus recibos…'
     : carga.estado === 'error' ? 'No se pudieron leer tus recibos de Kairós. Prueba de nuevo en un momento.'
     : !carga.elementos.length ? 'Aún no tienes recibos. Añade el primero y aparecerá también en Kairós.' : '';
-  return <section className="vista marco" id="recibos" aria-labelledby="h-recibos">
+  return <section className={clase} id="recibos" aria-labelledby="h-recibos">
     {mensaje || carga.estado !== 'listo'
       ? <div className="vcab"><div><h1 id="h-recibos" tabIndex={-1}>Recibos</h1><p className="sub" role="status">{mensaje}</p></div>
         {!sinSesion && carga.estado === 'listo' && <div className="acciones"><button type="button" className="boton" onClick={() => setHoja(null)}><Icono id="i-mas"/>Añadir recibo</button></div>}</div>
-      : <RecibosVista elementos={carga.elementos} cobros={carga.cobros} hoy={hoyLocal()} onEditar={setHoja} cobro={tarjeta}/>}
+      : <Vista elementos={carga.elementos} cobros={carga.cobros} hoy={hoyLocal()} onEditar={setHoja} cobro={tarjeta}/>}
     {hoja !== false && <HojaRecibo inicial={hoja} onGuardar={guardar} onBorrar={borrar} onCerrar={() => setHoja(false)}/>}
   </section>;
 }
