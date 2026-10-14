@@ -18,7 +18,7 @@ export type VistaNueva = {
   month: string; shiftMonth: (paso: number) => void;
   user: User | null; configured: boolean; syncState: Sync; pending: number; transferred: number;
   onSync: () => void; onAuth: () => void; onSignOut: () => void;
-  notice: string; clearNotice: () => void; busy: boolean;
+  notice: string; clearNotice: () => void; notify: (aviso: string) => void; busy: boolean;
   items: Transaction[]; monthly: Transaction[]; filtered: Transaction[];
   income: number; expenses: number; balance: number;
   groups: { category: string; total: number }[]; totalBudget: number;

@@ -259,7 +259,7 @@ export default function App(){
     const vista:VistaNueva={
       tab,go,month,shiftMonth:(step)=>setMonth(shiftMonth(month,step)),
       user,configured,syncState,pending,transferred,onSync:()=>void syncNow(),onAuth:()=>setAuthOpen(true),onSignOut:()=>{void supabase?.auth.signOut({scope:'local'})},
-      notice:modal?'':notice,clearNotice:()=>setNotice(''),busy,
+      notice:modal?'':notice,clearNotice:()=>setNotice(''),notify:setNotice,busy,
       items,monthly,filtered,income,expenses,balance,groups,totalBudget,
       monthBudgets:budgets.filter(b=>b.month===month),goals,investments,accounts,balances,bankTotal,investmentValue:marketValue(investments),wealth,spentFor,
       search,setSearch,filter,setFilter,merchants,merchantFilter,setMerchantFilter,

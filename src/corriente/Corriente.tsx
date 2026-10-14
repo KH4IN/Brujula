@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { supabase } from '../data';
 import type { Seccion, VistaNueva } from '../nuevo/Nuevo';
 import { corrienteDelMes, cifra, ritmos } from './datos';
 import { Icono, Hoja, Presupuestos } from './piezas';
@@ -27,7 +28,7 @@ const fechaRelativa = (fecha: string) => {
 
 
 
-function Rumbo({ v, ir }: { v: VistaNueva; ir: (d: Destino) => void }) {
+function Rumbo({ v, ir, modulos, activar }: { v: VistaNueva; ir: (d: Destino) => void; modulos: Modulos; activar: (k: Modulo) => void }) {
   const mes = nombreMes(v.month);
   // App crea estas listas en cada render: se comparan por contenido para no reiniciar el río sin motivo.
   const clave = JSON.stringify([v.groups, v.monthBudgets.map((b) => [b.category, b.amount]), v.income, v.expenses, v.month]);
@@ -60,8 +61,19 @@ function Rumbo({ v, ir }: { v: VistaNueva; ir: (d: Destino) => void }) {
           <h2 className="eti" id="h-indice">El resto de {mes}</h2>
           <a className="linea" href="#movimientos" onClick={(e) => { e.preventDefault(); ir('movimientos'); }}><span className="l-nom">Movimientos</span>
             <span className="l-dato">{ultimo ? <>{v.monthly.length} este mes. El último, {ultimo.description}, {fechaRelativa(ultimo.occurred_on)}.</> : 'Ninguno este mes todavía.'}</span><svg className="l-ir" aria-hidden="true"><use href="#i-ir"/></svg></a>
+          {modulos.recibos && <a className="linea" href="#recibos" onClick={(e) => { e.preventDefault(); ir('recibos'); }}><span className="l-nom">Recibos</span>
+            <span className="l-dato">Lo que se cobra en los próximos 30 días.</span><svg className="l-ir" aria-hidden="true"><use href="#i-ir"/></svg></a>}
+          {modulos.metas && <a className="linea" href="#metas" onClick={(e) => { e.preventDefault(); ir('metas'); }}><span className="l-nom">Metas</span>
+            <span className="l-dato">{v.goals.length ? `${v.goals.length} de ahorro en marcha.` : 'Ahorrar para algo y tus metas de Faro.'}</span><svg className="l-ir" aria-hidden="true"><use href="#i-ir"/></svg></a>}
           <a className="linea" href="#cuentas" onClick={(e) => { e.preventDefault(); ir('cuentas'); }}><span className="l-nom">Cuentas</span>
             <span className="l-dato"><span className="cifra">{cifra(v.wealth)} €</span> de patrimonio.</span><svg className="l-ir" aria-hidden="true"><use href="#i-ir"/></svg></a>
+          {!(modulos.recibos && modulos.metas) && <div className="activar">
+            <p>¿Pagas recibos o ahorras para algo? Brújula también puede llevarlo. Solo aparece si lo activas.</p>
+            <div className="acciones">
+              {!modulos.recibos && <button type="button" className="boton" onClick={() => activar('recibos')}><Icono id="i-rec"/>Activar recibos</button>}
+              {!modulos.metas && <button type="button" className="boton" onClick={() => activar('metas')}><Icono id="i-meta"/>Activar metas</button>}
+            </div>
+          </div>}
         </nav>
         <section className="presu-rumbo" aria-labelledby="h-presu-r">
           <div className="cab"><h2 id="h-presu-r">Presupuestos</h2><a className="ir" href="#movimientos" onClick={(e) => { e.preventDefault(); ir('movimientos'); }}>En movimientos<Icono id="i-ir"/></a></div>
@@ -72,7 +84,7 @@ function Rumbo({ v, ir }: { v: VistaNueva; ir: (d: Destino) => void }) {
   </section>;
 }
 
-function HojaCuenta({ v, abierta, onCerrar }: { v: VistaNueva; abierta: boolean; onCerrar: () => void }) {
+function HojaCuenta({ v, abierta, onCerrar, modulos, activar }: { v: VistaNueva; abierta: boolean; onCerrar: () => void; modulos: Modulos; activar: (k: Modulo, on?: boolean) => void }) {
   const estado = !v.user ? 'Tus datos se guardan en este dispositivo.'
     : v.syncState === 'synced' ? 'Todo sincronizado en tus dispositivos.'
     : v.syncState === 'syncing' ? 'Sincronizando…'
@@ -87,6 +99,8 @@ function HojaCuenta({ v, abierta, onCerrar }: { v: VistaNueva; abierta: boolean;
         {v.user
           ? <>{opcion('i-mov', 'Sincronizar ahora', 'Sube y trae los cambios de tus dispositivos', v.onSync)}{opcion('i-x', 'Cerrar sesión', 'Tus datos siguen en tu cuenta', v.onSignOut)}</>
           : v.configured && opcion('i-mov', 'Iniciar sesión', 'Para tener tus datos en todos tus dispositivos', v.onAuth)}
+        {opcion('i-rec', modulos.recibos ? 'Ocultar Recibos' : 'Activar Recibos', modulos.recibos ? 'Tus recibos siguen en Kairós' : 'Lo que pagas cada cierto tiempo, con Kairós', () => activar('recibos', !modulos.recibos))}
+        {opcion('i-meta', modulos.metas ? 'Ocultar Metas' : 'Activar Metas', modulos.metas ? 'Tus metas no se borran' : 'Ahorrar para algo y tus metas de Faro', () => activar('metas', !modulos.metas))}
         {opcion('i-cue', 'Configuración', 'Tema y aspecto de Brújula', v.openSettings)}
         {opcion('i-rumbo', 'Guía de Brújula', 'Un recorrido por la app', v.openGuide)}
         {opcion('i-sube', 'Exportar movimientos', 'Un archivo CSV con los de este mes', v.exportCSV)}
@@ -95,18 +109,49 @@ function HojaCuenta({ v, abierta, onCerrar }: { v: VistaNueva; abierta: boolean;
   </Hoja>;
 }
 
+type Modulo = 'recibos' | 'metas';
+type Modulos = Partial<Record<Modulo, boolean>>;
+const LLAVE_MODULOS = 'brujula.modulos';
+
+/** Qué módulos ha activado la persona: en su cuenta si tiene (sigue en todos sus dispositivos) y en este navegador. */
+function useModulos(v: VistaNueva): [Modulos, (k: Modulo, on?: boolean) => void] {
+  const deCuenta = v.user?.user_metadata?.brujula_modulos as Modulos | undefined;
+  const [locales, setLocales] = useState<Modulos>(() => { try { return JSON.parse(localStorage.getItem(LLAVE_MODULOS) ?? '{}'); } catch { return {}; } });
+  const modulos = { ...locales, ...deCuenta };
+  const activar = (k: Modulo, on = true) => {
+    const n = { ...modulos, [k]: on };
+    setLocales(n);
+    try { localStorage.setItem(LLAVE_MODULOS, JSON.stringify(n)); } catch { /* sigue valiendo en esta sesión */ }
+    if (v.user && supabase) void supabase.auth.updateUser({ data: { brujula_modulos: n } });
+    v.notify(on ? `${k === 'recibos' ? 'Recibos' : 'Metas'} activado: ya está en el menú` : `${k === 'recibos' ? 'Recibos' : 'Metas'} oculto. Puedes volver a activarlo en Tu espacio.`);
+  };
+  return [modulos, activar];
+}
+
 /** Tema Corriente: el dinero como un río. Mismos datos y acciones que el tema nuevo (VistaNueva). */
 export function Corriente({ v }: { v: VistaNueva }) {
   // Recibos no es una sección de App: vive solo en Corriente.
   const [enRecibos, setEnRecibos] = useState(false);
   useEffect(() => setEnRecibos(false), [v.tab]);
-  const destino: Destino = enRecibos ? 'recibos' : DESTINO[v.tab];
+  const [modulos, activar] = useModulos(v);
+  const pedido = DESTINO[v.tab];
+  // Recibos y Metas no se ven hasta activarlos (en Rumbo, en Tu espacio o al anotar el primero).
+  const destino: Destino = enRecibos && modulos.recibos ? 'recibos' : pedido === 'metas' && !modulos.metas ? 'rumbo' : pedido;
   const [cuenta, setCuenta] = useState(false);
+  const [que, setQue] = useState(false);
+  const [nuevo, setNuevo] = useState<Modulo | null>(null);
+  const elegir = (k: 'mov' | Modulo) => {
+    setQue(false);
+    if (k === 'mov') return v.openTransaction();
+    if (!modulos[k]) activar(k);
+    setNuevo(k); ir(k === 'recibos' ? 'recibos' : 'metas');
+  };
   const ir = (d: Destino) => { setEnRecibos(d === 'recibos'); if (d !== 'recibos') v.go(SECCION[d]); requestAnimationFrame(() => document.getElementById(`h-${d}`)?.focus({ preventScroll: true })); };
   useEffect(() => { if (!v.notice) return; const t = setTimeout(v.clearNotice, 2600); return () => clearTimeout(t); }, [v.notice, v.clearNotice]);
   const [y, m] = v.month.split('-');
   const mesLargo = nombreMes(v.month);
   const inicial = v.user?.email?.charAt(0).toUpperCase() ?? 'T';
+  const visibles = NOMBRES.filter(([d]) => (d !== 'recibos' || modulos.recibos) && (d !== 'metas' || modulos.metas));
   const enlace = (d: Destino, nombre: string, icono?: string) =>
     <a key={d} href={`#${d}`} aria-current={destino === d ? 'page' : undefined} onClick={(e) => { e.preventDefault(); ir(d); }}>{icono && <Icono id={icono}/>}{nombre}</a>;
   return <div className="c-app">
@@ -121,20 +166,27 @@ export function Corriente({ v }: { v: VistaNueva }) {
       <button type="button" className="yo" aria-label="Tu espacio: cuenta y configuración" onClick={() => setCuenta(true)}>{inicial}</button>
     </header>
     <main key={`${destino}-${m}`}>
-      {destino === 'rumbo' && <Rumbo v={v} ir={ir}/>}
+      {destino === 'rumbo' && <Rumbo v={v} ir={ir} modulos={modulos} activar={activar}/>}
       {destino === 'movimientos' && <Movimientos v={v}/>}
-      {destino === 'recibos' && <Recibos key={v.user?.id ?? 'invitado'} v={v}/>}
-      {destino === 'metas' && <Metas key={v.user?.id ?? 'invitado'} v={v}/>}
+      {destino === 'recibos' && <Recibos key={v.user?.id ?? 'invitado'} v={v} nuevo={nuevo === 'recibos'} onNuevo={() => setNuevo(null)}/>}
+      {destino === 'metas' && <Metas key={v.user?.id ?? 'invitado'} v={v} nuevo={nuevo === 'metas'} onNuevo={() => setNuevo(null)}/>}
       {destino === 'cuentas' && <Cuentas v={v}/>}
     </main>
     <nav className="dock" aria-label="Destinos">
-      {NOMBRES.map(([d, n]) => enlace(d, n))}
+      {visibles.map(([d, n]) => enlace(d, n))}
       <span className="sep" aria-hidden="true"/>
-      <button type="button" className="anotar" onClick={() => v.openTransaction()}><Icono id="i-mas"/>Anotar</button>
+      <button type="button" className="anotar" onClick={() => setQue(true)}><Icono id="i-mas"/>Anotar</button>
     </nav>
-    <nav className="tabbar" aria-label="Destinos">{NOMBRES.map(([d, n, i]) => enlace(d, n, i))}</nav>
-    <button type="button" className="fab" aria-label="Anotar" onClick={() => v.openTransaction()}><Icono id="i-mas"/></button>
+    <nav className="tabbar" aria-label="Destinos">{visibles.map(([d, n, i]) => enlace(d, n, i))}</nav>
+    <button type="button" className="fab" aria-label="Anotar" onClick={() => setQue(true)}><Icono id="i-mas"/></button>
     <div className={`tostada${v.notice ? ' ver' : ''}`} role="status" aria-live="polite">{v.notice}</div>
-    <HojaCuenta v={v} abierta={cuenta} onCerrar={() => setCuenta(false)}/>
+    <HojaCuenta v={v} abierta={cuenta} onCerrar={() => setCuenta(false)} modulos={modulos} activar={activar}/>
+    <Hoja titulo="¿Qué anotas?" abierta={que} onCerrar={() => setQue(false)}>
+      <div className="hoja-cuerpo"><div className="opciones">
+        <button type="button" className="opcion" onClick={() => elegir('mov')}><Icono id="i-mov"/><span><b>Un movimiento</b><small>Un gasto, un ingreso o un traspaso</small></span><Icono id="i-der"/></button>
+        <button type="button" className="opcion" onClick={() => elegir('recibos')}><Icono id="i-rec"/><span><b>Un recibo</b><small>Algo que se paga cada cierto tiempo{!modulos.recibos && <em> · activa Recibos</em>}</small></span><Icono id="i-der"/></button>
+        <button type="button" className="opcion" onClick={() => elegir('metas')}><Icono id="i-meta"/><span><b>Una meta</b><small>Ahorrar para algo{!modulos.metas && <em> · activa Metas</em>}</small></span><Icono id="i-der"/></button>
+      </div></div>
+    </Hoja>
   </div>;
 }
