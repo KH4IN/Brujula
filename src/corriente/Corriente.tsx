@@ -3,6 +3,7 @@ import type { Seccion, VistaNueva } from '../nuevo/Nuevo';
 import { corrienteDelMes, cifra, ritmos } from './datos';
 import { Icono, Hoja, Presupuestos } from './piezas';
 import { montarRumbo } from './rio';
+import { Cuentas } from './Cuentas';
 import { Movimientos } from './Movimientos';
 import { ICONOS } from './iconos';
 import './corriente.css';
@@ -69,14 +70,6 @@ function Rumbo({ v, ir }: { v: VistaNueva; ir: (d: Destino) => void }) {
   </section>;
 }
 
-// shortcut: Cuentas aún no tiene su vista de Corriente; llega en el paso B1c del plan.
-function EnCamino({ id, titulo }: { id: Destino; titulo: string }) {
-  return <section className="vista marco" id={id} aria-labelledby={`h-${id}`}>
-    <div className="vcab"><div><h1 id={`h-${id}`} tabIndex={-1}>{titulo}</h1>
-      <p className="sub">Este destino llega en el siguiente paso. Mientras tanto, lo tienes en el tema nuevo (tu perfil → Configuración).</p></div></div>
-  </section>;
-}
-
 function HojaCuenta({ v, abierta, onCerrar }: { v: VistaNueva; abierta: boolean; onCerrar: () => void }) {
   const estado = !v.user ? 'Tus datos se guardan en este dispositivo.'
     : v.syncState === 'synced' ? 'Todo sincronizado en tus dispositivos.'
@@ -125,7 +118,7 @@ export function Corriente({ v }: { v: VistaNueva }) {
     <main key={`${destino}-${m}`}>
       {destino === 'rumbo' && <Rumbo v={v} ir={ir}/>}
       {destino === 'movimientos' && <Movimientos v={v}/>}
-      {destino === 'cuentas' && <EnCamino id="cuentas" titulo="Cuentas"/>}
+      {destino === 'cuentas' && <Cuentas v={v}/>}
     </main>
     <nav className="dock" aria-label="Destinos">
       {NOMBRES.map(([d, n]) => enlace(d, n))}

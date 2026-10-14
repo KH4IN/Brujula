@@ -359,3 +359,8 @@
 :root[data-tema="corriente"] .c-app .presu-acciones{grid-column:1/-1;display:flex;gap:18px;font-size:13px;color:var(--perla-2)}
 :root[data-tema="corriente"] .c-app .presu-acciones button{min-height:32px}
 :root[data-tema="corriente"] .c-app .presu-acciones button:hover{color:var(--perla)}
+:root[data-tema="corriente"] .c-app .cuenta-editar{width:100%;text-align:left;border-radius:0;border-bottom:0}
+:root[data-tema="corriente"] .c-app .cuentas li:last-child .cuenta-editar{border-bottom:1px solid var(--hilo)}
+:root[data-tema="corriente"] .c-app .cuenta-editar:hover b{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--perla-3)}
+:root[data-tema="corriente"] .c-app .cuenta .var.coral{color:var(--coral)}
+@media (max-width:759px){:root[data-tema="corriente"] .c-app .afluentes{height:460px}}

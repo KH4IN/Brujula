@@ -4,9 +4,9 @@ export type Tema = 'nuevo' | 'antiguo' | 'clasico' | 'corriente';
 export const TEMAS: readonly Tema[] = ['nuevo', 'antiguo', 'clasico', 'corriente'];
 export const esTema = (valor: unknown): valor is Tema => typeof valor === 'string' && (TEMAS as readonly string[]).includes(valor);
 
-/** Sin preferencia guardada, todo el mundo empieza en el tema nuevo. */
+/** Sin preferencia guardada, todo el mundo empieza en Corriente. */
 export function temaGuardado(valor: string | null): Tema {
-  return esTema(valor) ? valor : 'nuevo';
+  return esTema(valor) ? valor : 'corriente';
 }
 
 export type Rumbo = {
