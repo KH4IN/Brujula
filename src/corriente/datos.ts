@@ -95,3 +95,16 @@ export function porDias<T extends Mov>(movs: T[]) {
   }
   return [...dias].map(([fecha, lista]) => ({ fecha, lista, sale: lista.reduce((s, m) => s + (m.kind === 'expense' ? Number(m.amount) : 0), 0) }));
 }
+
+const mesAño = (f: string) => new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(new Date(`${f}T12:00:00`));
+
+/** Lo que falta de un objetivo de ahorro de Brújula y lo que tocaría apartar cada mes para llegar a tiempo. */
+export function detalleAhorro(g: { target_amount: number; saved_amount: number; due_on: string | null }, hoy: string) {
+  const falta = Math.max(0, Number(g.target_amount) - Number(g.saved_amount));
+  if (!falta) return 'Conseguida';
+  if (!g.due_on) return `Faltan ${cifra(falta)} € · sin fecha`;
+  const [a, m] = hoy.split('-').map(Number), [da, dm] = g.due_on.split('-').map(Number);
+  const meses = (da - a) * 12 + (dm - m);
+  return meses > 0 ? `${cifra(falta / meses)} € al mes · ${mesAño(g.due_on)}` : `Faltan ${cifra(falta)} € · el plazo ${g.due_on < hoy ? 'era' : 'es'} ${mesAño(g.due_on)}`;
+}
+
