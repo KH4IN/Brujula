@@ -1,6 +1,6 @@
 # Temas de Brújula
 
-Fecha: 27-09-2026. Estado: **solo en pruebas** (rama `claude/affectionate-clarke-jgtcs5`, basada en `staging`). Producción no se ha tocado.
+Fecha: 27-09-2026. Estado: **en producción** desde el 27-09-2026 (`main` 0a7ba26, PR #71; `staging` con la PR #70).
 
 ## Qué hay
 
@@ -23,7 +23,7 @@ Los niveles Alto y Medio se han retirado, junto con sus estilos.
 - La guía mantiene sus anclas (`data-guide`) en el tema nuevo y tiene textos propios para la portada.
 - El diseño de referencia está en el lienzo de Claude Design «Brújula · tema nuevo».
 
-## Antes de producción
+## Antes de producción (hecho el 27-09-2026)
 
 1. El fundador lo prueba en la vista previa de esta rama, que usa Brújula pruebas. Tiene que probar el iPhone, los modos día y noche, los tres temas y el alta, edición y borrado de un movimiento ficticio.
 2. PR a `staging` y después a `main`, sin arrastrar los cuatro archivos propios de `staging` (ver `STAGING.md` en `main`).
