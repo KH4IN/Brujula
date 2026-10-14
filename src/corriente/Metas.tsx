@@ -80,7 +80,8 @@ type Datos = { metas: Meta[]; pasos: Paso[]; registros: Registro[]; revisiones: 
 type Carga = Datos | 'cargando' | 'error' | null;
 const ahora = () => new Date().toISOString();
 
-export function Metas({ v, nuevo, onNuevo }: { v: VistaNueva; nuevo?: boolean; onNuevo?: () => void }) {
+// La carga y las escrituras son las mismas en Corriente y en Monolito; cada tema pone su vista y su clase.
+export function Metas({ v, nuevo, onNuevo, Vista = MetasVista, clase = 'vista marco' }: { v: VistaNueva; nuevo?: boolean; onNuevo?: () => void; Vista?: typeof MetasVista; clase?: string }) {
   const uid = v.user?.id;
   const [carga, setCarga] = useState<Carga>(supabase && uid ? 'cargando' : null);
   const [vuelta, setVuelta] = useState(0);
@@ -128,10 +129,10 @@ export function Metas({ v, nuevo, onNuevo }: { v: VistaNueva; nuevo?: boolean; o
     const previa = datos.revisiones.find((r) => r.semana === lunesDe(hoy));
     return escribir(sb.from('faro_revisiones').upsert({ id: previa?.id ?? crypto.randomUUID(), user_id: uid, semana: lunesDe(hoy), avances, frenos, focos, actualizado: ahora() }, { onConflict: 'user_id,semana' }));
   };
-  return <section className="vista marco" id="metas" aria-labelledby="h-metas">
+  return <section className={clase} id="metas" aria-labelledby="h-metas">
     {carga === 'cargando' ? <div className="vcab"><div><h1 id="h-metas" tabIndex={-1}>Metas</h1><p className="sub" role="status">Cargando tus metas…</p></div></div>
       : <>
-        <MetasVista goals={v.goals} metas={datos?.metas ?? null} pasos={datos?.pasos ?? []} registros={datos?.registros ?? []} hoy={hoy}
+        <Vista goals={v.goals} metas={datos?.metas ?? null} pasos={datos?.pasos ?? []} registros={datos?.registros ?? []} hoy={hoy}
           acciones={{ objetivo: (g) => setHoja({ tipo: 'objetivo', g }), faro }}/>
         {(carga === 'error' || aviso) && <p className="nota alerta" role="alert">{aviso || 'No se pudieron leer tus metas de Faro. Prueba de nuevo en un momento.'}</p>}
       </>}

@@ -355,3 +355,13 @@
 :root[data-tema="monolito"] .m-app .partes .dd small{display:block;font-size:12px;color:var(--gris-1)}
 :root[data-tema="monolito"] .m-app .partes .parte-editar:hover .dt{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--gris-3)}
 :root[data-tema="monolito"] .m-app .patri .dot.senal{color:var(--senal)}
+:root[data-tema="monolito"] .m-app .fila-editar{width:100%;text-align:left}
+:root[data-tema="monolito"] .m-app .fila-editar:last-of-type{border-bottom:1px solid var(--linea)}
+:root[data-tema="monolito"] .m-app .grupo li:has(> .grupo-editar){display:block;padding:0}
+:root[data-tema="monolito"] .m-app .grupo-editar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 0;width:100%;text-align:left;font-size:14px}
+:root[data-tema="monolito"] .m-app .grupo-editar small{color:var(--gris-2);font:500 11px var(--mono);letter-spacing:.04em}
+:root[data-tema="monolito"] .m-app .grupo-editar .mono{grid-row:1;grid-column:2;font-size:13px;color:var(--tinta)}
+:root[data-tema="monolito"] .m-app .grupo-editar:hover span:first-child,:root[data-tema="monolito"] .m-app .fila-editar:hover b{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--gris-3)}
+:root[data-tema="monolito"] .m-app .boton > svg{width:14px;height:14px}
+:root[data-tema="monolito"] .m-app .deposito-editar{text-align:left}
+:root[data-tema="monolito"] .m-app .habito button:disabled{cursor:default}
