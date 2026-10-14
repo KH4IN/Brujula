@@ -2,7 +2,7 @@
 
 Creado el 14-10-2026. Objetivo: cumplir `ROADMAP.md` y la ficha de Brújula
 (`apps/00-brujula.md` en el repositorio de Ideas: Brújula con Kairós y Faro dentro).
-Estado: **pendiente de aprobación del fundador**. Se marca `[x]` cada paso al terminarlo.
+Estado: **aprobado por el fundador el 14-10-2026**, con sus cuatro recomendaciones y la condición de no romper producción. Se marca `[x]` cada paso al terminarlo.
 
 ## Cómo se trabaja
 
@@ -15,7 +15,7 @@ Estado: **pendiente de aprobación del fundador**. Se marca `[x]` cada paso al t
   ficticios.
 - Nada contra producción, nada en `.github/workflows/`, ningún secreto en el repo.
 
-## Decisiones que necesito antes de empezar
+## Decisiones (aprobadas el 14-10-2026 tal como se recomiendan)
 
 1. **¿Se levanta la regla de «solo fallos» en Brújula?** La auditoría de Brújula está
    cerrada (permisos SQL comprobados en producción, #73 y #74 unidas, Insights aceptado),
