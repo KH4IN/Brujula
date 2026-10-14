@@ -78,9 +78,14 @@ Otras apps leen tablas de Brújula con la sesión del usuario y el RLS de Brúju
 | `public.goals` | `id, name, target_amount, saved_amount, due_on` | Faro |
 
 No renombres, quites ni cambies el tipo o el significado de esas columnas, y no
-cambies sus políticas de lectura (cada usuario lee solo lo suyo). Brújula **nunca**
-escribe en tablas de otras apps (`kairos_*`, `faro_*`, `bitacora_*`, `periplo_*`),
-y las otras apps nunca escriben en las de Brújula.
+cambies sus políticas de lectura (cada usuario lee solo lo suyo).
+
+Desde la Brújula nueva (decisión del fundador, 14-10-2026), Brújula **lee y escribe**
+en `kairos_*` (recibos y sus cobros) y en `faro_*` (metas, pasos, registros y
+revisiones), siempre con la sesión del usuario y el RLS de esas tablas, y con la
+misma lógica que Kairós y Faro (copiada en `src/recibos` y `src/metas` con sus
+pruebas). Brújula nunca escribe en `bitacora_*` ni en `periplo_*`, y las otras apps
+nunca escriben en las tablas de Brújula.
 
 ## 3. Invariantes de seguridad (la auditoría las comprobará)
 
