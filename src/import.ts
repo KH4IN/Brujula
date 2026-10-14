@@ -91,6 +91,9 @@ export async function parseSheets(sheets:Sheet[],fileName:string,existing:Transa
   const read=(row:Cell[],field:Field)=>columns[field]===undefined?'':tidy(row[columns[field]!]);
   const content=sheet.data.slice(header+1).filter(row=>row.some(v=>tidy(v)));
   const hasNegative=columns.amount!==undefined&&content.some(row=>(amountNumber(row[columns.amount!]??null)??0)<0);
+  const fechaDe=(row:Cell[])=>(columns.date===undefined?'':read(row,'date'))||read(row,'startDate'),diaMes=/^(\d{1,2})[./-](\d{1,2})[./-]\d{2,4}(?:[ T].*)?$/;
+  const mesDia=content.some(row=>{const m=fechaDe(row).match(diaMes);return Boolean(m&&+m[1]<=12&&+m[2]>12)});
+  if(mesDia)warning='Algunas fechas solo tienen sentido como mes/día (formato de EE. UU.). No se adivina ninguna: revisa el formato de fecha del archivo.';
   if(columns.amount!==undefined&&columns.debit===undefined&&columns.credit===undefined&&options.signMode===undefined&&content.length&&!hasNegative&&columns.type===undefined){needsMapping=true;warning='Todos los importes son positivos y no hay columna de tipo. Indica si son gastos o ingresos.'}
   for(let i=header+1;i<sheet.data.length;i++){
    const row=sheet.data[i];if(!row||row.every(v=>!tidy(v)))continue;
@@ -102,11 +105,12 @@ export async function parseSheets(sheets:Sheet[],fileName:string,existing:Transa
    const kind:ImportRow['kind']=hasDebit?'expense':hasCredit?'income':signedAmount&&amount<0?'expense':signedAmount&&amount>0&&options.signMode===undefined?'income':expenseType?'expense':incomeType?'income':options.signMode==='expenses'?'expense':options.signMode==='income'?'income':(amount??0)<0?'expense':'income';
    const value=hasDebit?debit:hasCredit?credit:amount,shop=read(row,'merchant'),description=[read(row,'description'),read(row,'description2'),shop].filter((x,ix,arr)=>x&&arr.indexOf(x)===ix).join(' | ').slice(0,120),currency=normal(read(row,'currency'));
    const unsettled=/\b(?:pending|pendiente|processing|en proceso|reverted|revertido|reversado|cancelled|canceled|cancelado|declined|rechazado|failed|fallido)\b/.test(state);
+   const traspaso=/\b(?:traspasos?|entre cuentas|cuentas? propias?|transferencia propia|own account|umbuchung)\b/.test(normal(description+' '+type));
    const investment=/\b(?:buy|sell|purchase shares|securities purchase|securities sale|sparplan|savings plan|compra acciones|venta acciones|compra etf|venta etf|wertpapierkauf|wertpapierverkauf)\b/.test(type);
-   const reasons=[!date&&'Fecha no válida',(value===null||Math.abs(value)<.005||Math.abs(value)>9999999999.99)&&'Importe no válido',hasDebit&&hasCredit&&'Cargo y abono simultáneos',expenseType&&incomeType&&'Tipo contradictorio',signedAmount&&((amount<0&&incomeType)||(amount>0&&expenseType))&&'El signo contradice el tipo: revisa el movimiento',!description&&'Sin descripción',currency&&currency!=='eur'&&currency!=='euro'&&'Divisa distinta de EUR',fee!==null&&Math.abs(fee)>.004&&'Comisión separada: revisa si está incluida en el importe',unsettled&&'Movimiento pendiente, rechazado o anulado',investment&&'Compra o venta de inversión: regístrala en Inversiones'].filter(Boolean);
+   const reasons=[!date&&'Fecha no válida',(value===null||Math.abs(value)<.005||Math.abs(value)>9999999999.99)&&'Importe no válido',hasDebit&&hasCredit&&'Cargo y abono simultáneos',expenseType&&incomeType&&'Tipo contradictorio',signedAmount&&((amount<0&&incomeType)||(amount>0&&expenseType))&&'El signo contradice el tipo: revisa el movimiento',!description&&'Sin descripción',currency&&currency!=='eur'&&currency!=='euro'&&'Divisa distinta de EUR',fee!==null&&Math.abs(fee)>.004&&'Comisión separada: revisa si está incluida en el importe',unsettled&&'Movimiento pendiente, rechazado o anulado',investment&&'Compra o venta de inversión: regístrala en Inversiones',mesDia&&diaMes.test(fechaDe(row))&&'Fecha ambigua: el archivo parece usar mes/día'].filter(Boolean);
    if(columns.type!==undefined&&!expenseType&&!incomeType&&amount!==null&&amount>=0&&options.signMode===undefined&&!hasDebit&&!hasCredit&&!hasNegative){reasons.push('Tipo de movimiento no reconocido');needsMapping=true}
    if(!description&&!date&&value===null&&/\b(?:total|saldo|balance|summe)\b/.test(normal(row.join(' '))))continue;
-   candidates.push({sheet:sheet.sheet,line:i+1,kind,occurred_on:date??'',amount:Math.round(Math.abs(value??0)*100)/100,description,merchant:merchantFor(description)??(shop||null),category:read(row,'category').slice(0,60)||categoryFor(description,kind),valid:!reasons.length,reason:reasons.join(' · '),reference:read(row,'reference')})
+   candidates.push({sheet:sheet.sheet,line:i+1,kind,occurred_on:date??'',amount:Math.round(Math.abs(value??0)*100)/100,description,merchant:merchantFor(description)??(shop||null),category:read(row,'category').slice(0,60)||categoryFor(description,kind),valid:!reasons.length,reason:reasons.length?reasons.join(' · '):traspaso?'¿Traspaso entre tus cuentas? No se marca: regístralo en Cuentas o márcalo si es un gasto o ingreso':'',reference:read(row,'reference')})
   }
  }
  const oldKeys=new Set(existing.map(t=>t.import_key).filter(Boolean)),oldCounts=new Map<string,number>();
@@ -115,7 +119,7 @@ export async function parseSheets(sheets:Sheet[],fileName:string,existing:Transa
  for(const candidate of candidates){const sig=signature(candidate,account),count=(occurrences.get(sig)??0)+1;occurrences.set(sig,count);
   const ref=normal(candidate.reference),basis=ref?['ref',account,ref,candidate.occurred_on,candidate.amount.toFixed(2),candidate.kind].join('|'):['content',sig,count].join('|');
   const import_key=await hash(basis),duplicate=candidate.valid&&(oldKeys.has(import_key)||(oldCounts.get(sig)??0)>=count||Boolean(ref&&refs.has(basis)));
-  if(ref)refs.add(basis);rows.push({...candidate,id:crypto.randomUUID(),import_key,duplicate:Boolean(duplicate),selected:candidate.valid&&!duplicate})
+  if(ref)refs.add(basis);rows.push({...candidate,id:crypto.randomUUID(),import_key,duplicate:Boolean(duplicate),selected:candidate.valid&&!duplicate&&!candidate.reason})
  }
  return{rows,openingBalance:balance(sheets),fileName,sheets:previews,needsMapping,warning};
 }

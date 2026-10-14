@@ -140,3 +140,17 @@ test('cantidades agrupadas, negativos contables y columnas de saldo',()=>{
  const cols=detectColumns(['Fecha Valor','IBAN','Saldo','Importe (EUR)','Concepto']);
  assert.equal(cols.amount,3);assert.equal(cols.description,4);
 });
+
+// 14-10-2026: lo que puede ser un traspaso o una fecha mes/día no se guarda sin revisión.
+test('un traspaso entre cuentas propias llega sin marcar y con aviso',async()=>{
+ const p=await parse('t.csv','Fecha;Concepto;Importe\n01/09/2026;Traspaso a cuenta ahorro;-200,00\n02/09/2026;Transferencia recibida de Ana;50,00');
+ assert.deepEqual(p.rows.map(r=>[r.valid,r.selected]),[[true,false],[true,true]]);
+ assert.match(p.rows[0].reason,/Traspaso entre tus cuentas/);assert.equal(p.rows[1].reason,'');
+});
+test('si alguna fecha solo cuadra como mes/día no se adivina ninguna',async()=>{
+ const p=await parse('us.csv','Date,Description,Amount\n09/13/2026,Shop,-3.00\n09/01/2026,Shop,-4.00\n2026-09-02,Shop,-5.00');
+ assert.deepEqual(p.rows.map(r=>[r.valid,r.selected]),[[false,false],[false,false],[true,true]]);
+ assert.match(p.rows[1].reason,/Fecha ambigua/);assert.match(p.warning,/mes\/día/);
+ const es=await parse('es.csv','Fecha;Concepto;Importe\n13/09/2026;Bar;-3,00\n01/09/2026;Bar;-4,00');
+ assert.deepEqual(es.rows.map(r=>[r.occurred_on,r.valid]),[['2026-09-13',true],['2026-09-01',true]]);
+});
