@@ -5,16 +5,17 @@ import { Icono, Hoja, Presupuestos } from './piezas';
 import { montarRumbo } from './rio';
 import { Cuentas } from './Cuentas';
 import { Movimientos } from './Movimientos';
+import { Recibos } from './Recibos';
 import { ICONOS } from './iconos';
 import './corriente.css';
 
-type Destino = 'rumbo' | 'movimientos' | 'cuentas';
-const DESTINO: Record<Seccion, Destino> = {
+type Destino = 'rumbo' | 'movimientos' | 'recibos' | 'cuentas';
+const DESTINO: Record<Seccion, Exclude<Destino, 'recibos'>> = {
   dashboard: 'rumbo', analysis: 'rumbo', transactions: 'movimientos', budgets: 'movimientos',
   accounts: 'cuentas', investments: 'cuentas', goals: 'rumbo',
 };
-const SECCION: Record<Destino, Seccion> = { rumbo: 'dashboard', movimientos: 'transactions', cuentas: 'accounts' };
-const NOMBRES: [Destino, string, string][] = [['rumbo', 'Rumbo', 'i-rumbo'], ['movimientos', 'Movimientos', 'i-mov'], ['cuentas', 'Cuentas', 'i-cue']];
+const SECCION: Record<Exclude<Destino, 'recibos'>, Seccion> = { rumbo: 'dashboard', movimientos: 'transactions', cuentas: 'accounts' };
+const NOMBRES: [Destino, string, string][] = [['rumbo', 'Rumbo', 'i-rumbo'], ['movimientos', 'Movimientos', 'i-mov'], ['recibos', 'Recibos', 'i-rec'], ['cuentas', 'Cuentas', 'i-cue']];
 
 const nombreMes = (mes: string) => new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(new Date(`${mes}-01T12:00:00`));
 const fechaRelativa = (fecha: string) => {
@@ -95,9 +96,12 @@ function HojaCuenta({ v, abierta, onCerrar }: { v: VistaNueva; abierta: boolean;
 
 /** Tema Corriente: el dinero como un río. Mismos datos y acciones que el tema nuevo (VistaNueva). */
 export function Corriente({ v }: { v: VistaNueva }) {
-  const destino = DESTINO[v.tab];
+  // Recibos no es una sección de App: vive solo en Corriente.
+  const [enRecibos, setEnRecibos] = useState(false);
+  useEffect(() => setEnRecibos(false), [v.tab]);
+  const destino: Destino = enRecibos ? 'recibos' : DESTINO[v.tab];
   const [cuenta, setCuenta] = useState(false);
-  const ir = (d: Destino) => { v.go(SECCION[d]); requestAnimationFrame(() => document.getElementById(`h-${d}`)?.focus({ preventScroll: true })); };
+  const ir = (d: Destino) => { setEnRecibos(d === 'recibos'); if (d !== 'recibos') v.go(SECCION[d]); requestAnimationFrame(() => document.getElementById(`h-${d}`)?.focus({ preventScroll: true })); };
   useEffect(() => { if (!v.notice) return; const t = setTimeout(v.clearNotice, 2600); return () => clearTimeout(t); }, [v.notice, v.clearNotice]);
   const [y, m] = v.month.split('-');
   const mesLargo = nombreMes(v.month);
@@ -118,6 +122,7 @@ export function Corriente({ v }: { v: VistaNueva }) {
     <main key={`${destino}-${m}`}>
       {destino === 'rumbo' && <Rumbo v={v} ir={ir}/>}
       {destino === 'movimientos' && <Movimientos v={v}/>}
+      {destino === 'recibos' && <Recibos v={v}/>}
       {destino === 'cuentas' && <Cuentas v={v}/>}
     </main>
     <nav className="dock" aria-label="Destinos">
