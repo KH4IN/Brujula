@@ -2,32 +2,14 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import type { VistaNueva } from '../nuevo/Nuevo';
 import { grados3, rumboDelMes } from '../nuevo/rumbo';
 import { HojaCuenta, useModulos, type Modulo } from '../corriente/Corriente';
-import { corrienteDelMes, cifra, ritmos, type Ritmo } from '../corriente/datos';
+import { corrienteDelMes, cifra, ritmos } from '../corriente/datos';
 import { ICONOS } from '../corriente/iconos';
 import { Hoja } from '../corriente/piezas';
-import { cienPuntos, digitos, medidorPresupuesto } from './puntos';
+import { Cuentas } from './Cuentas';
+import { Movimientos } from './Movimientos';
+import { cienPuntos, digitos } from './puntos';
+import { el, encima, Glifo, Presupuesto, quieto } from './piezas';
 import './monolito.css';
-
-const NS = 'http://www.w3.org/2000/svg';
-const el = (n: string, a: Record<string, string | number> = {}) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, String(a[k])); return e; };
-const quieto = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-/* Glifos de puntos 7×7 de la maqueta. */
-const GLIFOS: Record<string, string[]> = {
-  logo: ['..###..', '.#...#.', '#....##', '#..#..#', '#.....#', '.#...#.', '..###..'],
-  rumbo: ['..###..', '.#...#.', '#...#.#', '#..#..#', '#.....#', '.#...#.', '..###..'],
-  mov: ['....#..', '#######', '....#..', '.......', '..#....', '#######', '..#....'],
-  rec: ['#######', '#.....#', '#.#.#.#', '#.....#', '#.#.#.#', '#.....#', '#######'],
-  meta: ['..###..', '.#...#.', '#..#..#', '#.###.#', '#..#..#', '.#...#.', '..###..'],
-  cue: ['...#...', '..#.#..', '#######', '.......', '#.#.#.#', '#.#.#.#', '#######'],
-  mas: ['...#...', '...#...', '...#...', '#######', '...#...', '...#...', '...#...'],
-  flecha: ['...#...', '....#..', '.....#.', '#######', '.....#.', '....#..', '...#...'],
-  izq: ['....#..', '...#...', '..#....', '.#.....', '..#....', '...#...', '....#..'],
-  der: ['..#....', '...#...', '....#..', '.....#.', '....#..', '...#...', '..#....'],
-};
-export const Glifo = ({ g, clase = '' }: { g: string; clase?: string }) =>
-  <i className={`g ${clase}`.trim()} aria-hidden="true"><svg viewBox="0 0 21 21">{GLIFOS[g].flatMap((fila, y) => [...fila].map((c, x) =>
-    c === '#' ? <circle key={`${x}-${y}`} cx={x * 3 + 1.5} cy={y * 3 + 1.5} r={1.15}/> : null))}</svg></i>;
 
 /* Dígitos 5×7 para la cifra grande. */
 const FUENTE: Record<string, string[]> = {
@@ -57,29 +39,6 @@ function pintaCifra(panel: HTMLElement, texto: string) {
 
 type Grupo = { id: string; n: string; v: number; p: number; d: string; alerta?: string; queda?: boolean };
 
-/** Ficha flotante al pasar por encima de un grupo de puntos (o enfocarlo con el teclado), como en la maqueta. */
-function encima(cont: HTMLElement, info: (id: string) => { n: string; v: string; d: string; alerta?: string } | null) {
-  const tip = cont.querySelector<HTMLElement>('.tip')!;
-  const mostrar = (g: Element) => {
-    const id = (g as HTMLElement).dataset.g!, d = info(id); if (!d) return;
-    cont.classList.add('foco');
-    cont.querySelectorAll<HTMLElement>('[data-g]').forEach((x) => x.classList.toggle('activo', x.dataset.g === id));
-    tip.querySelector('.n')!.textContent = d.n; tip.querySelector('.v')!.innerHTML = d.v; tip.querySelector('.d:not(.rojo)')!.textContent = d.d;
-    const r = tip.querySelector<HTMLElement>('.rojo')!; r.hidden = !d.alerta; r.textContent = d.alerta ?? '';
-    const ancla = g.querySelector('.ancla') ?? g, cb = cont.getBoundingClientRect(), gb = ancla.getBoundingClientRect();
-    const tw = tip.offsetWidth || 200, th = tip.offsetHeight || 100;
-    let y = gb.top - cb.top - th - 12; if (y < -cb.top + 70) y = gb.bottom - cb.top + 12;
-    tip.style.setProperty('--x', `${Math.round(Math.min(Math.max(0, gb.left - cb.left + gb.width / 2 - tw / 2), Math.max(0, cb.width - tw)))}px`);
-    tip.style.setProperty('--y', `${Math.round(y)}px`);
-    tip.classList.add('ver');
-  };
-  const ocultar = () => { cont.classList.remove('foco'); cont.querySelectorAll('.activo').forEach((x) => x.classList.remove('activo')); tip.classList.remove('ver'); };
-  const sobre = (e: Event) => { const g = (e.target as Element).closest('[data-g]'); if (g && cont.contains(g)) mostrar(g); };
-  cont.addEventListener('pointerover', sobre); cont.addEventListener('click', sobre); cont.addEventListener('focusin', sobre);
-  cont.addEventListener('pointerleave', ocultar); cont.addEventListener('focusout', ocultar);
-  return () => { cont.removeEventListener('pointerover', sobre); cont.removeEventListener('click', sobre); cont.removeEventListener('focusin', sobre); cont.removeEventListener('pointerleave', ocultar); cont.removeEventListener('focusout', ocultar); };
-}
-
 /** Cien puntos, cada uno el 1 % de lo que entra (o sale, si sale más), repartidos por grupos. */
 function pintarReparto(cont: HTMLElement, grupos: Grupo[]) {
   const svg = cont.querySelector('svg')!, W = cont.clientWidth; if (!W) return;
@@ -97,24 +56,6 @@ function pintarReparto(cont: HTMLElement, grupos: Grupo[]) {
     svg.append(grupo);
   }
   if (!quieto()) { cont.classList.remove('vivo'); void cont.offsetWidth; cont.classList.add('vivo'); setTimeout(() => cont.classList.remove('vivo'), 2600); }
-}
-
-/** Medidor de puntos en línea (presupuestos). */
-function medidor(svg: SVGSVGElement, seg: string, paso = 11) {
-  const items: string[] = [], cortes: number[] = [];
-  seg.split(',').forEach((p) => { if (p === '|') { cortes.push(items.length); return; } const [n, c] = p.split(':'); for (let i = 0; i < +n; i++) items.push(c); });
-  const hueco = paso * 0.6, W = items.length * paso + cortes.length * hueco, H = paso, r = paso * 0.32;
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', String(W)); svg.setAttribute('height', String(H)); svg.replaceChildren();
-  items.forEach((c, i) => { const desp = cortes.filter((k) => k <= i).length * hueco; svg.append(el('circle', { cx: i * paso + paso / 2 + desp, cy: paso / 2, r: c.startsWith('hueco') ? r - 0.6 : r, class: c })); });
-  cortes.forEach((c, k) => { const x = c * paso + k * hueco + hueco / 2; svg.append(el('line', { x1: x, x2: x, y1: -2, y2: H + 2 })); });
-}
-
-function Presupuesto({ r }: { r: Ritmo }) {
-  const ref = useRef<SVGSVGElement>(null);
-  useEffect(() => { if (ref.current) medidor(ref.current, medidorPresupuesto(r.gastado, r.limite, r.previsto)); }, [r.gastado, r.limite, r.previsto]);
-  return <div className="presu"><div className="fila-p"><b>{r.nombre}</b><span className="cant">{cifra(r.gastado)} / {cifra(r.limite)} €</span></div>
-    <svg ref={ref} role="img" aria-label={`${r.limite > 0 ? Math.round(r.gastado / r.limite * 100) : 0} % del presupuesto`}/>
-    <span className={`nota${r.pasa ? ' senal' : ''}`}>{r.pasa ? `A este ritmo, +${cifra(r.previsto - r.limite)} €` : `A este ritmo acabarás en ${cifra(r.previsto)} €`}</span></div>;
 }
 
 type Destino = 'rumbo' | 'movimientos' | 'recibos' | 'metas' | 'cuentas';
@@ -203,7 +144,7 @@ function Rumbo({ v, ir, modulos, activar }: { v: VistaNueva; ir: (d: Destino) =>
   </section>;
 }
 
-// shortcut: Movimientos, Recibos, Metas y Cuentas aún no tienen su vista de Monolito; llegan en B9b y B9c.
+// shortcut: Recibos y Metas aún no tienen su vista de Monolito; llegan en B9c.
 function EnCamino({ id, titulo }: { id: Destino; titulo: string }) {
   return <section className="vista" id={id} aria-labelledby={`h-${id}`}>
     <div className="vcab"><div><h1 id={`h-${id}`} tabIndex={-1}>{titulo}</h1>
@@ -261,7 +202,9 @@ export function Monolito({ v }: { v: VistaNueva }) {
           <div className="estado"><span className="sinc">{sinc}</span><button type="button" className="yo" aria-label="Tu espacio: cuenta y configuración" onClick={() => setCuenta(true)}>{v.user?.email?.charAt(0).toUpperCase() ?? 'T'}</button></div>
         </header>
         <div key={`${destino}-${v.month}`}>
-          {destino === 'rumbo' ? <Rumbo v={v} ir={ir} modulos={modulos} activar={activar}/> : <EnCamino id={destino} titulo={NOMBRES.find(([d]) => d === destino)![1]}/>}
+          {destino === 'rumbo' ? <Rumbo v={v} ir={ir} modulos={modulos} activar={activar}/>
+            : destino === 'movimientos' ? <Movimientos v={v}/> : destino === 'cuentas' ? <Cuentas v={v}/>
+            : <EnCamino id={destino} titulo={NOMBRES.find(([d]) => d === destino)![1]}/>}
         </div>
       </main>
     </div>

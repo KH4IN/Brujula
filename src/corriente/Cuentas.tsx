@@ -8,11 +8,11 @@ import { Hoja, Icono } from './piezas';
 import { euros } from './rio';
 
 type Afluente = { id: string; n: string; v: number; d: string; inv?: boolean };
-const TIPOS: Record<NonNullable<Investment['asset_type']>, string> = { crypto: 'Cripto', etf: 'ETF', stock: 'Acción', other: 'Inversión' };
-const esEfectivo = (a: AccountSetting) => a.kind === 'cash' || a.account === 'cash';
-const valor = (i: Investment) => Number(i.units) * Number(i.current_price);
-const pct = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1, signDisplay: 'always' });
-const fechaCorta = (f: string) => new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' }).format(new Date(`${f}T12:00:00`)).replace('.', '');
+export const TIPOS: Record<NonNullable<Investment['asset_type']>, string> = { crypto: 'Cripto', etf: 'ETF', stock: 'Acción', other: 'Inversión' };
+export const esEfectivo = (a: AccountSetting) => a.kind === 'cash' || a.account === 'cash';
+export const valor = (i: Investment) => Number(i.units) * Number(i.current_price);
+export const pct = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1, signDisplay: 'always' });
+export const fechaCorta = (f: string) => new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' }).format(new Date(`${f}T12:00:00`)).replace('.', '');
 
 /** Los afluentes del patrimonio (maqueta de Corriente): cada cuenta e inversión desemboca en el total. */
 function montarAfluentes(lienzo: HTMLElement, cuentas: Afluente[]) {
@@ -52,7 +52,7 @@ function montarAfluentes(lienzo: HTMLElement, cuentas: Afluente[]) {
 }
 
 /** Alta y cambio de un banco o del efectivo: nombre y saldo inicial (misma validación que el tema clásico). */
-function HojaCuentaBanco({ v, cuenta, onCerrar }: { v: VistaNueva; cuenta: AccountSetting | 'nueva'; onCerrar: () => void }) {
+export function HojaCuentaBanco({ v, cuenta, onCerrar }: { v: VistaNueva; cuenta: AccountSetting | 'nueva'; onCerrar: () => void }) {
   const nueva = cuenta === 'nueva';
   const [nombre, setNombre] = useState(nueva ? '' : accountName(cuenta.account, v.accounts));
   const [saldo, setSaldo] = useState(nueva ? '0' : String(cuenta.opening_balance ?? 0));
@@ -79,7 +79,7 @@ function HojaCuentaBanco({ v, cuenta, onCerrar }: { v: VistaNueva; cuenta: Accou
 }
 
 /** Alta, cambio y baja de una inversión. Brújula solo apunta: el precio lo actualizas tú. */
-function HojaInversion({ v, inversion, onCerrar }: { v: VistaNueva; inversion: Investment | 'nueva'; onCerrar: () => void }) {
+export function HojaInversion({ v, inversion, onCerrar }: { v: VistaNueva; inversion: Investment | 'nueva'; onCerrar: () => void }) {
   const i = inversion === 'nueva' ? null : inversion;
   const [f, setF] = useState({ name: i?.name ?? '', ticker: i?.ticker ?? '', asset_type: i?.asset_type ?? 'other', units: i ? String(i.units) : '', average_cost: i ? String(i.average_cost) : '', current_price: i ? String(i.current_price) : '', funding_account: i?.funding_account ?? 'outside', purchased_on: i?.purchased_on ?? '' });
   const [error, setError] = useState('');

@@ -343,3 +343,15 @@
 .tema-muestra-monolito i:nth-child(3){left:8px;top:31px;width:6px;background:radial-gradient(circle,#FF2E2E 0 1.6px,transparent 1.8px) 0 0/6px 4px repeat-x}
 /* .app también es una clase del diseño clásico (fondo oscuro azulado en modo noche): aquí manda el negro. */
 :root[data-tema="monolito"] .m-app .app{background:var(--negro);color:var(--tinta)}
+:root[data-tema="monolito"] .m-app .presu-acciones{display:flex;gap:16px;margin-top:6px}
+:root[data-tema="monolito"] .m-app .mov-editar,:root[data-tema="monolito"] .m-app .parte-editar{width:100%;text-align:left}
+:root[data-tema="monolito"] .m-app .partes .parte-editar{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:14px 0;border-top:1px solid var(--linea)}
+:root[data-tema="monolito"] .m-app .partes .parte-editar:hover dt{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--gris-3)}
+:root[data-tema="monolito"] .m-app ul.partes{list-style:none;margin:0;padding:0}
+:root[data-tema="monolito"] .m-app ul.partes li:last-child .parte-editar{border-bottom:1px solid var(--linea)}
+:root[data-tema="monolito"] .m-app .partes .dt{font-size:15px;color:var(--blanco);font-weight:500}
+:root[data-tema="monolito"] .m-app .partes .dt small{display:block;font-size:13px;color:var(--gris-1);font-weight:400}
+:root[data-tema="monolito"] .m-app .partes .dd{font:500 15px var(--mono);color:var(--tinta);text-align:right}
+:root[data-tema="monolito"] .m-app .partes .dd small{display:block;font-size:12px;color:var(--gris-1)}
+:root[data-tema="monolito"] .m-app .partes .parte-editar:hover .dt{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--gris-3)}
+:root[data-tema="monolito"] .m-app .patri .dot.senal{color:var(--senal)}

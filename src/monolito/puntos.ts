@@ -23,3 +23,8 @@ export function medidorPresupuesto(gastado: number, limite: number, previsto: nu
 
 /** Dígitos de una cifra para la matriz de puntos (5×7 por dígito); sin separador de miles. */
 export const digitos = (n: number) => String(Math.round(Math.abs(n)));
+
+/** Cuánto vale un punto para que un importe quepa en unos 120 puntos: 100 €, 200 €, 500 €, 1.000 €… */
+export function unidadPuntos(total: number, max = 120) {
+  for (let base = 100; ; base *= 10) for (const m of [1, 2, 5]) if (total / (base * m) <= max) return base * m;
+}
