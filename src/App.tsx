@@ -94,7 +94,7 @@ export default function App(){
     if(tema==='nuevo')cargarFuentesNuevas();
     try{localStorage.setItem('brujula.tema',tema);localStorage.removeItem('brujula.motion')}catch{/* Preference still applies for this session. */}
   },[tema]);
-  useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('brujula.theme',dark?'dark':'light')}catch{/* The theme still works without storage. */}document.querySelector('meta[name="theme-color"]')?.setAttribute('content',tema==='nuevo'?(dark?'#0D1411':'#F2F3EE'):dark?'#171720':'#173f32')},[dark,tema]);
+  useEffect(()=>{document.documentElement.dataset.theme=dark||tema==='antiguo'?'dark':'light';try{localStorage.setItem('brujula.theme',dark?'dark':'light')}catch{/* The theme still works without storage. */}document.querySelector('meta[name="theme-color"]')?.setAttribute('content',tema==='nuevo'?(dark?'#0D1411':'#F2F3EE'):dark?'#171720':'#173f32')},[dark,tema]);
   function descubrirClasico(){setClasicoDescubierto(true);try{localStorage.setItem('brujula.clasico','1')}catch{/* Visible during this session. */}}
   useEffect(()=>{
     if(!user){themeScope.current=null;return}
