@@ -364,3 +364,12 @@
 :root[data-tema="corriente"] .c-app .cuenta-editar:hover b{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--perla-3)}
 :root[data-tema="corriente"] .c-app .cuenta .var.coral{color:var(--coral)}
 @media (max-width:759px){:root[data-tema="corriente"] .c-app .afluentes{height:460px}}
+:root[data-tema="corriente"] .c-app .lista-rec li:has(> .rec-editar),:root[data-tema="corriente"] .c-app .grupo li:has(> .rec-editar){display:block;padding:0}
+:root[data-tema="corriente"] .c-app .lista-rec .rec-editar{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:20px;align-items:center;padding:20px 0;width:100%;text-align:left;border-radius:0}
+:root[data-tema="corriente"] .c-app .grupo .rec-editar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:11px 0;width:100%;text-align:left;font-size:15px;border-radius:0}
+:root[data-tema="corriente"] .c-app .grupo .rec-editar small{color:var(--perla-2);font-size:13px}
+:root[data-tema="corriente"] .c-app .grupo .rec-editar .imp{grid-row:1;grid-column:2;font-weight:500}
+:root[data-tema="corriente"] .c-app .rec-editar:hover b,:root[data-tema="corriente"] .c-app .grupo .rec-editar:hover span:first-child{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--perla-3)}
+:root[data-tema="corriente"] .c-app .casilla{display:flex;gap:10px;align-items:center;font-size:14.5px;color:var(--perla-2)}
+:root[data-tema="corriente"] .c-app .casilla input{accent-color:var(--menta);width:18px;height:18px}
+@media (max-width:759px){:root[data-tema="corriente"] .c-app .lista-rec .rec-editar{grid-template-columns:58px minmax(0,1fr) auto;gap:12px;padding:18px 0}}
