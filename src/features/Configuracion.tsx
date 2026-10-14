@@ -6,6 +6,7 @@ const TOQUES_SECRETO = 7;
 
 const OPCIONES: { valor: Tema; titulo: string; detalle: string }[] = [
   { valor: 'corriente', titulo: 'Corriente', detalle: 'El dinero como un río que entra, se reparte y se remansa.' },
+  { valor: 'monolito', titulo: 'Monolito (en construcción)', detalle: 'Negro, blanco y una señal roja: todo son puntos. Por ahora solo Rumbo.' },
   { valor: 'nuevo', titulo: 'Tema nuevo', detalle: 'Rumbo: una brújula que marca hacia dónde va tu mes.' },
   { valor: 'antiguo', titulo: 'Tema antiguo', detalle: 'El diseño Ultra de siempre, con sus cuatro perspectivas.' },
   { valor: 'clasico', titulo: 'Diseño clásico', detalle: 'La primera Brújula. Sin movimiento decorativo.' },
@@ -42,7 +43,7 @@ export function Configuracion({ tema, dark, clasicoDescubierto, onTema, onModo, 
         </label>)}
         {hallazgo && <p className="tema-hallazgo" role="status">Has encontrado el diseño clásico, el primero de Brújula. Ya puedes elegirlo.</p>}
       </fieldset>
-      {tema !== 'antiguo' && tema !== 'corriente' && <fieldset className="visual-settings-options modo-opciones">
+      {tema !== 'antiguo' && tema !== 'corriente' && tema !== 'monolito' && <fieldset className="visual-settings-options modo-opciones">
         <legend>Modo</legend>
         <label className={!dark ? 'selected' : ''}><input type="radio" name="modo" checked={!dark} onChange={() => onModo(false)}/><span><strong><Sun size={15}/> Día</strong></span></label>
         <label className={dark ? 'selected' : ''}><input type="radio" name="modo" checked={dark} onChange={() => onModo(true)}/><span><strong><Moon size={15}/> Noche</strong></span></label>

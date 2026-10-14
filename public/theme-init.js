@@ -7,7 +7,7 @@ try {
 // Tema visual antes del primer pintado, para no enseñar un instante el diseño equivocado.
 try {
   const tema = localStorage.getItem('brujula.tema');
-  document.documentElement.dataset.tema = tema === 'antiguo' || tema === 'clasico' || tema === 'nuevo' ? tema : 'corriente';
+  document.documentElement.dataset.tema = tema === 'antiguo' || tema === 'clasico' || tema === 'nuevo' || tema === 'monolito' ? tema : 'corriente';
 } catch {
   document.documentElement.dataset.tema = 'corriente';
 }
