@@ -43,7 +43,7 @@ Estado: **aprobado por el fundador el 14-10-2026**, con sus cuatro recomendacion
   de la auditoría de Brújula, Insights aceptado), dar la fase 6 por sustituida por los
   temas y añadir la fase 8 «Brújula nueva» con los pasos de la ficha. *Comprobación:*
   revisión del diff.
-- [ ] **A2. Revisión del acceso** — *bloqueado el 14-10: desde esta sesión no se llega a Supabase ni al correo; ver informe del día.* (fase 2, punto 1). Leer `auth.ts` y `Auth.tsx` sin
+- [ ] **A2. Revisión del acceso** — *la hace el fundador con la lista de [#85](https://github.com/KH4IN/Brujula/pull/85) (aprobado el 14-10); «Brújula pruebas» reactivado.* (fase 2, punto 1). Leer `auth.ts` y `Auth.tsx` sin
   tocarlos y probar en Brújula pruebas el registro, el acceso por contraseña, la
   recuperación y el vínculo de datos de invitado con una cuenta ficticia. Informe en
   `docs/auditoria/ACCESO.md`. *Comprobación:* cada flujo con resultado y captura.
@@ -51,10 +51,10 @@ Estado: **aprobado por el fundador el 14-10-2026**, con sus cuatro recomendacion
   navegación, teclado, contraste, modos día y noche y sin conexión. Informe en
   `docs/auditoria/INTERFAZ.md`; cada fallo visible, en su propia PR. *Comprobación:*
   capturas antes y después.
-- [ ] **A4. Dos usuarios reales** — *bloqueado el 14-10, por la misma razón que A2.* (fase 2, punto 3). Dos cuentas ficticias en pruebas:
+- [ ] **A4. Dos usuarios reales** — *igual que A2, con la misma lista.* (fase 2, punto 3). Dos cuentas ficticias en pruebas:
   ninguna ve ni cambia lo de la otra; el mismo usuario en dos navegadores, editando a la
   vez. Informe en `docs/auditoria/SINCRONIZACION.md`. *Comprobación:* resultados de cada caso.
-- [x] **A5. Importación** ([PR #80](https://github.com/KH4IN/Brujula/pull/80); dos comportamientos pendientes de decisión) (fase 2, punto 4). Pruebas en `tests/` con extractos
+- [x] **A5. Importación** ([PR #80](https://github.com/KH4IN/Brujula/pull/80); traspasos y fechas mes/día corregidos en [#86](https://github.com/KH4IN/Brujula/pull/86)) (fase 2, punto 4). Pruebas en `tests/` con extractos
   sintéticos: signos, cargo/abono, traspasos, duplicados y filas ambiguas. Sin tocar
   `import.ts` salvo fallo grave. *Comprobación:* `npm test` en verde.
 - [ ] **A6. Cierre de la fase 2.** Informe breve con hallazgos y riesgos en
@@ -64,7 +64,7 @@ Estado: **aprobado por el fundador el 14-10-2026**, con sus cuatro recomendacion
 
 Cada paso: PR a `staging`, capturas a 1440 y 390 px y, cuando lo apruebes, PR a `main`.
 
-- [ ] **B1. Cinco destinos.** Navegación Rumbo · Movimientos · Recibos · Metas · Cuentas
+- [ ] **B1. Cinco destinos.** Se hace en tres PR: **B1a** estructura, navegación, Rumbo y hoja de anotar ([#88](https://github.com/KH4IN/Brujula/pull/88), hecho); **B1b** Movimientos; **B1c** Cuentas y Corriente como tema por defecto. B1b y B1c empiezan cuando #88 esté unida (sin apilar PR). Navegación Rumbo · Movimientos · Recibos · Metas · Cuentas
   en el estilo Corriente, con lo que ya existe (Presupuestos dentro de Rumbo y
   Movimientos; Inversiones dentro de Cuentas). Recibos y Metas aún vacíos.
 - [ ] **B2. Recibos, lectura.** Lista, calendario de 30 días y coste anual leyendo
@@ -78,6 +78,8 @@ Cada paso: PR a `staging`, capturas a 1440 y 390 px y, cuando lo apruebes, PR a 
 - [ ] **B8. Activación.** Recibos y Metas no se ven hasta activarlos (Configuración o
   primer uso).
 - [ ] **B9. Monolito.** El mismo contenido en el estilo Monolito.
+
+Detalles de interfaz aprobados el 14-10 (botón de modo del tema antiguo, contrastes y buscador): [#87](https://github.com/KH4IN/Brujula/pull/87).
 
 ## Fuera de este plan (lo apunto, no lo hago)
 
