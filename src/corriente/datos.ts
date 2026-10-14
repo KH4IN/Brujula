@@ -1,0 +1,60 @@
+/* Cifras de presentación del tema Corriente. Solo reparten importes que App ya calcula; no cambian datos. */
+import type { Budget } from '../data';
+
+export type Rio = { id: string; nombre: string; v: number; pct: string; alerta?: string; ahorro?: boolean };
+export type Corriente = {
+  entran: number; salen: number; quedan: number; faltan: number;
+  /** Ríos de gasto, de mayor a menor (como mucho seis) y el remanso «Se quedan». */
+  rios: Rio[];
+  tronco: { nombre: string; pct: string };
+  vacio: boolean;
+};
+export type Ritmo = { nombre: string; gastado: number; limite: number; previsto: number; pasa: boolean };
+
+const MAX_RIOS = 6;
+const entero = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0, useGrouping: 'always' as unknown as boolean });
+/** 2.480 · sin decimales, como en el diseño. */
+export const cifra = (n: number) => entero.format(Math.round(n)).replace('-', '−');
+
+/** Días transcurridos del mes elegido: el de hoy si es el mes en curso, el mes entero si ya pasó y 0 si aún no empezó. */
+export function diasTranscurridos(mes: string, hoy = new Date()): { dia: number; diasMes: number } {
+  const [y, m] = mes.split('-').map(Number), diasMes = new Date(y, m, 0).getDate();
+  const actual = hoy.getFullYear() * 12 + hoy.getMonth(), elegido = y * 12 + m - 1;
+  return { dia: elegido < actual ? diasMes : elegido > actual ? 0 : hoy.getDate(), diasMes };
+}
+
+/** Lo que llevas gastado en cada presupuesto y dónde acabarás a este ritmo. */
+export function ritmos(presupuestos: Budget[], gastado: (categoria: string) => number, mes: string, hoy = new Date()): Ritmo[] {
+  const { dia, diasMes } = diasTranscurridos(mes, hoy);
+  return presupuestos.map((p) => {
+    const g = gastado(p.category), limite = Number(p.amount);
+    const previsto = dia > 0 ? g * diasMes / dia : g;
+    return { nombre: p.category, gastado: g, limite, previsto, pasa: previsto > limite };
+  });
+}
+
+/** Los ríos del mes: los gastos por categoría (los más grandes y «Otros») y lo que se queda. */
+export function corrienteDelMes(grupos: { category: string; total: number }[], entran: number, salen: number,
+  presupuestos: Ritmo[], nombreMes: string): Corriente {
+  const quedan = Math.max(0, entran - salen), faltan = Math.max(0, salen - entran);
+  const ordenados = [...grupos].filter((g) => g.total > 0).sort((a, b) => b.total - a.total);
+  const propios = ordenados.slice(0, ordenados.length > MAX_RIOS ? MAX_RIOS - 1 : MAX_RIOS);
+  const resto = ordenados.slice(propios.length).reduce((s, g) => s + g.total, 0);
+  const gastos = propios.map((g) => ({ nombre: g.category, v: g.total }));
+  if (resto > 0) {
+    const otros = gastos.find((g) => g.nombre === 'Otros');
+    if (otros) otros.v += resto; else gastos.push({ nombre: 'Otros', v: resto });
+  }
+  const rios: Rio[] = gastos.map((g, i) => {
+    const p = presupuestos.find((r) => r.nombre === g.nombre);
+    const pct = `${Math.round(g.v / salen * 100)} % de lo que sale${p ? ` · presupuesto de ${cifra(p.limite)} €` : ''}`;
+    return { id: `r${i}`, nombre: g.nombre, v: g.v, pct, alerta: p?.pasa ? `A este ritmo, +${cifra(p.previsto - p.limite)} €` : undefined };
+  });
+  rios.push({ id: 'aho', nombre: 'Se quedan', v: quedan, ahorro: true,
+    pct: entran > 0 ? `El ${Math.round(quedan / entran * 100)} % de lo que entra. Es tu remanso de ${nombreMes}.` : 'Este mes no ha entrado dinero.' });
+  const n = gastos.length;
+  return {
+    entran, salen, quedan, faltan, rios, vacio: entran <= 0 && salen <= 0,
+    tronco: { nombre: `Entran en ${nombreMes}`, pct: `Salen ${cifra(salen)} € en ${n === 1 ? 'un río' : `${n} ríos`} y se quedan ${cifra(quedan)} €.` },
+  };
+}
