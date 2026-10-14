@@ -6,6 +6,8 @@ import { describirFrecuencia, NOMBRE_TIPO, ocurrencias, type Cobro, type Element
 import { hoyLocal, sumarDias, type Fecha } from '../recibos/fechas';
 import { cifra } from './datos';
 import { canvasTexto, clamp, escena, lineal, PERLA, rgba, rotulo } from './escena';
+import { HojaRecibo } from './HojaRecibo';
+import { Icono } from './piezas';
 import { euros } from './rio';
 
 const dos = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' as unknown as boolean });
@@ -93,19 +95,22 @@ function montarRio30(lienzo: HTMLElement, hoy: Fecha, lista: Cita[]) {
 }
 
 /** Recibos leídos de Kairós: lo que viene en 30 días, esta semana y lo que suman al año. Solo lectura. */
-export function RecibosVista({ elementos, cobros, hoy }: { elementos: Elemento[]; cobros: Cobro[]; hoy: Fecha }) {
+export function RecibosVista({ elementos, cobros, hoy, onEditar }: { elementos: Elemento[]; cobros: Cobro[]; hoy: Fecha; onEditar: (e: Elemento | null) => void }) {
   const lienzo = useRef<HTMLDivElement>(null);
   const prox = proximosPendientes(citas(elementos, cobros, hoy, finDeVentana(hoy, 30)));
   const semana = prox.filter((c) => c.fecha <= sumarDias(hoy, 6));
   const resumen = resumenAnual(elementos);
   const suscripciones = resumen.categorias.find((g) => g.categoria === 'Suscripciones')?.total ?? 0;
   const siguiente = (e: Elemento) => ocurrencias(e, hoy, sumarDias(hoy, 800))[0];
+  // El resumen anual solo cuenta lo recurrente con importe; el resto también tiene que poder editarse.
+  const sueltos = elementos.filter((e) => !resumen.filas.some((f) => f.elemento.id === e.id));
   const huella = JSON.stringify(prox.map((c) => [clave(c), c.elemento.importe]));
   useEffect(() => { if (lienzo.current && prox.length) return montarRio30(lienzo.current, hoy, prox); }, [huella, hoy]);
   return <>
     <div className="vcab">
       <div><h1 id="h-recibos" tabIndex={-1}>Recibos</h1>
         <p className="sub">{prox.length ? <>{prox.length} en los próximos 30 días, <span className="cifra">{dos.format(totalPrevisto(prox))} €</span> en total.</> : 'Nada en los próximos 30 días.'}</p></div>
+      <div className="acciones"><button type="button" className="boton" onClick={() => onEditar(null)}><Icono id="i-mas"/>Añadir recibo</button></div>
     </div>
     {prox.length > 0 && <>
       <p className="eti">Los próximos 30 días vienen hacia ti</p>
@@ -120,9 +125,10 @@ export function RecibosVista({ elementos, cobros, hoy }: { elementos: Elemento[]
         <div className="cab"><h2 id="h-semana">Esta semana</h2></div>
         {semana.length ? <ol className="lista-rec">{semana.map((c) => {
           const d = fecha(c.fecha);
-          return <li key={clave(c)}><span className="dia"><b>{d.getDate()}</b><small>{SEM[d.getDay()]}</small></span>
+          return <li key={clave(c)}><button type="button" className="rec-editar" onClick={() => onEditar(c.elemento)} aria-label={`Editar ${c.elemento.nombre}`}>
+            <span className="dia"><b>{d.getDate()}</b><small>{SEM[d.getDay()]}</small></span>
             <span className="que"><b>{c.elemento.nombre}</b><small>{NOMBRE_TIPO[c.elemento.tipo]} · {describirFrecuencia(c.elemento.frecuencia)}{c.elemento.estimado ? ' · estimado' : ''}</small></span>
-            <span className="imp">{c.elemento.importe == null ? '—' : `${dos.format(c.elemento.importe)} €`}</span></li>;
+            <span className="imp">{c.elemento.importe == null ? '—' : `${dos.format(c.elemento.importe)} €`}</span></button></li>;
         })}</ol> : <p className="nota">Nada que pagar ni que venza en los próximos siete días.</p>}
       </section>
       <section className="c-der" aria-labelledby="h-anual">
@@ -133,9 +139,13 @@ export function RecibosVista({ elementos, cobros, hoy }: { elementos: Elemento[]
           <div className="grupo" key={g.categoria}><h3><span>{g.categoria}</span><span className="imp">{cifra(g.total)} € al año</span></h3>
             <ul>{resumen.filas.filter((f) => f.elemento.categoria === g.categoria).map(({ elemento: e }) => {
               const s = siguiente(e);
-              return <li key={e.id}><span>{e.nombre}</span><span className="imp">{dos.format(e.importe ?? 0)} €</span>
-                <small>{describirFrecuencia(e.frecuencia)}{s ? ` · próximo el ${corta(s)}` : ''}</small></li>;
+              return <li key={e.id}><button type="button" className="rec-editar" onClick={() => onEditar(e)} aria-label={`Editar ${e.nombre}`}><span>{e.nombre}</span><span className="imp">{dos.format(e.importe ?? 0)} €</span>
+                <small>{describirFrecuencia(e.frecuencia)}{s ? ` · próximo el ${corta(s)}` : ''}</small></button></li>;
             })}</ul></div>)}
+          {sueltos.length > 0 && <div className="grupo"><h3><span>Sin importe o una sola vez</span></h3>
+            <ul>{sueltos.map((e) => { const s = siguiente(e);
+              return <li key={e.id}><button type="button" className="rec-editar" onClick={() => onEditar(e)} aria-label={`Editar ${e.nombre}`}><span>{e.nombre}</span><span className="imp">{e.importe == null ? '—' : `${dos.format(e.importe)} €`}</span>
+                <small>{NOMBRE_TIPO[e.tipo]} · {describirFrecuencia(e.frecuencia)}{s ? ` · el ${corta(s)}` : ' · ya pasó'}</small></button></li>; })}</ul></div>}
         </div>
       </section>
     </div>
@@ -146,22 +156,39 @@ type Carga = { estado: 'cargando' } | { estado: 'error' } | { estado: 'listo'; e
 
 export function Recibos({ v }: { v: VistaNueva }) {
   const [carga, setCarga] = useState<Carga>({ estado: 'cargando' });
+  const [hoja, setHoja] = useState<Elemento | null | false>(false);
+  const [vuelta, setVuelta] = useState(0);
   const uid = v.user?.id;
   useEffect(() => {
     if (!supabase || !uid) return;
     let vivo = true;
-    // RLS de Kairós: con la sesión del usuario solo se leen sus filas. Brújula aquí no escribe nada.
+    // RLS de Kairós: con la sesión del usuario solo se leen y escriben sus filas.
     Promise.all([supabase.from('kairos_elementos').select('*').eq('activo', true), supabase.from('kairos_cobros').select('*')])
       .then(([e, c]) => { if (vivo) setCarga(e.error || c.error ? { estado: 'error' } : { estado: 'listo', elementos: e.data as Elemento[], cobros: c.data as Cobro[] }); });
     return () => { vivo = false; };
-  }, [uid]);
-  const mensaje = !supabase || !uid ? 'Recibos lee lo que tienes en Kairós. Entra con tu cuenta para verlos.'
+  }, [uid, vuelta]);
+  const recargar = () => setVuelta((n) => n + 1);
+  // Kairós sincroniza desde la nube al abrirse: lo que se guarde aquí lo verá allí.
+  const guardar = async (e: Elemento) => {
+    const { error } = await supabase!.from('kairos_elementos').upsert({ ...e, user_id: uid });
+    if (error) return 'No se pudo guardar. Revisa los datos y prueba de nuevo.';
+    recargar(); return null;
+  };
+  const borrar = async (e: Elemento) => {
+    const { error } = await supabase!.from('kairos_elementos').delete().eq('id', e.id);
+    if (error) return 'No se pudo borrar. Prueba de nuevo en un momento.';
+    recargar(); return null;
+  };
+  const sinSesion = !supabase || !uid;
+  const mensaje = sinSesion ? 'Recibos lee lo que tienes en Kairós. Entra con tu cuenta para verlos.'
     : carga.estado === 'cargando' ? 'Cargando tus recibos…'
     : carga.estado === 'error' ? 'No se pudieron leer tus recibos de Kairós. Prueba de nuevo en un momento.'
-    : !carga.elementos.length ? 'Aún no tienes recibos en Kairós.' : '';
+    : !carga.elementos.length ? 'Aún no tienes recibos. Añade el primero y aparecerá también en Kairós.' : '';
   return <section className="vista marco" id="recibos" aria-labelledby="h-recibos">
     {mensaje || carga.estado !== 'listo'
-      ? <div className="vcab"><div><h1 id="h-recibos" tabIndex={-1}>Recibos</h1><p className="sub" role="status">{mensaje}</p></div></div>
-      : <RecibosVista elementos={carga.elementos} cobros={carga.cobros} hoy={hoyLocal()}/>}
+      ? <div className="vcab"><div><h1 id="h-recibos" tabIndex={-1}>Recibos</h1><p className="sub" role="status">{mensaje}</p></div>
+        {!sinSesion && carga.estado === 'listo' && <div className="acciones"><button type="button" className="boton" onClick={() => setHoja(null)}><Icono id="i-mas"/>Añadir recibo</button></div>}</div>
+      : <RecibosVista elementos={carga.elementos} cobros={carga.cobros} hoy={hoyLocal()} onEditar={setHoja}/>}
+    {hoja !== false && <HojaRecibo inicial={hoja} onGuardar={guardar} onBorrar={borrar} onCerrar={() => setHoja(false)}/>}
   </section>;
 }
