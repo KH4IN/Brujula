@@ -63,7 +63,7 @@ export default function App(){
   },[mobileOpen]);
   const [settingsOpen,setSettingsOpen]=useState(false);
   const [dark,setDark]=useState(()=>document.documentElement.dataset.theme==='dark');
-  const [tema,setTema]=useState<Tema>(()=>{try{return temaGuardado(localStorage.getItem('brujula.tema'))}catch{return 'nuevo'}});
+  const [tema,setTema]=useState<Tema>(()=>{try{return temaGuardado(localStorage.getItem('brujula.tema'))}catch{return 'corriente'}});
   const [clasicoDescubierto,setClasicoDescubierto]=useState(()=>{try{return localStorage.getItem('brujula.clasico')==='1'}catch{return false}});
   const ultra=tema==='antiguo';
   const themeScope=useRef<string|null>(null);

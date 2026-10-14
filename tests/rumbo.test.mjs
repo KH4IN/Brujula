@@ -18,8 +18,8 @@ test('sin ingresos ni gastos la aguja queda en calma y sin porcentaje',()=>{
 test('los grados se muestran con tres cifras',()=>{
   assert.equal(grados3(0),'000°');assert.equal(grados3(66),'066°');assert.equal(grados3(180),'180°');
 });
-test('sin preferencia se usa el tema nuevo y se ignoran valores antiguos',()=>{
-  assert.equal(temaGuardado(null),'nuevo');assert.equal(temaGuardado('ultra'),'nuevo');assert.equal(temaGuardado('medium'),'nuevo');
+test('sin preferencia se usa Corriente y se ignoran valores antiguos',()=>{
+  assert.equal(temaGuardado(null),'corriente');assert.equal(temaGuardado('ultra'),'corriente');assert.equal(temaGuardado('medium'),'corriente');assert.equal(temaGuardado('nuevo'),'nuevo');
   assert.equal(temaGuardado('antiguo'),'antiguo');assert.equal(temaGuardado('clasico'),'clasico');
 });
 test('los arcos cubren la circunferencia en proporción al gasto',()=>{
