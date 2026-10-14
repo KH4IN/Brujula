@@ -1,0 +1,6 @@
+# Qué no entra en el mapa del proyecto (graphify-out/).
+.claude/
+graphify-out/
+node_modules/
+dist/
+.env*
