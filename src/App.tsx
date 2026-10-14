@@ -15,6 +15,8 @@ import { MotionExperience } from './features/MotionExperience';
 import { Configuracion } from './features/Configuracion';
 import { Nuevo, type VistaNueva } from './nuevo/Nuevo';
 import { HojaMovimiento } from './nuevo/HojaMovimiento';
+import { Corriente } from './corriente/Corriente';
+import { HojaAnotar } from './corriente/HojaAnotar';
 import { temaGuardado, type Tema } from './nuevo/rumbo';
 import { cargarFuentesNuevas } from './nuevo/fuentes';
 import { UltraPanel } from './features/UltraPanel';
@@ -92,7 +94,7 @@ export default function App(){
     if(tema==='nuevo')cargarFuentesNuevas();
     try{localStorage.setItem('brujula.tema',tema);localStorage.removeItem('brujula.motion')}catch{/* Preference still applies for this session. */}
   },[tema]);
-  useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('brujula.theme',dark?'dark':'light')}catch{/* The theme still works without storage. */}document.querySelector('meta[name="theme-color"]')?.setAttribute('content',tema==='nuevo'?(dark?'#0D1411':'#F2F3EE'):dark?'#171720':'#173f32')},[dark,tema]);
+  useEffect(()=>{document.documentElement.dataset.theme=dark||tema==='corriente'?'dark':'light';try{localStorage.setItem('brujula.theme',dark?'dark':'light')}catch{/* The theme still works without storage. */}document.querySelector('meta[name="theme-color"]')?.setAttribute('content',tema==='corriente'?'#09090A':tema==='nuevo'?(dark?'#0D1411':'#F2F3EE'):dark?'#171720':'#173f32')},[dark,tema]);
   function descubrirClasico(){setClasicoDescubierto(true);try{localStorage.setItem('brujula.clasico','1')}catch{/* Visible during this session. */}}
   useEffect(()=>{
     if(!user){themeScope.current=null;return}
@@ -233,7 +235,7 @@ export default function App(){
     {categoryDetail&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setCategoryDetail(null)}}><div className="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div className="modal-heading"><div><span className="section-kicker">DESGLOSE DEL MES</span><h2 id="detail-title">{categoryDetail}</h2></div><button className="icon-button" onClick={()=>setCategoryDetail(null)}><X size={20}/></button></div><strong className="detail-total">{money(spentFor(categoryDetail))}</strong><p className="feature-copy">{expenses?Math.round(spentFor(categoryDetail)/expenses*100):0}% de tus gastos de {monthLabel(month)} · {monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail).length} movimientos.</p><TransactionList accountLabels={accounts} items={monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail)} onEdit={t=>{setCategoryDetail(null);openTransaction(t)}} onDelete={deleteTransaction} onAdd={()=>{setCategoryDetail(null);openTransaction()}}/></div></div>}
     {importOpen&&<ImportDialog existing={items} accounts={accounts} onClose={()=>setImportOpen(false)} onConfirm={importRows}/>}
     {authOpen&&<Auth recovering={passwordRecovery} managePassword={Boolean(user)} onReady={()=>{setAuthOpen(false);setPasswordRecovery(false)}} onClose={()=>{setAuthOpen(false);setPasswordRecovery(false)}}/>}
-    {modal==='transaction'&&tema==='nuevo'?<HojaMovimiento form={form} setForm={setForm} editing={editing} busy={busy} notice={notice} accounts={accounts} categories={categories} onSubmit={saveTransaction} onDelete={deleteTransaction} onClose={closeModal}/>:modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget){setModal(null);setNotice('')}}}>
+    {modal==='transaction'&&tema==='corriente'?<HojaAnotar form={form} setForm={setForm} editing={editing} busy={busy} notice={notice} accounts={accounts} categories={categories} presupuestos={budgets.filter(b=>b.month===month)} gastado={spentFor} onSubmit={saveTransaction} onDelete={deleteTransaction} onClose={closeModal}/>:modal==='transaction'&&tema==='nuevo'?<HojaMovimiento form={form} setForm={setForm} editing={editing} busy={busy} notice={notice} accounts={accounts} categories={categories} onSubmit={saveTransaction} onDelete={deleteTransaction} onClose={closeModal}/>:modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget){setModal(null);setNotice('')}}}>
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div className="modal-heading"><div><span className="section-kicker">{modal==='transaction'?'MOVIMIENTOS':'PLANIFICACIÓN'}</span><h2 id="modal-title">{modal==='transaction'?(editing?'Editar movimiento':'Nuevo movimiento'):'Presupuesto mensual'}</h2></div><button className="icon-button" onClick={()=>{setModal(null);setNotice('')}} aria-label="Cerrar"><X size={20}/></button></div>
         {notice&&<div className="notice" role="alert">{notice}</div>}
@@ -253,7 +255,7 @@ export default function App(){
       </div>
     </div>}
   </>;
-  if(tema==='nuevo'){
+  if(tema==='nuevo'||tema==='corriente'){
     const vista:VistaNueva={
       tab,go,month,shiftMonth:(step)=>setMonth(shiftMonth(month,step)),
       user,configured,syncState,pending,transferred,onSync:()=>void syncNow(),onAuth:()=>setAuthOpen(true),onSignOut:()=>{void supabase?.auth.signOut({scope:'local'})},
@@ -266,7 +268,7 @@ export default function App(){
       onTransfer:()=>{openTransaction();setForm({...emptyForm(),kind:'transfer',description:'Traspaso entre cuentas'})},
       saveAccount:saveAccountLocal,mergeBank:mergeBankLocal,saveGoal:saveGoalLocal,deleteGoal:deleteGoalLocal,saveInvestment:saveInvestmentLocal,deleteInvestment:deleteInvestmentLocal,
     };
-    return <><Nuevo v={vista}/>{overlays}</>;
+    return <>{tema==='corriente'?<Corriente v={vista}/>:<Nuevo v={vista}/>}{overlays}</>;
   }
   return <div className="app">
     <MotionExperience level={ultra?'ultra':'low'} section={tab}/>
