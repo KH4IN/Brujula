@@ -16,6 +16,12 @@ Faro y Periplo leen sus tablas.
 
 ## 1. Alcance: qué puedes cambiar
 
+> **Actualización del 14-10-2026 (decisión del fundador).** La auditoría de seguridad de
+> Brújula está cerrada y se levanta la regla de «solo fallos» para Brújula: se puede
+> construir lo que recoge `docs/PLAN_TRABAJO.md`, paso a paso, con PR a `staging` y sin
+> romper producción. Las zonas intocables (§2) y las invariantes de seguridad (§3) siguen
+> igual. Lo que no esté en el plan sigue esta sección tal cual.
+
 Brújula está **en producción con datos financieros reales** y va a pasar una
 **auditoría de seguridad crítica y profunda**. Hasta nuevo aviso solo se aceptan:
 

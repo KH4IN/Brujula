@@ -1,6 +1,6 @@
 # Roadmap de Brújula
 
-Documento vivo para ordenar el trabajo y registrar avances. Última revisión: 27 de septiembre de 2026.
+Documento vivo para ordenar el trabajo y registrar avances. Última revisión: 14 de octubre de 2026. El plan paso a paso para terminarlo está en [`docs/PLAN_TRABAJO.md`](docs/PLAN_TRABAJO.md).
 
 ## Cómo se usa
 
@@ -69,6 +69,14 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 - [PR #35](https://github.com/KH4IN/Brujula/pull/35) se probó en `staging`; [PR #36](https://github.com/KH4IN/Brujula/pull/36) publicó la corrección en `main` (Vercel READY). La cuenta se sincroniza antes de incorporar datos de invitado; si hay saldos o registros incompatibles, se conservan ambos espacios y aparece un aviso. 36 tests y build correctos. Queda pendiente una interfaz para conciliar esos conflictos sin exportación manual.
 - Continuar con conflictos entre dispositivos y una prueba real entre dos cuentas, sin mover datos de producción al proyecto de pruebas.
 
+### Cierre de la auditoría de seguridad de Brújula (14-10-2026)
+
+- KH-BRU-01: `007_revocar_truncate.sql` ([PR #72](https://github.com/KH4IN/Brujula/pull/72)) figura aplicada en producción desde el 29-09-2026. El 14-10 la comprobación de catálogo devolvió cero filas con `TRUNCATE`, `TRIGGER` o `REFERENCES`; el rol autenticado conserva SELECT, INSERT, UPDATE y DELETE en las cinco tablas, y `anon` no tiene ningún permiso.
+- KH-KH-01: la copia local se protege y limpia al cerrar sesión ([PR #73](https://github.com/KH4IN/Brujula/pull/73)).
+- KH-BRU-V2-01: los atajos del tema Carta ya no actúan dentro de formularios ([PR #74](https://github.com/KH4IN/Brujula/pull/74), solo pruebas).
+- KH-PRI-V2-01: Vercel Insights se mantiene por decisión del fundador ([PR #75](https://github.com/KH4IN/Brujula/pull/75) cerrada sin unir).
+- Con la auditoría cerrada, el fundador levanta para Brújula la regla de «solo fallos» (ver `AGENTS.md`). Los puntos de la fase 2 que siguen abiertos se cierran según el plan de trabajo.
+
 ## Fase 3 · Diseñar una experiencia más visual
 
 - [x] Dibujar y publicar una portada breve: patrimonio, cifras del mes, cuatro accesos y tres movimientos recientes; Análisis reúne gráficos y desgloses. Diseño en `DESIGN_PHASE3.md` y producción aprobada por el fundador.
@@ -123,7 +131,8 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 ### Temas (27-09-2026)
 
-27-09-2026: el fundador pide sustituir los niveles por temas. Se retiran Alto y Medio. Ultra pasa a ser el «Tema antiguo», se crea un «Tema nuevo» desde cero (por defecto) y Bajo queda como diseño clásico oculto. Detalle en `TEMAS.md`; pendiente de prueba en staging.
+27-09-2026: el fundador pide sustituir los niveles por temas. Se retiran Alto y Medio. Ultra pasa a ser el «Tema antiguo», se crea un «Tema nuevo» desde cero (por defecto) y Bajo queda como diseño clásico oculto. Detalle en `TEMAS.md`. Publicado en producción el 27-09-2026 ([PR #71](https://github.com/KH4IN/Brujula/pull/71)). Esta fase queda **sustituida por los temas**: los tres niveles no se harán. Siguen valiendo `prefers-reduced-motion` y que todo funcione sin animaciones.
+
 ## Fase 7 · Publicación gradual y crecimiento
 
 - [ ] Pasar cada bloque por pruebas, revisión y despliegue controlado; anotar commit, resultado y forma de revertirlo.
@@ -131,6 +140,19 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 - [ ] Probar varios usuarios y dispositivos con datos ficticios; revisar índices/RLS y paginación cuando el volumen lo exija.
 - [ ] Valorar cotizaciones de cripto/ETF y nuevas integraciones como proyecto experimental separado, con fuente, coste, fiabilidad y privacidad definidos antes de incorporarlas.
 - **Criterio de cierre:** funcionalidades nuevas desplegadas sin pérdida de datos y con una ruta clara para resolver fallos.
+
+## Fase 8 · Brújula nueva: Kairós y Faro dentro
+
+Decisión del fundador del 02-10-2026 (ficha `apps/00-brujula.md` del repositorio de Ideas): Brújula absorbe Kairós y Faro con cinco destinos, Rumbo · Movimientos · Recibos · Metas · Cuentas. El diseño aprobado está en `docs/brujula/diseno/corriente/` y `monolito/` de ese repositorio. Decisiones del 14-10-2026: Corriente sustituye al tema «Rumbo» como tema por defecto (antiguo y clásico se quedan, Monolito llega después), y las tablas `kairos_*` y `faro_*` pasan a ser de Brújula, que puede escribir en ellas con el mismo RLS por usuario.
+
+- [ ] Navegación de cinco destinos en Corriente, con lo que ya existe.
+- [ ] Recibos: lectura (lista, 30 días y coste anual) y edición.
+- [ ] «¿Se cobró?»: proponer y confirmar el movimiento que cuadra con un recibo.
+- [ ] Metas: `goals` y `faro_metas` juntas, edición y revisión semanal.
+- [ ] Botón «+» y activación de Recibos y Metas.
+- [ ] Estilo Monolito con el mismo contenido.
+- [ ] Avisos unificados y aviso de traslado en Kairós y Faro (fuera de este repositorio; plan aparte).
+- **Criterio de cierre:** quien use Brújula ve sus recibos y metas de Kairós y Faro con la misma cuenta, sin perder datos, y Kairós y Faro avisan del traslado.
 
 ## Decisiones abiertas
 
@@ -143,6 +165,7 @@ La vista previa de `staging` se construye correctamente y tiene alias estable `h
 
 | Fecha | Cambio | Comprobación | Referencia |
 | --- | --- | --- | --- |
+| 2026-10-14 | Auditoría de seguridad de Brújula cerrada; plan de trabajo aprobado; fase 6 sustituida por temas; fase 8 añadida | Catálogo de permisos en producción con cero filas sobrantes; #72–#74 unidas | [docs/PLAN_TRABAJO.md](docs/PLAN_TRABAJO.md) |
 | 2026-09-25 | Retorno de Auth de pruebas guardado por el fundador; caché PWA revisada | Login/sync aún sin prueba real; PR #21 en staging y #22 fusionada en producción | [PR #21](https://github.com/KH4IN/Brujula/pull/21) |
 | 2026-09-25 | Aislamiento reforzado de staging y revisión de políticas | Vercel READY; 20 políticas inspeccionadas; anon sin SELECT; sesión real pendiente | [STAGING.md](STAGING.md) |
 | 2026-09-25 | Inicialización de tema compatible con CSP en staging y main | Build y tres casos de preferencia correctos; PR limitadas a dos archivos | [PR #19](https://github.com/KH4IN/Brujula/pull/19), [PR #20](https://github.com/KH4IN/Brujula/pull/20) |
