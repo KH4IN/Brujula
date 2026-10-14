@@ -18,6 +18,7 @@ export function UltraInsights({ section, monthly, budgets, accounts, balances, g
   const spent = (category: string) => monthly.filter(t => t.kind === 'expense' && t.category === category).reduce((sum,t) => sum + Number(t.amount),0);
   const investmentValue = investments.reduce((sum,i) => sum + Number(i.units) * Number(i.current_price),0);
   const investmentCost = investments.reduce((sum,i) => sum + Number(i.units) * Number(i.average_cost),0);
+  const nombre = ({analysis:'Análisis',transactions:'Movimientos',budgets:'Presupuestos',accounts:'Cuentas',goals:'Objetivos',investments:'Inversiones'} as Record<Section,string>)[section];
   const title = ({analysis:'La historia del mes',transactions:'Actividad en números',budgets:'Tu plan frente a la realidad',accounts:'El mapa de tu dinero',goals:'El progreso de tus metas',investments:'La composición de tu cartera'} as const)[section];
   let summary: string;
   let rows: Bar[];
@@ -45,8 +46,8 @@ export function UltraInsights({ section, monthly, budgets, accounts, balances, g
     summary = `${money(investmentValue)} de valor estimado; variación de ${money(investmentValue-investmentCost)} respecto al coste.`;
     rows = investments.map(i => ({label:i.name,value:Number(i.units)*Number(i.current_price)}));
   }
-  return <section className={`ultra-insights ultra-insights-${section}`} aria-label={`Resumen de ${section}`}>
-    <div className="ultra-insights-intro"><span>DATOS EN VIVO / {section.toUpperCase()}</span><h2>{title}</h2><p>{summary}</p></div>
+  return <section className={`ultra-insights ultra-insights-${section}`} aria-label={`Resumen de ${nombre}`}>
+    <div className="ultra-insights-intro"><span>DATOS EN VIVO / {nombre.toUpperCase()}</span><h2>{title}</h2><p>{summary}</p></div>
     <div className="ultra-insights-visual">{rows.length ? <Bars rows={rows.slice(0,7)} max={section==='budgets'?Math.max(...budgets.map(b => Number(b.amount)),1):undefined} action={section==='transactions' ? label => onFilter(label==='Ingresos'?'income':label==='Gastos'?'expense':'transfer') : undefined}/> : <div className="ultra-insights-empty">Todavía no hay datos para dibujar esta vista. Añade registros abajo y aparecerán aquí.</div>}</div>
   </section>;
 }
