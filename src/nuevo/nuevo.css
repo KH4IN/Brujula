@@ -51,7 +51,7 @@
 
 .r-pagina{display:flex;flex-direction:column;gap:14px;padding-top:14px}
 .r-titulo-movil h1{margin:4px 0 0;font-weight:800;font-size:32px;letter-spacing:-1px;font-stretch:116%;line-height:1.05}
-.r-pie{margin-top:18px;padding-top:16px;border-top:1px solid var(--r-linea-2);font-family:var(--r-mono);font-size:10px;letter-spacing:1.4px;color:var(--r-tenue);text-align:center}
+.r-pie{margin-top:18px;padding-top:16px;border-top:1px solid var(--r-linea-2);font-family:var(--r-mono);font-size:10px;letter-spacing:1.4px;color:var(--r-suave);text-align:center}
 
 /* Botones */
 .r-boton{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:22px;border:1px solid transparent;font-weight:700;font-size:14px;white-space:nowrap}
@@ -445,3 +445,4 @@
   :root[data-tema="nuevo"] .feature-grid.two,:root[data-tema="nuevo"] .feature-grid.three{grid-template-columns:1fr}
   :root[data-tema="nuevo"] .feature-intro .primary-button{width:100%}
 }
+:root[data-tema="nuevo"] .empty-investments strong,:root[data-tema="nuevo"] .empty-investments p{color:var(--r-suave)}
