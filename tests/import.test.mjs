@@ -140,3 +140,27 @@ test('cantidades agrupadas, negativos contables y columnas de saldo',()=>{
  const cols=detectColumns(['Fecha Valor','IBAN','Saldo','Importe (EUR)','Concepto']);
  assert.equal(cols.amount,3);assert.equal(cols.description,4);
 });
+
+// A5 (14-10-2026): límites y filas que no deben entrar sin revisión.
+test('límites: más de 8 MB, más de 5.000 filas y formato no admitido',async()=>{
+ const grande=new File([new Uint8Array(8*1024*1024+1)],'grande.csv');
+ await assert.rejects(parseFile(grande,[],'bank'),/supera 8 MB/);
+ const filas=Array.from({length:5001},(_,i)=>`01/09/2026;Compra ${i};-1,00`).join('\n');
+ await assert.rejects(parse('largo.csv','Fecha;Concepto;Importe\n'+filas),/más de 5\.000 filas/);
+ await assert.rejects(parseFile(new File(['x'],'extracto.pdf'),[],'bank'),/xlsx, .csv o .tsv/);
+});
+test('pendientes, anulados, importe cero y cargo/abono vacíos no se seleccionan',async()=>{
+ const r=await parse('revolut.csv','Type,Date completed (UTC),Description,Amount,Fee,Currency,State\nCARD_PAYMENT,2026-09-01 10:00:00,LIDL,-5,0,EUR,PENDING\nCARD_PAYMENT,2026-09-02 10:00:00,LIDL,-6,0,EUR,REVERTED');
+ assert.deepEqual(r.rows.map(x=>[x.valid,x.selected]),[[false,false],[false,false]]);
+ assert.match(r.rows[0].reason,/pendiente, rechazado o anulado/);
+ const z=await parse('cero.csv','Fecha;Concepto;Importe\n01/09/2026;Ajuste;0,00');
+ assert.equal(z.rows[0].valid,false);assert.equal(z.rows[0].selected,false);
+ const vacio=await parse('caixa.csv','Fecha;Concepto;Cargo;Abono\n02/09/2026;Nada;;');
+ assert.equal(vacio.rows[0].valid,false);
+});
+test('cargo con signo negativo sigue siendo gasto y el año de dos cifras se entiende',async()=>{
+ const c=await parse('caixa.csv','Fecha;Concepto;Cargo;Abono\n02/09/2026;Recibo luz;-45,10;');
+ assert.deepEqual([c.rows[0].kind,c.rows[0].amount,c.rows[0].valid],['expense',45.1,true]);
+ const y=await parse('corto.csv','Fecha;Concepto;Importe\n01/09/26;Bar;-3,00');
+ assert.deepEqual([y.rows[0].occurred_on,y.rows[0].valid],['2026-09-01',true]);
+});
