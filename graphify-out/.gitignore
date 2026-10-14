@@ -1,0 +1,7 @@
+# Solo se guardan el mapa, el resumen y los datos; lo demás es caché de graphify.
+*
+!.gitignore
+!LEEME.md
+!graph.html
+!graph.json
+!GRAPH_REPORT.md
