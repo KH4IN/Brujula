@@ -6,11 +6,11 @@ import { Hoja } from './piezas';
 const dos = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** Hoja de movimiento del tema Corriente. La validación y el guardado siguen en App, como en el tema nuevo. */
-export function HojaAnotar({ form, setForm, editing, busy, notice, accounts, categories, presupuestos, gastado, onSubmit, onDelete, onClose }: {
+export function HojaAnotar({ form, setForm, editing, busy, notice, accounts, categories, presupuestos, gastado, onSubmit, onDelete, onClose, clase = 'c-app' }: {
   form: FormularioMovimiento; setForm: (f: FormularioMovimiento) => void; editing: Transaction | null;
   busy: boolean; notice: string; accounts: AccountSetting[]; categories: string[];
   presupuestos: Budget[]; gastado: (categoria: string) => number;
-  onSubmit: (e: FormEvent) => void; onDelete: (t: Transaction) => void; onClose: () => void;
+  onSubmit: (e: FormEvent) => void; onDelete: (t: Transaction) => void; onClose: () => void; clase?: string;
 }) {
   const traspaso = form.kind === 'transfer';
   const opciones = accounts.map((a) => <option key={a.account} value={a.account}>{accountName(a.account, accounts)}</option>);
@@ -18,7 +18,7 @@ export function HojaAnotar({ form, setForm, editing, busy, notice, accounts, cat
   const importe = Number(form.amount) || 0, previo = gastado(form.category);
   const ayuda = traspaso ? 'Un traspaso no es gasto ni ingreso: no cambia tu rumbo del mes.'
     : form.kind === 'expense' && limite ? `${form.category} va por ${dos.format(previo)} de ${dos.format(Number(limite.amount))} €. Con esto, ${dos.format(previo + (editing ? 0 : importe))} €.` : '';
-  return <div className="c-app">
+  return <div className={clase}>
     <Hoja titulo={traspaso ? 'Traspasar' : editing ? 'Editar movimiento' : 'Movimiento'} abierta onCerrar={onClose}
       pie={<>{editing && <button type="button" className="boton" onClick={() => onDelete(editing)}>Eliminar</button>}
         <button type="button" className="boton" onClick={onClose}>Cancelar</button>

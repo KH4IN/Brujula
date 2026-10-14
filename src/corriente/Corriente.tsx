@@ -84,7 +84,7 @@ function Rumbo({ v, ir, modulos, activar }: { v: VistaNueva; ir: (d: Destino) =>
   </section>;
 }
 
-function HojaCuenta({ v, abierta, onCerrar, modulos, activar }: { v: VistaNueva; abierta: boolean; onCerrar: () => void; modulos: Modulos; activar: (k: Modulo, on?: boolean) => void }) {
+export function HojaCuenta({ v, abierta, onCerrar, modulos, activar }: { v: VistaNueva; abierta: boolean; onCerrar: () => void; modulos: Modulos; activar: (k: Modulo, on?: boolean) => void }) {
   const estado = !v.user ? 'Tus datos se guardan en este dispositivo.'
     : v.syncState === 'synced' ? 'Todo sincronizado en tus dispositivos.'
     : v.syncState === 'syncing' ? 'Sincronizando…'
@@ -109,12 +109,12 @@ function HojaCuenta({ v, abierta, onCerrar, modulos, activar }: { v: VistaNueva;
   </Hoja>;
 }
 
-type Modulo = 'recibos' | 'metas';
-type Modulos = Partial<Record<Modulo, boolean>>;
+export type Modulo = 'recibos' | 'metas';
+export type Modulos = Partial<Record<Modulo, boolean>>;
 const LLAVE_MODULOS = 'brujula.modulos';
 
 /** Qué módulos ha activado la persona: en su cuenta si tiene (sigue en todos sus dispositivos) y en este navegador. */
-function useModulos(v: VistaNueva): [Modulos, (k: Modulo, on?: boolean) => void] {
+export function useModulos(v: VistaNueva): [Modulos, (k: Modulo, on?: boolean) => void] {
   const deCuenta = v.user?.user_metadata?.brujula_modulos as Modulos | undefined;
   const [locales, setLocales] = useState<Modulos>(() => { try { return JSON.parse(localStorage.getItem(LLAVE_MODULOS) ?? '{}'); } catch { return {}; } });
   const modulos = { ...locales, ...deCuenta };
