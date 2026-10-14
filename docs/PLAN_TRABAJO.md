@@ -39,22 +39,22 @@ Estado: **aprobado por el fundador el 14-10-2026**, con sus cuatro recomendacion
 
 ## Bloque A · Cerrar la fase 2 del ROADMAP (se puede hacer ya)
 
-- [ ] **A1. ROADMAP al día** (solo documento, a `main`). Marcar lo hecho (temas, cierre
+- [x] **A1. ROADMAP al día** ([PR #79](https://github.com/KH4IN/Brujula/pull/79)) (solo documento, a `main`). Marcar lo hecho (temas, cierre
   de la auditoría de Brújula, Insights aceptado), dar la fase 6 por sustituida por los
   temas y añadir la fase 8 «Brújula nueva» con los pasos de la ficha. *Comprobación:*
   revisión del diff.
-- [ ] **A2. Revisión del acceso** (fase 2, punto 1). Leer `auth.ts` y `Auth.tsx` sin
+- [ ] **A2. Revisión del acceso** — *bloqueado el 14-10: desde esta sesión no se llega a Supabase ni al correo; ver informe del día.* (fase 2, punto 1). Leer `auth.ts` y `Auth.tsx` sin
   tocarlos y probar en Brújula pruebas el registro, el acceso por contraseña, la
   recuperación y el vínculo de datos de invitado con una cuenta ficticia. Informe en
   `docs/auditoria/ACCESO.md`. *Comprobación:* cada flujo con resultado y captura.
-- [ ] **A3. Revisión de la interfaz** (fase 2, punto 2). Los tres temas a 1440 y 390 px:
+- [x] **A3. Revisión de la interfaz** ([informe #83](https://github.com/KH4IN/Brujula/pull/83); fallos en [#81](https://github.com/KH4IN/Brujula/pull/81) y [#82](https://github.com/KH4IN/Brujula/pull/82), a `staging`; falta su PR a `main`) (fase 2, punto 2). Los tres temas a 1440 y 390 px:
   navegación, teclado, contraste, modos día y noche y sin conexión. Informe en
   `docs/auditoria/INTERFAZ.md`; cada fallo visible, en su propia PR. *Comprobación:*
   capturas antes y después.
-- [ ] **A4. Dos usuarios reales** (fase 2, punto 3). Dos cuentas ficticias en pruebas:
+- [ ] **A4. Dos usuarios reales** — *bloqueado el 14-10, por la misma razón que A2.* (fase 2, punto 3). Dos cuentas ficticias en pruebas:
   ninguna ve ni cambia lo de la otra; el mismo usuario en dos navegadores, editando a la
   vez. Informe en `docs/auditoria/SINCRONIZACION.md`. *Comprobación:* resultados de cada caso.
-- [ ] **A5. Importación** (fase 2, punto 4). Pruebas en `tests/` con extractos
+- [x] **A5. Importación** ([PR #80](https://github.com/KH4IN/Brujula/pull/80); dos comportamientos pendientes de decisión) (fase 2, punto 4). Pruebas en `tests/` con extractos
   sintéticos: signos, cargo/abono, traspasos, duplicados y filas ambiguas. Sin tocar
   `import.ts` salvo fallo grave. *Comprobación:* `npm test` en verde.
 - [ ] **A6. Cierre de la fase 2.** Informe breve con hallazgos y riesgos en
