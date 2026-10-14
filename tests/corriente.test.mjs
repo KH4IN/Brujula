@@ -4,7 +4,7 @@ import { build } from 'esbuild';
 
 // Compila el módulo del tema Corriente al vuelo (esbuild ya está instalado con Vite).
 const { outputFiles: [salida] } = await build({ entryPoints: [new URL('../src/corriente/datos.ts', import.meta.url).pathname], bundle: true, write: false, format: 'esm', platform: 'node' });
-const { corrienteDelMes, ritmos, diasTranscurridos, cifra } = await import('data:text/javascript;base64,' + Buffer.from(salida.text).toString('base64'));
+const { corrienteDelMes, ritmos, diasTranscurridos, cifra, detalleAhorro } = await import('data:text/javascript;base64,' + Buffer.from(salida.text).toString('base64'));
 
 test('los ríos suman lo que sale y el remanso lo que se queda', () => {
   const c = corrienteDelMes([{ category: 'Vivienda', total: 780 }, { category: 'Ocio', total: 70 }], 2480, 850, [], 'octubre');
@@ -62,4 +62,12 @@ test('los días se nombran como en la maqueta y la lista va del más reciente al
   assert.deepEqual(['2026-10-20', '2026-10-19', '2026-10-18'].map((f) => nombreDia(f, hoy)), ['Hoy', 'Ayer', 'Domingo 18']);
   const dias = porDias([{ id: 'a', kind: 'expense', amount: 3, occurred_on: '2026-10-01' }, { id: 'b', kind: 'expense', amount: 2, occurred_on: '2026-10-05' }, { id: 'c', kind: 'income', amount: 5, occurred_on: '2026-10-05' }]);
   assert.deepEqual(dias.map((d) => [d.fecha, d.sale, d.lista.length]), [['2026-10-05', 2, 2], ['2026-10-01', 3, 1]]);
+});
+
+test('metas de ahorro: lo que toca apartar al mes hasta el plazo', () => {
+  assert.equal(detalleAhorro({ target_amount: 1500, saved_amount: 960, due_on: '2027-04-30' }, '2026-10-14'), '90 € al mes · abril de 2027');
+  assert.equal(detalleAhorro({ target_amount: 6000, saved_amount: 3200, due_on: null }, '2026-10-14'), 'Faltan 2.800 € · sin fecha');
+  assert.equal(detalleAhorro({ target_amount: 500, saved_amount: 600, due_on: '2026-01-01' }, '2026-10-14'), 'Conseguida');
+  assert.equal(detalleAhorro({ target_amount: 500, saved_amount: 100, due_on: '2026-10-30' }, '2026-10-14'), 'Faltan 400 € · el plazo es octubre de 2026');
+  assert.equal(detalleAhorro({ target_amount: 500, saved_amount: 100, due_on: '2026-09-30' }, '2026-10-14'), 'Faltan 400 € · el plazo era septiembre de 2026');
 });
