@@ -122,7 +122,7 @@ export function Corriente({ v }: { v: VistaNueva }) {
     <main key={`${destino}-${m}`}>
       {destino === 'rumbo' && <Rumbo v={v} ir={ir}/>}
       {destino === 'movimientos' && <Movimientos v={v}/>}
-      {destino === 'recibos' && <Recibos v={v}/>}
+      {destino === 'recibos' && <Recibos key={v.user?.id ?? 'invitado'} v={v}/>}
       {destino === 'cuentas' && <Cuentas v={v}/>}
     </main>
     <nav className="dock" aria-label="Destinos">
