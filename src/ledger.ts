@@ -25,6 +25,21 @@ export function readStore(scope:string):LocalStore{
   return scope==='guest'&&!configured?{...blank(),...readDemo()}:blank();
 }
 export function writeStore(scope:string,state:LocalStore){localStorage.setItem(prefix+scope,JSON.stringify(state))}
+/** Nunca se elimina la copia de una cuenta antes de confirmar la baja de la sesión. */
+export async function cerrarCuentaLocal(
+  userId:string, modo:'sin_pendientes'|'sincronizar'|'borrar',
+  cerrar:()=>Promise<{error:Error|null}>, enviar:()=>Promise<LocalStore>
+){
+  if(readStore(userId).pending.length){
+    if(modo==='sin_pendientes')throw new Error('Hay cambios pendientes; elige cómo salir.');
+    if(modo==='sincronizar'){
+      const resultado=await enviar();
+      if(resultado.pending.length||readStore(userId).pending.length)throw new Error('Quedan cambios sin sincronizar. No se ha cerrado la sesión.');
+    }
+  }
+  const {error}=await cerrar();if(error)throw error;
+  localStorage.removeItem(prefix+userId);
+}
 // Older versions stored user edits alongside sample rows under this key.
 // Import only identifiable user edits; never turn sample finances into real finances.
 export function recoverLegacyGuest(){

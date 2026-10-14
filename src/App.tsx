@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { Activity, ArrowDownLeft, Flag, ArrowRight, ArrowUpRight, CalendarClock, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Download, FileSpreadsheet, Landmark, LayoutDashboard, LogOut, Menu, Moon, Plus, Search, Settings2, SlidersHorizontal, Sun, Target, Trash2, TrendingUp, Wallet, X } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import { CATEGORIES, accountName, configured, localDate, money, monthLabel, monthOf, supabase, type AccountSetting, type Budget, type Category, type Goal, type Investment, type Transaction } from './data';
-import { claimGuest, emptyStore, readStore, recoverLegacyGuest, removeBudget as removeLocalBudget, removeTransaction as removeLocalTransaction, saveBudget as saveLocalBudget, saveTransaction as saveLocalTransaction, saveGoal, removeGoal, saveInvestment, removeInvestment, saveAccount, mergeUnusedBank, importTransactions, synchronize, type LocalStore } from './ledger';
+import { claimGuest, cerrarCuentaLocal, emptyStore, readStore, recoverLegacyGuest, removeBudget as removeLocalBudget, removeTransaction as removeLocalTransaction, saveBudget as saveLocalBudget, saveTransaction as saveLocalTransaction, saveGoal, removeGoal, saveInvestment, removeInvestment, saveAccount, mergeUnusedBank, importTransactions, synchronize, type LocalStore } from './ledger';
 import { AccountsPanel, DailyChart, GoalsPanel, ImportDialog, InvestmentsPanel } from './features';
 import { accountBalances, marketValue, monthSummary } from './finance';
 import { Auth } from './features/Auth';
@@ -45,6 +45,8 @@ export default function App(){
   const [passwordRecovery,setPasswordRecovery]=useState(false);
   const [busy,setBusy]=useState(false);
   const [notice,setNotice]=useState('');
+  const [salidaPendiente,setSalidaPendiente]=useState(false);
+  const [saliendo,setSaliendo]=useState(false);
   const [modal,setModal]=useState<'transaction'|'budget'|null>(null);
   const [editing,setEditing]=useState<Transaction|null>(null);
   const [form,setForm]=useState(emptyForm);
@@ -162,6 +164,21 @@ export default function App(){
     }
   },[user,applyLocal]);
   latestSync.current=()=>void syncNow();
+  const finalizarSalida=async(modo:'sin_pendientes'|'sincronizar'|'borrar')=>{
+    const actual=user,cliente=supabase;
+    if(!actual||!cliente||saliendo)return;
+    setSaliendo(true);setNotice('');
+    try{
+      await cerrarCuentaLocal(actual.id,modo,()=>cliente.auth.signOut({scope:'local'}),()=>synchronize(actual.id));
+      setSalidaPendiente(false);
+    }catch(error){setNotice(error instanceof Error?error.message:'No se pudo cerrar sesión.');setSalidaPendiente(true)}
+    finally{setSaliendo(false)}
+  };
+  const salir=()=>{
+    if(!user||saliendo)return;
+    if(readStore(user.id).pending.length){setSalidaPendiente(true);return}
+    void finalizarSalida('sin_pendientes');
+  };
 
   useEffect(()=>{
     try{
@@ -232,6 +249,14 @@ export default function App(){
     {settingsOpen&&<Configuracion tema={tema} dark={dark} clasicoDescubierto={clasicoDescubierto} onTema={setTema} onModo={setThemeMode} onDescubrir={descubrirClasico} onClose={()=>setSettingsOpen(false)}/>}
     {categoryDetail&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setCategoryDetail(null)}}><div className="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div className="modal-heading"><div><span className="section-kicker">DESGLOSE DEL MES</span><h2 id="detail-title">{categoryDetail}</h2></div><button className="icon-button" onClick={()=>setCategoryDetail(null)}><X size={20}/></button></div><strong className="detail-total">{money(spentFor(categoryDetail))}</strong><p className="feature-copy">{expenses?Math.round(spentFor(categoryDetail)/expenses*100):0}% de tus gastos de {monthLabel(month)} · {monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail).length} movimientos.</p><TransactionList accountLabels={accounts} items={monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail)} onEdit={t=>{setCategoryDetail(null);openTransaction(t)}} onDelete={deleteTransaction} onAdd={()=>{setCategoryDetail(null);openTransaction()}}/></div></div>}
     {importOpen&&<ImportDialog existing={items} accounts={accounts} onClose={()=>setImportOpen(false)} onConfirm={importRows}/>}
+    {salidaPendiente&&<div className="modal-backdrop"><div className="modal" role="dialog" aria-modal="true" aria-labelledby="salida-title">
+      <div className="modal-heading"><div><span className="section-kicker">TU CUENTA</span><h2 id="salida-title">Cambios pendientes</h2></div></div>
+      <p>Hay cambios que aún no están en la nube. Elige cómo salir; no se borrarán sin que lo confirmes.</p>
+      {notice&&<p className="notice" role="alert">{notice}</p>}
+      <button className="primary-button" disabled={saliendo} onClick={()=>void finalizarSalida('sincronizar')}>Sincronizar y salir</button>
+      <button className="secondary-button" disabled={saliendo} onClick={()=>void finalizarSalida('borrar')}>Salir y borrar de este dispositivo</button>
+      <button className="secondary-button" disabled={saliendo} onClick={()=>{setSalidaPendiente(false);setNotice('')}}>Cancelar</button>
+    </div></div>}
     {authOpen&&<Auth recovering={passwordRecovery} managePassword={Boolean(user)} onReady={()=>{setAuthOpen(false);setPasswordRecovery(false)}} onClose={()=>{setAuthOpen(false);setPasswordRecovery(false)}}/>}
     {modal==='transaction'&&tema==='nuevo'?<HojaMovimiento form={form} setForm={setForm} editing={editing} busy={busy} notice={notice} accounts={accounts} categories={categories} onSubmit={saveTransaction} onDelete={deleteTransaction} onClose={closeModal}/>:modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget){setModal(null);setNotice('')}}}>
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -256,7 +281,7 @@ export default function App(){
   if(tema==='nuevo'){
     const vista:VistaNueva={
       tab,go,month,shiftMonth:(step)=>setMonth(shiftMonth(month,step)),
-      user,configured,syncState,pending,transferred,onSync:()=>void syncNow(),onAuth:()=>setAuthOpen(true),onSignOut:()=>{void supabase?.auth.signOut({scope:'local'})},
+      user,configured,syncState,pending,transferred,onSync:()=>void syncNow(),onAuth:()=>setAuthOpen(true),onSignOut:salir,
       notice:modal?'':notice,clearNotice:()=>setNotice(''),busy,
       items,monthly,filtered,income,expenses,balance,groups,totalBudget,
       monthBudgets:budgets.filter(b=>b.month===month),goals,investments,accounts,balances,bankTotal,investmentValue:marketValue(investments),wealth,spentFor,
@@ -290,10 +315,10 @@ export default function App(){
       </nav>
       <div className="sidebar-spacer"/>
       <div className="sidebar-tip"><div className="tip-icon"><CircleHelp size={20}/></div><strong>Una visión más clara.</strong><p>Registra tus movimientos para ver adónde va cada euro.</p><button className="guide-help" onClick={()=>{setMobileOpen(false);setGuideOpen(true)}}>Ver guía de Brújula</button></div>
-      <div className="sidebar-footer"><div className="avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</div><div className="account"><strong>{user?.email?.split('@')[0]??'Mi espacio'}</strong><span>{user?'Sincronización activada':'Solo en este dispositivo'}</span></div>{user?<><button className="account-password" onClick={()=>setAuthOpen(true)}>Contraseña</button><button title="Desconectar cuenta" className="icon-button" onClick={()=>{void supabase?.auth.signOut({scope:'local'})}}><LogOut size={17}/></button></>:configured&&<button className="connect-button" onClick={()=>setAuthOpen(true)}>Sincronizar</button>}</div>
+      <div className="sidebar-footer"><div className="avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</div><div className="account"><strong>{user?.email?.split('@')[0]??'Mi espacio'}</strong><span>{user?'Sincronización activada':'Solo en este dispositivo'}</span></div>{user?<><button className="account-password" onClick={()=>setAuthOpen(true)}>Contraseña</button><button title="Desconectar cuenta" className="icon-button" onClick={salir}><LogOut size={17}/></button></>:configured&&<button className="connect-button" onClick={()=>setAuthOpen(true)}>Sincronizar</button>}</div>
     </aside>
     <main className="main">
-      <header className="topbar"><button className="mobile-menu icon-button" aria-label="Abrir menú" onClick={()=>setMobileOpen(true)}><Menu size={23}/></button><div className="breadcrumb"><strong>{({dashboard:'Vista general',analysis:'Análisis',transactions:'Movimientos',budgets:'Presupuestos',accounts:'Cuentas y efectivo',goals:'Objetivos',investments:'Inversiones'} as Record<Tab,string>)[tab]}</strong></div><div className="topbar-right"><button className="icon-button guide-top-button" aria-label="Abrir guía de Brújula" title="Guía de Brújula" onClick={()=>setGuideOpen(true)}><CircleHelp size={19}/></button><button className="icon-button theme-toggle" aria-label={dark?'Activar modo claro':'Activar modo oscuro'} title={dark?'Modo claro':'Modo oscuro'} aria-pressed={dark} onClick={changeTheme}>{dark?<Sun size={19}/>:<Moon size={19}/>}</button><details className="top-account-menu"><summary aria-label="Abrir menú de cuenta"><span className="top-avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</span><ChevronDown size={15}/></summary><div className="top-account-actions"><strong>{user?.email??'Solo en este dispositivo'}</strong><button onClick={event=>{event.currentTarget.closest('details')?.removeAttribute('open');setSettingsOpen(true)}}><Settings2 size={16}/> Configuración</button>{user?<><button onClick={()=>setAuthOpen(true)}>Gestionar acceso</button><button onClick={()=>{void supabase?.auth.signOut({scope:'local'})}}>Cerrar sesión</button></>:configured&&<button onClick={()=>setAuthOpen(true)}>Iniciar sesión</button>}</div></details></div></header>
+      <header className="topbar"><button className="mobile-menu icon-button" aria-label="Abrir menú" onClick={()=>setMobileOpen(true)}><Menu size={23}/></button><div className="breadcrumb"><strong>{({dashboard:'Vista general',analysis:'Análisis',transactions:'Movimientos',budgets:'Presupuestos',accounts:'Cuentas y efectivo',goals:'Objetivos',investments:'Inversiones'} as Record<Tab,string>)[tab]}</strong></div><div className="topbar-right"><button className="icon-button guide-top-button" aria-label="Abrir guía de Brújula" title="Guía de Brújula" onClick={()=>setGuideOpen(true)}><CircleHelp size={19}/></button><button className="icon-button theme-toggle" aria-label={dark?'Activar modo claro':'Activar modo oscuro'} title={dark?'Modo claro':'Modo oscuro'} aria-pressed={dark} onClick={changeTheme}>{dark?<Sun size={19}/>:<Moon size={19}/>}</button><details className="top-account-menu"><summary aria-label="Abrir menú de cuenta"><span className="top-avatar">{user?.email?.charAt(0).toUpperCase()??'T'}</span><ChevronDown size={15}/></summary><div className="top-account-actions"><strong>{user?.email??'Solo en este dispositivo'}</strong><button onClick={event=>{event.currentTarget.closest('details')?.removeAttribute('open');setSettingsOpen(true)}}><Settings2 size={16}/> Configuración</button>{user?<><button onClick={()=>setAuthOpen(true)}>Gestionar acceso</button><button onClick={salir}>Cerrar sesión</button></>:configured&&<button onClick={()=>setAuthOpen(true)}>Iniciar sesión</button>}</div></details></div></header>
       <div className="content" data-ultra-section={ultra?tab:undefined}>
         <div className="demo-banner" role="status"><span className="demo-badge">{user?'SYNC':'LOCAL'}</span><span>{user?syncState==='synced'?transferred?`${transferred} registros locales incorporados a tu cuenta. Todo sincronizado.`:'Todo sincronizado en tus dispositivos.':syncState==='syncing'?'Sincronizando cambios…':syncState==='offline'?`Sin conexión. ${pending} cambios pendientes; aún no aparecen en otros dispositivos.`:`${pending} cambios pendientes de sincronizar; aún no aparecen en otros dispositivos.`:'Tus datos se guardan en este dispositivo. Inicia sesión para sincronizarlos con otros.'}</span>{user&&<button className="sync-button" onClick={()=>void syncNow()} disabled={syncState==='syncing'}>Sincronizar ahora</button>}{!user&&configured&&<button className="sync-button" onClick={()=>setAuthOpen(true)}>Activar sincronización</button>}</div>
         <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line"/> TU PANORAMA FINANCIERO</div><h1>{({dashboard:'Tu dinero, con claridad.',analysis:'Explora tus números.',transactions:'Tus movimientos.',budgets:'Presupuestos a tu medida.',accounts:'Tus cuentas, siempre claras.',goals:'Tus objetivos.',investments:'Tu cartera de inversión.'} as Record<Tab,string>)[tab]}</h1><p>{({dashboard:'Lo esencial de tu mes. Entra en cada sección para ver los detalles.',analysis:'Descubre cuándo y en qué se mueve tu dinero.',transactions:'Cada movimiento cuenta una parte de la historia.',budgets:'Pon un límite a cada categoría y sigue tu progreso.',accounts:'Cada banco, efectivo y cartera, por separado.',goals:'Pequeños pasos hacia algo grande.',investments:'Tus posiciones y precios, actualizados por ti.'} as Record<Tab,string>)[tab]}</p></div><div className="heading-actions"><div className="month-picker"><button aria-label="Mes anterior" onClick={()=>setMonth(shiftMonth(month,-1))}><ChevronLeft size={17}/></button><span><CalendarDays size={16}/>{monthLabel(month)}</span><button aria-label="Mes siguiente" onClick={()=>setMonth(shiftMonth(month,1))}><ChevronRight size={17}/></button></div><button data-guide="import-action" className="secondary-button import-button" onClick={()=>setImportOpen(true)}><FileSpreadsheet size={17}/> Importar archivo</button><button className="primary-button" onClick={()=>openTransaction()}><Plus size={18}/> Añadir movimiento</button></div></div>

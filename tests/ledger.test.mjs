@@ -1,6 +1,29 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {claimGuest, flushPending, importTransactions, mergeUnusedBank, readStore, recoverLegacyGuest, saveAccount, saveBudget, saveTransaction, writeStore} from './.ledger.bundle.mjs';
+import {claimGuest, cerrarCuentaLocal, flushPending, importTransactions, mergeUnusedBank, readStore, recoverLegacyGuest, saveAccount, saveBudget, saveTransaction, writeStore} from './.ledger.bundle.mjs';
+
+test('cerrar sesión borra la copia limpia y protege cambios pendientes',async()=>{
+  storage();
+  const id='usuario-uno';
+  writeStore(id,readStore('guest'));
+  await cerrarCuentaLocal(id,'sin_pendientes',async()=>({error:null}),async()=>readStore(id));
+  assert.equal(localStorage.getItem('brujula.local.v2.'+id),null);
+  saveTransaction(id,transaction);
+  await assert.rejects(cerrarCuentaLocal(id,'sin_pendientes',async()=>({error:null}),async()=>readStore(id)),/pendientes/);
+  assert.ok(localStorage.getItem('brujula.local.v2.'+id));
+  await assert.rejects(cerrarCuentaLocal(id,'sincronizar',async()=>({error:null}),async()=>readStore(id)),/Quedan cambios/);
+  await assert.rejects(cerrarCuentaLocal(id,'borrar',async()=>({error:new Error('fallo')}),async()=>readStore(id)),/fallo/);
+  assert.ok(localStorage.getItem('brujula.local.v2.'+id));
+  await cerrarCuentaLocal(id,'borrar',async()=>({error:null}),async()=>readStore(id));
+  assert.equal(localStorage.getItem('brujula.local.v2.'+id),null);
+  saveTransaction(id,transaction);
+  await cerrarCuentaLocal(id,'sincronizar',async()=>({error:null}),async()=>{
+    const limpio={...readStore(id),pending:[]};
+    writeStore(id,limpio);
+    return limpio;
+  });
+  assert.equal(localStorage.getItem('brujula.local.v2.'+id),null);
+});
 
 function storage(){
   const values=new Map();
