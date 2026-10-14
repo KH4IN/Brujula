@@ -80,13 +80,14 @@ type Datos = { metas: Meta[]; pasos: Paso[]; registros: Registro[]; revisiones: 
 type Carga = Datos | 'cargando' | 'error' | null;
 const ahora = () => new Date().toISOString();
 
-export function Metas({ v }: { v: VistaNueva }) {
+export function Metas({ v, nuevo, onNuevo }: { v: VistaNueva; nuevo?: boolean; onNuevo?: () => void }) {
   const uid = v.user?.id;
   const [carga, setCarga] = useState<Carga>(supabase && uid ? 'cargando' : null);
   const [vuelta, setVuelta] = useState(0);
   const [hoja, setHoja] = useState<{ tipo: 'objetivo'; g: Goal | null } | { tipo: 'avance'; m: Meta } | { tipo: 'revision' } | null>(null);
   const [aviso, setAviso] = useState('');
   const hoy = hoyLocal();
+  useEffect(() => { if (nuevo) { setHoja({ tipo: 'objetivo', g: null }); onNuevo?.(); } }, [nuevo]);
   useEffect(() => {
     if (!supabase || !uid) return;
     let vivo = true;

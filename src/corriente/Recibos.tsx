@@ -156,7 +156,7 @@ export function RecibosVista({ elementos, cobros, hoy, onEditar, cobro }: { elem
 
 type Carga = { estado: 'cargando' } | { estado: 'error' } | { estado: 'listo'; elementos: Elemento[]; cobros: Cobro[] };
 
-export function Recibos({ v }: { v: VistaNueva }) {
+export function Recibos({ v, nuevo, onNuevo }: { v: VistaNueva; nuevo?: boolean; onNuevo?: () => void }) {
   const [carga, setCarga] = useState<Carga>({ estado: 'cargando' });
   const [hoja, setHoja] = useState<Elemento | null | false>(false);
   const [vuelta, setVuelta] = useState(0);
@@ -170,6 +170,8 @@ export function Recibos({ v }: { v: VistaNueva }) {
     return () => { vivo = false; };
   }, [uid, vuelta]);
   const recargar = () => setVuelta((n) => n + 1);
+  // Desde «¿Qué anotas?»: en cuanto se pueda, se abre la hoja de un recibo nuevo.
+  useEffect(() => { if (nuevo && carga.estado === 'listo') { setHoja(null); onNuevo?.(); } }, [nuevo, carga.estado]);
   // «¿Se cobró?»: se propone un cargo de Brújula que cuadra con un recibo; solo se guarda si la persona dice que sí.
   const llave = `brujula.recibos.rechazados.${uid}`;
   const [rechazados, setRechazados] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem(llave) ?? '[]'); } catch { return []; } });
