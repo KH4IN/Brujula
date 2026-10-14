@@ -6,7 +6,7 @@ import { merchantFor } from '../categorize';
 import { AccountsPanel, GoalsPanel, InvestmentsPanel } from '../features';
 import type { Seccion, VistaNueva } from '../nuevo/Nuevo';
 import { arcos, colorRumbo, grados3, rumboDelMes } from '../nuevo/rumbo';
-import { diasDelMes, diasRecorridos, mesDeLlegada, mesesEntre, previsionGasto, rumboDelPuntero, rutaDelMes } from './carta';
+import { diasDelMes, diasRecorridos, esCampoDeEdicion, mesDeLlegada, mesesEntre, previsionGasto, rumboDelPuntero, rutaDelMes } from './carta';
 import './carta.css';
 
 /* ───────── Utilidades de presentación ───────── */
@@ -374,9 +374,9 @@ export function Carta({ v }: { v: VistaNueva }) {
   useEffect(() => {
     const t = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
-      const escribiendo = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
+      if (esCampoDeEdicion(el?.tagName, !!el?.isContentEditable)) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaleta((p) => !p); return; }
-      if (escribiendo || e.metaKey || e.ctrlKey || e.altKey || paleta || gestion || document.querySelector('[aria-modal="true"]')) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || paleta || gestion || document.querySelector('[aria-modal="true"]')) return;
       if (e.key === '/') { e.preventDefault(); setPaleta(true); }
       else if (e.key.toLowerCase() === 'n') { e.preventDefault(); v.openTransaction(); }
       else if (e.key === 'ArrowLeft' && !(el instanceof SVGElement)) v.shiftMonth(-1);
