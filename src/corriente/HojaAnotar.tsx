@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react';
 import { accountName, type AccountSetting, type Budget, type Transaction } from '../data';
 import type { FormularioMovimiento } from '../nuevo/HojaMovimiento';
-import { Hoja } from './Corriente';
+import { Hoja } from './piezas';
 
 const dos = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 

@@ -58,3 +58,40 @@ export function corrienteDelMes(grupos: { category: string; total: number }[], e
     tronco: { nombre: `Entran en ${nombreMes}`, pct: `Salen ${cifra(salen)} € en ${n === 1 ? 'un río' : `${n} ríos`} y se quedan ${cifra(quedan)} €.` },
   };
 }
+
+type Mov = { id: string; kind: 'income' | 'expense' | 'transfer'; amount: number; occurred_on: string };
+
+/** Lo que sale cada día del mes elegido y cuántos movimientos hubo, hasta hoy si es el mes en curso. */
+export function pulsoDelMes(movs: Mov[], mes: string, hoy = new Date()) {
+  const { dia, diasMes } = diasTranscurridos(mes, hoy);
+  const gasto = new Array<number>(diasMes).fill(0), cuantos = new Array<number>(diasMes).fill(0);
+  for (const m of movs) {
+    if (!m.occurred_on.startsWith(mes)) continue;
+    const d = Number(m.occurred_on.slice(8, 10)) - 1;
+    if (d < 0 || d >= diasMes) continue;
+    cuantos[d]++;
+    if (m.kind === 'expense') gasto[d] += Number(m.amount);
+  }
+  const enCurso = mes === `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+  return { hoy: dia, diasMes, enCurso, gasto, cuantos };
+}
+
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+/** «Hoy», «Ayer» o «Lunes 18». */
+export function nombreDia(fecha: string, hoy = new Date()) {
+  const d = new Date(`${fecha}T12:00:00`), h = new Date(hoy); h.setHours(12, 0, 0, 0);
+  const dif = Math.round((h.getTime() - d.getTime()) / 86400000);
+  if (dif === 0) return 'Hoy';
+  if (dif === 1) return 'Ayer';
+  const n = DIAS[d.getDay()];
+  return `${n.charAt(0).toUpperCase()}${n.slice(1)} ${d.getDate()}`;
+}
+
+/** Movimientos agrupados por día, del más reciente al más antiguo, con lo que salió ese día. */
+export function porDias<T extends Mov>(movs: T[]) {
+  const dias = new Map<string, T[]>();
+  for (const m of [...movs].sort((a, b) => b.occurred_on.localeCompare(a.occurred_on))) {
+    const l = dias.get(m.occurred_on); if (l) l.push(m); else dias.set(m.occurred_on, [m]);
+  }
+  return [...dias].map(([fecha, lista]) => ({ fecha, lista, sale: lista.reduce((s, m) => s + (m.kind === 'expense' ? Number(m.amount) : 0), 0) }));
+}

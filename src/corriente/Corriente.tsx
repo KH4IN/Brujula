@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Seccion, VistaNueva } from '../nuevo/Nuevo';
-import { corrienteDelMes, cifra, ritmos, type Ritmo } from './datos';
+import { corrienteDelMes, cifra, ritmos } from './datos';
+import { Icono, Hoja, Presupuestos } from './piezas';
 import { montarRumbo } from './rio';
+import { Movimientos } from './Movimientos';
 import { ICONOS } from './iconos';
 import './corriente.css';
 
@@ -13,7 +15,6 @@ const DESTINO: Record<Seccion, Destino> = {
 const SECCION: Record<Destino, Seccion> = { rumbo: 'dashboard', movimientos: 'transactions', cuentas: 'accounts' };
 const NOMBRES: [Destino, string, string][] = [['rumbo', 'Rumbo', 'i-rumbo'], ['movimientos', 'Movimientos', 'i-mov'], ['cuentas', 'Cuentas', 'i-cue']];
 
-export const Icono = ({ id }: { id: string }) => <svg aria-hidden="true"><use href={`#${id}`}/></svg>;
 const nombreMes = (mes: string) => new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(new Date(`${mes}-01T12:00:00`));
 const fechaRelativa = (fecha: string) => {
   const hoy = new Date(), d = new Date(`${fecha}T12:00:00`), ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
@@ -21,32 +22,7 @@ const fechaRelativa = (fecha: string) => {
   return mismo(d, hoy) ? 'hoy' : mismo(d, ayer) ? 'ayer' : `el ${new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric' }).format(d)}`;
 };
 
-/** Hoja con la estructura de la maqueta (dialog nativo: foco atrapado y Escape para cerrar). */
-export function Hoja({ titulo, abierta, onCerrar, children, pie, atras }: { titulo: string; abierta: boolean; onCerrar: () => void; children: ReactNode; pie?: ReactNode; atras?: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => { const d = ref.current; if (!d) return; if (abierta && !d.open) d.showModal(); if (!abierta && d.open) d.close(); }, [abierta]);
-  return <dialog ref={ref} className="hoja" aria-label={titulo} onClose={onCerrar} onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }}>
-    <div className="hoja-cab">
-      {atras && <button type="button" className="atras" aria-label="Volver" onClick={atras}><Icono id="i-izq"/></button>}
-      <h2>{titulo}</h2>
-      <button type="button" className="cerrar" aria-label="Cerrar" onClick={onCerrar}><Icono id="i-x"/></button>
-    </div>
-    {children}
-    {pie && <div className="hoja-pie">{pie}</div>}
-  </dialog>;
-}
 
-function Presupuestos({ filas, onAnadir }: { filas: Ritmo[]; onAnadir: () => void }) {
-  if (!filas.length) return <p className="nota">Aún no hay presupuestos este mes. <button type="button" className="ir" onClick={onAnadir}>Añadir uno<Icono id="i-mas"/></button></p>;
-  return <>{filas.map((p) => {
-    const pp = p.limite > 0 ? p.gastado / p.limite : 0, q = p.limite > 0 ? Math.min(p.previsto / p.limite, 1.24) : 0;
-    return <div className="presu-fila" key={p.nombre}>
-      <span className="nombre">{p.nombre}</span><span className="imp">{cifra(p.gastado)} / {cifra(p.limite)} €</span>
-      <div className="carril" style={{ '--p': Math.min(pp, 1.24).toFixed(3), '--q': q.toFixed(3) } as CSSProperties} role="img" aria-label={`${Math.round(pp * 100)} % del presupuesto`}><i/>{p.pasa ? <s/> : <u/>}</div>
-      {p.pasa ? <span className="alerta">A este ritmo, +{cifra(p.previsto - p.limite)} €</span> : <span className="ok">A este ritmo acabarás en {cifra(p.previsto)} €</span>}
-    </div>;
-  })}</>;
-}
 
 function Rumbo({ v, ir }: { v: VistaNueva; ir: (d: Destino) => void }) {
   const mes = nombreMes(v.month);
@@ -93,7 +69,7 @@ function Rumbo({ v, ir }: { v: VistaNueva; ir: (d: Destino) => void }) {
   </section>;
 }
 
-// shortcut: Movimientos y Cuentas aún no tienen su vista de Corriente; llegan en los pasos B1b y B1c del plan.
+// shortcut: Cuentas aún no tiene su vista de Corriente; llega en el paso B1c del plan.
 function EnCamino({ id, titulo }: { id: Destino; titulo: string }) {
   return <section className="vista marco" id={id} aria-labelledby={`h-${id}`}>
     <div className="vcab"><div><h1 id={`h-${id}`} tabIndex={-1}>{titulo}</h1>
@@ -148,7 +124,7 @@ export function Corriente({ v }: { v: VistaNueva }) {
     </header>
     <main key={`${destino}-${m}`}>
       {destino === 'rumbo' && <Rumbo v={v} ir={ir}/>}
-      {destino === 'movimientos' && <EnCamino id="movimientos" titulo="Movimientos"/>}
+      {destino === 'movimientos' && <Movimientos v={v}/>}
       {destino === 'cuentas' && <EnCamino id="cuentas" titulo="Cuentas"/>}
     </main>
     <nav className="dock" aria-label="Destinos">

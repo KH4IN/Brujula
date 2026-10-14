@@ -44,3 +44,22 @@ test('el ritmo de un presupuesto mira los días que han pasado del mes', () => {
   assert.equal(c.rios[0].pct, '100 % de lo que sale · presupuesto de 90 €');
   assert.equal(cifra(2480), '2.480');
 });
+
+const { pulsoDelMes, nombreDia, porDias } = await import('data:text/javascript;base64,' + Buffer.from(salida.text).toString('base64'));
+test('el pulso suma lo que sale cada día y cuenta todos los movimientos', () => {
+  const movs = [
+    { id: '1', kind: 'expense', amount: 10, occurred_on: '2026-10-01' }, { id: '2', kind: 'income', amount: 900, occurred_on: '2026-10-01' },
+    { id: '3', kind: 'expense', amount: 4.5, occurred_on: '2026-10-20' }, { id: '4', kind: 'transfer', amount: 50, occurred_on: '2026-10-20' },
+    { id: '5', kind: 'expense', amount: 99, occurred_on: '2026-09-30' },
+  ];
+  const p = pulsoDelMes(movs, '2026-10', new Date(2026, 9, 20));
+  assert.equal(p.hoy, 20); assert.equal(p.diasMes, 31); assert.equal(p.enCurso, true);
+  assert.equal(p.gasto[0], 10); assert.equal(p.gasto[19], 4.5); assert.equal(p.cuantos[19], 2);
+  assert.equal(pulsoDelMes(movs, '2026-09', new Date(2026, 9, 20)).enCurso, false);
+});
+test('los días se nombran como en la maqueta y la lista va del más reciente al más antiguo', () => {
+  const hoy = new Date(2026, 9, 20);
+  assert.deepEqual(['2026-10-20', '2026-10-19', '2026-10-18'].map((f) => nombreDia(f, hoy)), ['Hoy', 'Ayer', 'Domingo 18']);
+  const dias = porDias([{ id: 'a', kind: 'expense', amount: 3, occurred_on: '2026-10-01' }, { id: 'b', kind: 'expense', amount: 2, occurred_on: '2026-10-05' }, { id: 'c', kind: 'income', amount: 5, occurred_on: '2026-10-05' }]);
+  assert.deepEqual(dias.map((d) => [d.fecha, d.sale, d.lista.length]), [['2026-10-05', 2, 2], ['2026-10-01', 3, 1]]);
+});
