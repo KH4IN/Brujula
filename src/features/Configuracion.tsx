@@ -6,7 +6,7 @@ const TOQUES_SECRETO = 7;
 
 const OPCIONES: { valor: Tema; titulo: string; detalle: string }[] = [
   { valor: 'corriente', titulo: 'Corriente', detalle: 'El dinero como un río que entra, se reparte y se remansa.' },
-  { valor: 'monolito', titulo: 'Monolito (en construcción)', detalle: 'Negro, blanco y una señal roja: todo son puntos. Por ahora solo Rumbo.' },
+  { valor: 'monolito', titulo: 'Monolito (en construcción)', detalle: 'Negro, blanco y una señal roja: todo son puntos. Aún sin Recibos ni Metas.' },
   { valor: 'nuevo', titulo: 'Tema nuevo', detalle: 'Rumbo: una brújula que marca hacia dónde va tu mes.' },
   { valor: 'antiguo', titulo: 'Tema antiguo', detalle: 'El diseño Ultra de siempre, con sus cuatro perspectivas.' },
   { valor: 'clasico', titulo: 'Diseño clásico', detalle: 'La primera Brújula. Sin movimiento decorativo.' },
