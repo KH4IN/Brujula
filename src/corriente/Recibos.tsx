@@ -1,0 +1,167 @@
+import { useEffect, useRef, useState } from 'react';
+import { supabase } from '../data';
+import type { VistaNueva } from '../nuevo/Nuevo';
+import { citas, finDeVentana, proximosPendientes, resumenAnual, totalPrevisto, type Cita } from '../recibos/agenda';
+import { describirFrecuencia, NOMBRE_TIPO, ocurrencias, type Cobro, type Elemento } from '../recibos/elementos';
+import { hoyLocal, sumarDias, type Fecha } from '../recibos/fechas';
+import { cifra } from './datos';
+import { canvasTexto, clamp, escena, lineal, PERLA, rgba, rotulo } from './escena';
+import { euros } from './rio';
+
+const dos = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' as unknown as boolean });
+const SEM = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const fecha = (f: Fecha) => new Date(`${f}T12:00:00`);
+const corta = (f: Fecha) => { const d = fecha(f); return `${SEM[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`; };
+const clave = (c: Cita) => `${c.elemento.id}:${c.fecha}`;
+
+/** Los próximos 30 días como un río que llega a hoy; cada recibo es una piedra (maqueta de Corriente). */
+function montarRio30(lienzo: HTMLElement, hoy: Fecha, lista: Cita[]) {
+  return escena(lienzo, (W, H, movil, st) => {
+    const pad = movil ? 14 : 22, x0 = pad + (movil ? 18 : 30), dx = (W - pad - x0) / 29;
+    const ym = H * 0.5, wb = movil ? 10 : 14;
+    const piedras = lista.map((c) => {
+      const v = c.elemento.importe ?? 0, i = Math.round((fecha(c.fecha).getTime() - fecha(hoy).getTime()) / 86_400_000);
+      return { c, id: clave(c), v, x: x0 + i * dx, R: 2.5 + Math.sqrt(v) * (movil ? 0.62 : 0.9), semana: i <= 6, yEt: undefined as number | undefined };
+    });
+    const empuje = (x: number, u: number) => {
+      let s = 0;
+      for (const p of piedras) {
+        const d = x - p.x; if (d > p.R * 4 || d < -p.R * 4) continue;
+        s += (u >= 0 ? 1 : -1) * (p.R + 2.5) * Math.exp(-(d * d) / (2 * p.R * p.R * 0.9)) * (0.55 + Math.abs(u) * 0.9);
+      }
+      return s;
+    };
+    // Etiquetas arriba y abajo, en niveles para no pisarse; en móvil, solo las de 60 € o más.
+    const lado: { x: number; w: number; nivel: number }[][] = [[], []];
+    const visibles = piedras.filter((p) => !movil || p.v >= 60);
+    st.capa.querySelectorAll<HTMLElement>('[data-g]').forEach((el) => { el.hidden = !visibles.some((p) => p.id === el.dataset.g); });
+    visibles.forEach((p, k) => {
+      const b = rotulo(st, p.id, [[String(fecha(p.c.fecha).getDate()), 'b'], [p.c.elemento.nombre], p.c.elemento.importe == null ? [''] : [`${p.v % 1 ? dos.format(p.v) : cifra(p.v)} €`, 'imp']]);
+      b.hidden = false;
+      b.setAttribute('aria-label', `${p.c.elemento.nombre}, ${corta(p.c.fecha)}${p.c.elemento.importe == null ? '' : `: ${dos.format(p.v)} €`}`);
+      const w = b.offsetWidth || 120, s = k % 2;
+      let nivel = 0;
+      while (lado[s].some((o) => o.nivel === nivel && Math.abs(o.x - p.x) < (o.w + w) / 2 + 10)) nivel++;
+      lado[s].push({ x: p.x, w, nivel });
+      const yEt = s === 0 ? ym - p.R - 34 - nivel * 32 : ym + p.R + 12 + nivel * 32;
+      b.style.transform = `translate(${Math.round(clamp(p.x - w / 2, 0, W - w) + 8)}px, ${Math.round(yEt)}px)`;
+      p.yEt = s === 0 ? yEt + 30 : yEt + 2;
+    });
+    const mesHoy = fecha(hoy).getMonth();
+    return {
+      vel: clamp(W * 0.04, 26, 58), sinAtenuar: true,
+      rios: [{ Y: lineal(W, () => ym), WD: lineal(W, () => wb), x0, x1: W, dir: -1, col: PERLA, grupo: 'r', fadeIn: 40, fadeOut: 26, empuje, dens: 1.6 }],
+      fondo(ctx) {
+        for (let i = 0; i < 30; i++) {
+          const f = fecha(sumarDias(hoy, i)), finde = [0, 6].includes(f.getDay());
+          ctx.fillStyle = finde ? 'rgba(236,234,228,.12)' : 'rgba(236,234,228,.26)';
+          ctx.fillRect(x0 + i * dx - 0.5, H - 26, 1, f.getDay() === 1 ? 6 : 3);
+          if (f.getDay() === 1 && i > 1) canvasTexto(ctx, f.getMonth() !== mesHoy && f.getDate() <= 7 ? `${f.getDate()} ${MESES[f.getMonth()]}` : String(f.getDate()), x0 + i * dx, H - 6, '#6F6C67', 'center');
+        }
+        canvasTexto(ctx, 'hoy', x0, H - 6, '#ECEAE4', 'center');
+        ctx.fillStyle = 'rgba(236,234,228,.55)'; ctx.fillRect(x0 - 0.5, ym - 26, 1, H - 26 - (ym - 26));
+        for (const p of piedras) {
+          if (p.yEt === undefined) continue;
+          ctx.fillStyle = 'rgba(236,234,228,.16)';
+          ctx.fillRect(p.x - 0.5, Math.min(p.yEt, ym), 1, Math.abs(p.yEt - ym));
+        }
+      },
+      encima(ctx) {
+        for (const p of piedras) {
+          const on = st.foco === p.id;
+          ctx.beginPath(); ctx.arc(p.x, ym, p.R + (on ? 2 : 0), 0, 6.283);
+          ctx.fillStyle = '#09090A'; ctx.fill();
+          ctx.lineWidth = on ? 1.6 : 1.1;
+          ctx.strokeStyle = rgba(PERLA, on ? 1 : p.semana ? 0.85 : 0.45);
+          ctx.stroke();
+          if (p.semana || on) { ctx.beginPath(); ctx.arc(p.x, ym, Math.max(1.5, p.R * 0.35), 0, 6.283); ctx.fillStyle = rgba(PERLA, 0.85); ctx.fill(); }
+        }
+      },
+      sobre(mx, my) {
+        let mejor: string | null = null, dist = 1e9;
+        for (const p of piedras) { const d = Math.hypot(mx - p.x, my - ym); if (d < p.R + 12 && d < dist) { dist = d; mejor = p.id; } }
+        return mejor ? { g: mejor } : null;
+      },
+      info(g) {
+        const p = piedras.find((x) => x.id === g); if (!p) return null;
+        const e = p.c.elemento;
+        return { n: `${e.nombre} · ${corta(p.c.fecha)}`, v: e.importe == null ? 'Sin importe' : euros(p.v), d: `${describirFrecuencia(e.frecuencia)} · ${NOMBRE_TIPO[e.tipo]}${e.estimado ? ' · importe estimado' : ''}` };
+      },
+    };
+  });
+}
+
+/** Recibos leídos de Kairós: lo que viene en 30 días, esta semana y lo que suman al año. Solo lectura. */
+export function RecibosVista({ elementos, cobros, hoy }: { elementos: Elemento[]; cobros: Cobro[]; hoy: Fecha }) {
+  const lienzo = useRef<HTMLDivElement>(null);
+  const prox = proximosPendientes(citas(elementos, cobros, hoy, finDeVentana(hoy, 30)));
+  const semana = prox.filter((c) => c.fecha <= sumarDias(hoy, 6));
+  const resumen = resumenAnual(elementos);
+  const suscripciones = resumen.categorias.find((g) => g.categoria === 'Suscripciones')?.total ?? 0;
+  const siguiente = (e: Elemento) => ocurrencias(e, hoy, sumarDias(hoy, 800))[0];
+  const huella = JSON.stringify(prox.map((c) => [clave(c), c.elemento.importe]));
+  useEffect(() => { if (lienzo.current && prox.length) return montarRio30(lienzo.current, hoy, prox); }, [huella, hoy]);
+  return <>
+    <div className="vcab">
+      <div><h1 id="h-recibos" tabIndex={-1}>Recibos</h1>
+        <p className="sub">{prox.length ? <>{prox.length} en los próximos 30 días, <span className="cifra">{dos.format(totalPrevisto(prox))} €</span> en total.</> : 'Nada en los próximos 30 días.'}</p></div>
+    </div>
+    {prox.length > 0 && <>
+      <p className="eti">Los próximos 30 días vienen hacia ti</p>
+      <div className="lienzo rio30" ref={lienzo}>
+        <canvas role="img" aria-label={`Los próximos 30 días como un río que llega a hoy. Cada recibo es una piedra en el cauce: ${prox.map((c) => `${c.elemento.nombre} el ${corta(c.fecha)}`).join(', ')}.`}/>
+        <div className="etiquetas"/>
+        <div className="aviso" role="status" aria-live="polite"><p className="n"/><p className="v"/><p className="d"/><p className="d coral" hidden/></div>
+      </div>
+    </>}
+    <div className="rejilla">
+      <section className="c7" aria-labelledby="h-semana">
+        <div className="cab"><h2 id="h-semana">Esta semana</h2></div>
+        {semana.length ? <ol className="lista-rec">{semana.map((c) => {
+          const d = fecha(c.fecha);
+          return <li key={clave(c)}><span className="dia"><b>{d.getDate()}</b><small>{SEM[d.getDay()]}</small></span>
+            <span className="que"><b>{c.elemento.nombre}</b><small>{NOMBRE_TIPO[c.elemento.tipo]} · {describirFrecuencia(c.elemento.frecuencia)}{c.elemento.estimado ? ' · estimado' : ''}</small></span>
+            <span className="imp">{c.elemento.importe == null ? '—' : `${dos.format(c.elemento.importe)} €`}</span></li>;
+        })}</ol> : <p className="nota">Nada que pagar ni que venza en los próximos siete días.</p>}
+      </section>
+      <section className="c-der" aria-labelledby="h-anual">
+        <div className="cab"><h2 id="h-anual">Al año</h2></div>
+        <p className="anual"><span className="cifra">{cifra(resumen.anual)}</span><span className="eur">€</span></p>
+        <p className="nota">Lo que suman todos tus recibos en doce meses.{suscripciones > 0 && <> De eso, <span className="cifra">{cifra(suscripciones)} €</span> son suscripciones.</>}</p>
+        <div className="grupos">{resumen.categorias.map((g) =>
+          <div className="grupo" key={g.categoria}><h3><span>{g.categoria}</span><span className="imp">{cifra(g.total)} € al año</span></h3>
+            <ul>{resumen.filas.filter((f) => f.elemento.categoria === g.categoria).map(({ elemento: e }) => {
+              const s = siguiente(e);
+              return <li key={e.id}><span>{e.nombre}</span><span className="imp">{dos.format(e.importe ?? 0)} €</span>
+                <small>{describirFrecuencia(e.frecuencia)}{s ? ` · próximo el ${corta(s)}` : ''}</small></li>;
+            })}</ul></div>)}
+        </div>
+      </section>
+    </div>
+  </>;
+}
+
+type Carga = { estado: 'cargando' } | { estado: 'error' } | { estado: 'listo'; elementos: Elemento[]; cobros: Cobro[] };
+
+export function Recibos({ v }: { v: VistaNueva }) {
+  const [carga, setCarga] = useState<Carga>({ estado: 'cargando' });
+  const uid = v.user?.id;
+  useEffect(() => {
+    if (!supabase || !uid) return;
+    let vivo = true;
+    // RLS de Kairós: con la sesión del usuario solo se leen sus filas. Brújula aquí no escribe nada.
+    Promise.all([supabase.from('kairos_elementos').select('*').eq('activo', true), supabase.from('kairos_cobros').select('*')])
+      .then(([e, c]) => { if (vivo) setCarga(e.error || c.error ? { estado: 'error' } : { estado: 'listo', elementos: e.data as Elemento[], cobros: c.data as Cobro[] }); });
+    return () => { vivo = false; };
+  }, [uid]);
+  const mensaje = !supabase || !uid ? 'Recibos lee lo que tienes en Kairós. Entra con tu cuenta para verlos.'
+    : carga.estado === 'cargando' ? 'Cargando tus recibos…'
+    : carga.estado === 'error' ? 'No se pudieron leer tus recibos de Kairós. Prueba de nuevo en un momento.'
+    : !carga.elementos.length ? 'Aún no tienes recibos en Kairós.' : '';
+  return <section className="vista marco" id="recibos" aria-labelledby="h-recibos">
+    {mensaje || carga.estado !== 'listo'
+      ? <div className="vcab"><div><h1 id="h-recibos" tabIndex={-1}>Recibos</h1><p className="sub" role="status">{mensaje}</p></div></div>
+      : <RecibosVista elementos={carga.elementos} cobros={carga.cobros} hoy={hoyLocal()}/>}
+  </section>;
+}
