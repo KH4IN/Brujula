@@ -79,6 +79,18 @@ Cada paso: PR a `staging`, capturas a 1440 y 390 px y, cuando lo apruebes, PR a 
   primer uso).
 - [x] **B9. Monolito.** ([#97](https://github.com/KH4IN/Brujula/pull/97), [#98](https://github.com/KH4IN/Brujula/pull/98), [#99](https://github.com/KH4IN/Brujula/pull/99), en `staging`) El mismo contenido en el estilo Monolito.
 
+### Integración completa de Kairós y Faro (añadido el 15-10 con aprobación del fundador)
+
+Para que Brújula haga todo lo que hacen Kairós y Faro (decisión del 02-10: Brújula los
+absorbe). Dentro de Brújula, en `staging` y sin tocar producción ni el servidor.
+
+- [ ] **B10. Metas de vida completas.** Crear, editar, pausar y borrar metas de Faro;
+  añadir y borrar pasos; enlazar una meta de dinero a un objetivo de ahorro.
+- [ ] **B11. Recibos completos.** Marcar pagado u omitido a mano, historial de cobros y
+  recibos sugeridos a partir de los movimientos.
+- [ ] **B12. Ajustes de avisos.** Hora, antelación y canales de recibos; día y hora de la
+  revisión de metas (las funciones de avisos del servidor ya leen esos ajustes).
+
 Detalles de interfaz aprobados el 14-10 (botón de modo del tema antiguo, contrastes y buscador): [#87](https://github.com/KH4IN/Brujula/pull/87).
 
 ## Fuera de este plan (lo apunto, no lo hago)
