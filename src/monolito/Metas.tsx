@@ -4,7 +4,7 @@ import { lunesDe, type Fecha } from '../metas/fechas';
 import { progreso, ritmo, TEXTO_RITMO, type Meta, type Paso, type Registro } from '../metas/metas';
 import type { Acciones } from '../corriente/Metas';
 import { cifra, detalleAhorro } from '../corriente/datos';
-import { el, encima, medidor, quieto } from './piezas';
+import { el, encima, Glifo, medidor, quieto } from './piezas';
 import { unidadDeposito } from './puntos';
 
 const mesAño = (f: Fecha) => new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(new Date(`${f}T12:00:00`));
@@ -39,6 +39,7 @@ export function MetasVistaM({ goals, metas, pasos, registros, hoy, acciones }: {
   const activas = (metas ?? []).filter((m) => m.estado === 'activa');
   const ahorroFaro = activas.filter((m) => m.progreso === 'dinero' && !brujula.some((g) => g.id === m.objetivo_brujula));
   const vida = activas.filter((m) => m.progreso !== 'dinero');
+  const otras = (metas ?? []).filter((m) => m.estado !== 'activa');
   const faro = acciones.faro;
   const depositos: Deposito[] = [
     ...brujula.map((g) => ({ id: g.id, n: g.name, hecho: g.saved_amount, meta: g.target_amount, detalle: detalleAhorro(g, hoy), accion: 'editarla', abrir: () => acciones.objetivo(goals.find((x) => x.id === g.id)!) })),
@@ -77,17 +78,17 @@ export function MetasVistaM({ goals, metas, pasos, registros, hoy, acciones }: {
     </section>}
     <div className="rejilla">
       <section className="mod" aria-labelledby="h-vida">
-        <div className="tit"><h2 id="h-vida">De vida</h2></div>
+        <div className="tit"><h2 id="h-vida">De vida</h2>{acciones.faro && <button type="button" className="ir" onClick={acciones.faro.nueva}>Añadir<Glifo g="mas"/></button>}</div>
         <div style={{ marginTop: 12 }}>
           {!metas ? <p className="res">Las metas de vida vienen de Faro. Entra con tu cuenta para verlas.</p>
-            : !vida.length ? <p className="res">Aún no hay metas de vida. Se crean en Faro.</p>
+            : !vida.length ? <p className="res">Aún no hay metas de vida.{faro && <> <button type="button" className="ir" onClick={faro.nueva}>Añadir una</button></>}</p>
             : vida.map((m) => {
               const p = progreso(m, pasos, registros, brujula, hoy), r = ritmo(m, p, hoy);
               const lista = pasos.filter((x) => x.meta_id === m.id).sort((a, b) => a.orden - b.orden);
               const hechoHoy = registros.some((x) => x.meta_id === m.id && x.fecha === hoy);
               const escala = p.objetivo > 60 ? Math.ceil(p.objetivo / 60) : 1;
               return <div className="meta" key={m.id}>
-                <span><b>{m.titulo}</b><small>{p.texto} · {PLAZO(m)}{r ? ` · ${TEXTO_RITMO[r].toLowerCase()}` : ''}</small></span><span className="cant">{p.actual} / {p.objetivo}</span>
+                <span><b>{faro ? <button type="button" className="meta-abrir" onClick={() => faro.abrir(m)}>{m.titulo}</button> : m.titulo}</b><small>{p.texto} · {PLAZO(m)}{r ? ` · ${TEXTO_RITMO[r].toLowerCase()}` : ''}</small></span><span className="cant">{p.actual} / {p.objetivo}</span>
                 {m.progreso === 'numero' && <><div className="cuerpo"><Medidor seg={`${Math.min(Math.round(p.objetivo / escala), Math.floor(p.actual / escala))}:on,${Math.max(0, Math.round(p.objetivo / escala) - Math.floor(p.actual / escala))}:off`} paso={22}/></div>
                   <span className="unidad">1 punto = {escala} {escala === 1 ? (m.unidad || 'unidad').replace(/s$/, '') : m.unidad || 'unidades'}{faro && <> · <button type="button" className="ir" onClick={() => faro.anotar(m)}>Anotar avance</button></>}</span></>}
                 {m.progreso === 'habito' && <div className="cuerpo habito" role="group" aria-label={`${m.titulo}: ${p.texto}`}>{Array.from({ length: p.objetivo }, (_, i) =>
@@ -95,6 +96,7 @@ export function MetasVistaM({ goals, metas, pasos, registros, hoy, acciones }: {
                 {m.progreso === 'pasos' && <div className="cuerpo"><ul className="pasos">{lista.map((x) => <li key={x.id}><label><input type="checkbox" checked={x.hecho} disabled={!faro} onChange={() => faro?.paso(x)}/><span>{x.texto}</span></label></li>)}</ul></div>}
               </div>;
             })}
+          {faro && otras.length > 0 && <p className="res" style={{ marginTop: 18 }}>En pausa o terminadas: {otras.map((m, i) => <span key={m.id}>{i ? ' · ' : ''}<button type="button" className="ir" onClick={() => faro.abrir(m)}>{m.titulo}</button></span>)}</p>}
         </div>
       </section>
       <section className="mod der revision" aria-labelledby="h-rev">

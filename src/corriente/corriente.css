@@ -377,3 +377,7 @@
 :root[data-tema="corriente"] .c-app .ahorros li:not(:last-child) > .ahorro-editar{border-bottom:0}
 :root[data-tema="corriente"] .c-app .ahorro-editar:hover h3{text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--perla-3);text-decoration-thickness:1px}
 :root[data-tema="corriente"] .c-app .semana button:disabled{cursor:default}
+:root[data-tema="corriente"] .c-app .meta-abrir{font:inherit;color:inherit;text-align:left}
+:root[data-tema="corriente"] .c-app .meta-abrir:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--perla-3);text-decoration-thickness:1px}
+:root[data-tema="corriente"] .c-app .paso-fila{display:flex;align-items:center;justify-content:space-between;gap:12px}
+:root[data-tema="corriente"] .c-app .grupo-hoja{display:grid;gap:12px}
