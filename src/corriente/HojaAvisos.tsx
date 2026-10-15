@@ -4,6 +4,7 @@ import { ajustesIniciales as inicialesRecibos, horaAviso, type Ajustes as Ajuste
 import { opcionesDeZona, zonaDelDispositivo } from '../recibos/zonas';
 import { ajustesIniciales as inicialesMetas, DIAS, horaRevision, type Ajustes as AjustesMetas } from '../metas/metas';
 import { Hoja } from './piezas';
+import { activarPush, desactivarPush, esIOSSinInstalar, pushDisponible } from './push';
 
 const hora = (v: string) => { const [h, m] = v.split(':').map(Number); return Number.isInteger(h) && Number.isInteger(m) ? [h, m] as const : null; };
 
@@ -16,6 +17,9 @@ export function HojaAvisos({ uid, correo, recibos, metas, onCerrar, onGuardado }
 }) {
   const [r, setR] = useState<AjustesRecibos | null>(null), [m, setM] = useState<AjustesMetas | null>(null);
   const [error, setError] = useState(''), [ocupado, setOcupado] = useState(false);
+  // ¿Este dispositivo ya recibe avisos de Brújula? (tiene suscripción en el service worker principal)
+  const [movil, setMovil] = useState(false), [movilAntes, setMovilAntes] = useState(false);
+  useEffect(() => { if (pushDisponible()) void navigator.serviceWorker.getRegistration('/').then((reg) => reg?.pushManager.getSubscription()).then((s) => { setMovil(!!s); setMovilAntes(!!s); }); }, []);
   useEffect(() => {
     let vivo = true;
     Promise.all([supabase!.from('kairos_ajustes').select('*').maybeSingle(), supabase!.from('faro_ajustes').select('*').maybeSingle()]).then(([a, b]) => {
@@ -31,10 +35,15 @@ export function HojaAvisos({ uid, correo, recibos, metas, onCerrar, onGuardado }
     if (!r || !m) return;
     if (!Number.isInteger(r.antelacion_por_defecto) || r.antelacion_por_defecto < 0 || r.antelacion_por_defecto > 365) return setError('La antelación debe estar entre 0 y 365 días.');
     setOcupado(true); setError('');
+    let push = r.canal_push || m.canal_push;
+    try {
+      if (movil && !movilAntes) { await activarPush(uid, recibos, metas); push = true; }
+      if (!movil && movilAntes) { await desactivarPush(); push = false; }
+    } catch (e) { setOcupado(false); setMovil(false); return setError((e as Error).message); }
     const ahora = new Date().toISOString();
     const [a, b] = await Promise.all([
-      recibos ? supabase!.from('kairos_ajustes').upsert({ ...r, user_id: uid, actualizado: ahora }) : Promise.resolve({ error: null }),
-      metas ? supabase!.from('faro_ajustes').upsert({ ...m, zona_horaria: r.zona_horaria, canal_correo: r.canal_correo, user_id: uid, actualizado: ahora }) : Promise.resolve({ error: null }),
+      recibos ? supabase!.from('kairos_ajustes').upsert({ ...r, canal_push: push, user_id: uid, actualizado: ahora }) : Promise.resolve({ error: null }),
+      metas ? supabase!.from('faro_ajustes').upsert({ ...m, zona_horaria: r.zona_horaria, canal_correo: r.canal_correo, canal_push: push, user_id: uid, actualizado: ahora }) : Promise.resolve({ error: null }),
     ]);
     setOcupado(false);
     if (a.error || b.error) return setError('No se pudieron guardar los avisos. Prueba de nuevo en un momento.');
@@ -63,7 +72,11 @@ export function HojaAvisos({ uid, correo, recibos, metas, onCerrar, onGuardado }
         <label className="campo"><span>Zona horaria</span><select value={r.zona_horaria} onChange={(e) => setR({ ...r, zona_horaria: e.target.value })}>
           {zonas.map((z) => <option key={z.id} value={z.id}>{z.nombre}</option>)}</select></label>
         <label className="casilla"><input type="checkbox" checked={r.canal_correo} onChange={(e) => setR({ ...r, canal_correo: e.target.checked })}/><span>Avisarme por correo{correo ? ` a ${correo}` : ''}</span></label>
-        <p className="ayuda">{r.canal_push || m.canal_push ? 'Los avisos en el móvil siguen activos desde Kairós y Faro.' : 'Los avisos en el móvil se activan, por ahora, desde Kairós y Faro.'} Llegarán a Brújula con los avisos unificados.</p>
+        {pushDisponible() && <label className="casilla"><input type="checkbox" checked={movil} onChange={(e) => setMovil(e.target.checked)}/><span>Avisarme en este dispositivo</span></label>}
+        {movil && recibos && <label className="casilla"><input type="checkbox" checked={r.importes_en_push} onChange={(e) => setR({ ...r, importes_en_push: e.target.checked })}/><span>Mostrar importes en la notificación (se ven con el móvil bloqueado)</span></label>}
+        <p className="ayuda">{!pushDisponible() ? 'Este navegador no admite avisos en el dispositivo.'
+          : esIOSSinInstalar() ? 'En iPhone, primero añade Brújula a la pantalla de inicio y ábrela desde allí.'
+          : 'Si en este móvil también tienes los avisos activados en Kairós o en Faro, desactívalos allí para no recibirlos dos veces.'}</p>
       </>}
     </div>
   </Hoja>;
