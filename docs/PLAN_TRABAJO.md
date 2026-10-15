@@ -90,6 +90,7 @@ absorbe). Dentro de Brújula, en `staging` y sin tocar producción ni el servido
   recibos sugeridos a partir de los movimientos.
 - [x] **B12. Ajustes de avisos.** ([#104](https://github.com/KH4IN/Brujula/pull/104), en `staging`) Hora, antelación y canales de recibos; día y hora de la
   revisión de metas (las funciones de avisos del servidor ya leen esos ajustes).
+- [x] **B13. Avisos en el móvil desde Brújula** ([#105](https://github.com/KH4IN/Brujula/pull/105), en `staging`). Primera fase de los avisos unificados, sin tocar el servidor; las fases 2 y 3 están en [`docs/avisos/PLAN.md`](avisos/PLAN.md) y esperan tu aprobación.
 
 Detalles de interfaz aprobados el 14-10 (botón de modo del tema antiguo, contrastes y buscador): [#87](https://github.com/KH4IN/Brujula/pull/87).
 
