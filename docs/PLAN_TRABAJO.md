@@ -64,20 +64,20 @@ Estado: **aprobado por el fundador el 14-10-2026**, con sus cuatro recomendacion
 
 Cada paso: PR a `staging`, capturas a 1440 y 390 px y, cuando lo apruebes, PR a `main`.
 
-- [ ] **B1. Cinco destinos.** Se hace en tres PR: **B1a** estructura, navegación, Rumbo y hoja de anotar ([#88](https://github.com/KH4IN/Brujula/pull/88), hecho); **B1b** Movimientos; **B1c** Cuentas y Corriente como tema por defecto. B1b y B1c empiezan cuando #88 esté unida (sin apilar PR). Navegación Rumbo · Movimientos · Recibos · Metas · Cuentas
+- [x] **B1. Cinco destinos.** (B1a [#88](https://github.com/KH4IN/Brujula/pull/88), B1b [#89](https://github.com/KH4IN/Brujula/pull/89), B1c [#90](https://github.com/KH4IN/Brujula/pull/90), en `staging`) Se hace en tres PR: **B1a** estructura, navegación, Rumbo y hoja de anotar ([#88](https://github.com/KH4IN/Brujula/pull/88), hecho); **B1b** Movimientos; **B1c** Cuentas y Corriente como tema por defecto. B1b y B1c empiezan cuando #88 esté unida (sin apilar PR). Navegación Rumbo · Movimientos · Recibos · Metas · Cuentas
   en el estilo Corriente, con lo que ya existe (Presupuestos dentro de Rumbo y
   Movimientos; Inversiones dentro de Cuentas). Recibos y Metas aún vacíos.
-- [ ] **B2. Recibos, lectura.** Lista, calendario de 30 días y coste anual leyendo
+- [x] **B2. Recibos, lectura.** ([#91](https://github.com/KH4IN/Brujula/pull/91), en `staging`) Lista, calendario de 30 días y coste anual leyendo
   `kairos_*` con la sesión del usuario. Traer las pruebas de cálculo de Kairós.
-- [ ] **B3. Recibos, edición.** Alta, cambio y baja de recibos.
-- [ ] **B4. «¿Se cobró?»** Proponer el movimiento que cuadra con un recibo; se guarda
+- [x] **B3. Recibos, edición.** ([#92](https://github.com/KH4IN/Brujula/pull/92), en `staging`) Alta, cambio y baja de recibos.
+- [x] **B4. «¿Se cobró?»** ([#93](https://github.com/KH4IN/Brujula/pull/93), en `staging`) Proponer el movimiento que cuadra con un recibo; se guarda
   solo si la persona confirma.
-- [ ] **B5. Metas, lectura.** `goals` y `faro_metas` juntas, de ahorro y de vida.
-- [ ] **B6. Metas, edición y revisión semanal.**
-- [ ] **B7. Botón «+».** Pregunta si es movimiento, recibo o meta y abre su ficha.
-- [ ] **B8. Activación.** Recibos y Metas no se ven hasta activarlos (Configuración o
+- [x] **B5. Metas, lectura.** ([#94](https://github.com/KH4IN/Brujula/pull/94), en `staging`) `goals` y `faro_metas` juntas, de ahorro y de vida.
+- [x] **B6. Metas, edición y revisión semanal.** ([#95](https://github.com/KH4IN/Brujula/pull/95), en `staging`)
+- [x] **B7. Botón «+».** ([#96](https://github.com/KH4IN/Brujula/pull/96), en `staging`) Pregunta si es movimiento, recibo o meta y abre su ficha.
+- [x] **B8. Activación.** ([#96](https://github.com/KH4IN/Brujula/pull/96), en `staging`) Recibos y Metas no se ven hasta activarlos (Configuración o
   primer uso).
-- [ ] **B9. Monolito.** El mismo contenido en el estilo Monolito.
+- [x] **B9. Monolito.** ([#97](https://github.com/KH4IN/Brujula/pull/97), [#98](https://github.com/KH4IN/Brujula/pull/98), [#99](https://github.com/KH4IN/Brujula/pull/99), en `staging`) El mismo contenido en el estilo Monolito.
 
 Detalles de interfaz aprobados el 14-10 (botón de modo del tema antiguo, contrastes y buscador): [#87](https://github.com/KH4IN/Brujula/pull/87).
 
