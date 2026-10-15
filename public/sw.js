@@ -41,3 +41,17 @@ self.addEventListener('fetch',event=>{
     return response;
   }));
 });
+// Avisos de Recibos (los envía la función de avisos de Kairós a los dispositivos que Brújula registra).
+self.addEventListener('push',event=>{
+  let datos={};
+  try{datos=event.data?event.data.json():{}}catch{datos={cuerpo:event.data?.text()}}
+  event.waitUntil(self.registration.showNotification(datos.titulo||'Brújula',{body:datos.cuerpo||'Tienes un aviso.',icon:'/icon.svg',badge:'/icon.svg',tag:datos.clave||undefined,data:{url:'/'}}));
+});
+self.addEventListener('notificationclick',event=>{
+  event.notification.close();
+  event.waitUntil((async()=>{
+    const ventanas=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    const abierta=ventanas.find(v=>v.url.startsWith(self.location.origin));
+    return abierta?abierta.focus():self.clients.openWindow('/');
+  })());
+});
