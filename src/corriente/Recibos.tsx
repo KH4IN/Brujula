@@ -2,12 +2,12 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { accountName, supabase } from '../data';
 import type { VistaNueva } from '../nuevo/Nuevo';
 import { citas, finDeVentana, proximosPendientes, resumenAnual, totalPrevisto, type Cita } from '../recibos/agenda';
-import { conciliar, type Conciliacion } from '../recibos/brujula';
+import { conciliar, detectarRecurrentes, type Conciliacion, type Sugerencia } from '../recibos/brujula';
 import { describirFrecuencia, NOMBRE_TIPO, ocurrencias, type Cobro, type Elemento } from '../recibos/elementos';
 import { hoyLocal, sumarDias, type Fecha } from '../recibos/fechas';
 import { cifra } from './datos';
 import { canvasTexto, clamp, escena, lineal, PERLA, rgba, rotulo } from './escena';
-import { HojaRecibo } from './HojaRecibo';
+import { HojaFichaRecibo, HojaRecibo } from './HojaRecibo';
 import { Icono } from './piezas';
 import { euros } from './rio';
 
@@ -160,13 +160,15 @@ type Carga = { estado: 'cargando' } | { estado: 'error' } | { estado: 'listo'; e
 export function Recibos({ v, nuevo, onNuevo, Vista = RecibosVista, clase = 'vista marco' }: { v: VistaNueva; nuevo?: boolean; onNuevo?: () => void; Vista?: typeof RecibosVista; clase?: string }) {
   const [carga, setCarga] = useState<Carga>({ estado: 'cargando' });
   const [hoja, setHoja] = useState<Elemento | null | false>(false);
+  const [base, setBase] = useState<Partial<Elemento> | undefined>();
+  const [ficha, setFicha] = useState<string | null>(null);
   const [vuelta, setVuelta] = useState(0);
   const uid = v.user?.id;
   useEffect(() => {
     if (!supabase || !uid) return;
     let vivo = true;
     // RLS de Kairós: con la sesión del usuario solo se leen y escriben sus filas.
-    Promise.all([supabase.from('kairos_elementos').select('*').eq('activo', true), supabase.from('kairos_cobros').select('*')])
+    Promise.all([supabase.from('kairos_elementos').select('*'), supabase.from('kairos_cobros').select('*')])
       .then(([e, c]) => { if (vivo) setCarga(e.error || c.error ? { estado: 'error' } : { estado: 'listo', elementos: e.data as Elemento[], cobros: c.data as Cobro[] }); });
     return () => { vivo = false; };
   }, [uid, vuelta]);
@@ -178,7 +180,7 @@ export function Recibos({ v, nuevo, onNuevo, Vista = RecibosVista, clase = 'vist
   const [rechazados, setRechazados] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem(llave) ?? '[]'); } catch { return []; } });
   const [respuesta, setRespuesta] = useState<{ eti: string; texto: string } | null>(null);
   const propuesta: Conciliacion | undefined = carga.estado === 'listo'
-    ? conciliar(carga.elementos, carga.cobros, v.items.filter((t) => !rechazados.includes(t.id)).map((t) => ({ ...t, amount: Number(t.amount) })), hoyLocal())[0] : undefined;
+    ? conciliar(carga.elementos.filter((e) => e.activo), carga.cobros, v.items.filter((t) => !rechazados.includes(t.id)).map((t) => ({ ...t, amount: Number(t.amount) })), hoyLocal())[0] : undefined;
   const responder = async (c: Conciliacion, si: boolean) => {
     const e = carga.estado === 'listo' ? carga.elementos.find((x) => x.id === c.elemento_id) : undefined;
     if (si) {
@@ -215,6 +217,38 @@ export function Recibos({ v, nuevo, onNuevo, Vista = RecibosVista, clase = 'vist
     if (error) return 'No se pudo borrar. Prueba de nuevo en un momento.';
     recargar(); return null;
   };
+  // Lo que hacía la ficha de Kairós: marcar a mano, deshacer, pausar.
+  const marcar = async (e: Elemento, fecha: Fecha, pagado: boolean) => {
+    const { error } = await supabase!.from('kairos_cobros').upsert({ id: crypto.randomUUID(), user_id: uid, elemento_id: e.id, fecha_prevista: fecha, fecha_real: pagado ? fecha : null,
+      importe_real: pagado ? e.importe : null, estado: pagado ? 'pagado' : 'omitido', transaction_id: null, actualizado: new Date().toISOString() }, { onConflict: 'elemento_id,fecha_prevista' });
+    if (!error) recargar();
+  };
+  const deshacer = async (c: Cobro) => {
+    const { error } = await supabase!.from('kairos_cobros').delete().eq('id', c.id);
+    if (error) return;
+    // Si venía de un movimiento, no volver a proponer ese mismo movimiento (como en Kairós).
+    if (c.transaction_id) { const lista = [...rechazados, c.transaction_id]; setRechazados(lista); try { localStorage.setItem(llave, JSON.stringify(lista)); } catch { /* solo este navegador */ } }
+    recargar();
+  };
+  // Cargos que se repiten en los movimientos y aún no son recibos (detectarRecurrentes de Kairós).
+  const llaveIgnoradas = `brujula.recibos.ignoradas.${uid}`;
+  const [ignoradas, setIgnoradas] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem(llaveIgnoradas) ?? '[]'); } catch { return []; } });
+  const sugerencias = carga.estado === 'listo' ? detectarRecurrentes(v.items.map((t) => ({ ...t, amount: Number(t.amount) })), carga.elementos, hoyLocal()).filter((s) => !ignoradas.includes(s.clave)) : [];
+  const ignorar = (s: Sugerencia) => { const lista = [...ignoradas, s.clave]; setIgnoradas(lista); try { localStorage.setItem(llaveIgnoradas, JSON.stringify(lista)); } catch { /* solo este navegador */ } };
+  const pausados = carga.estado === 'listo' ? carga.elementos.filter((e) => !e.activo) : [];
+  const extra = <>
+    {sugerencias.length > 0 && <div className="cobro">
+      <p className="eti">Parecen recibos</p>
+      <p>Se repiten en tus movimientos y aún no están en Recibos.</p>
+      <ul className="pasos">{sugerencias.slice(0, 5).map((s) => <li key={s.clave} className="paso-fila">
+        <span><b>{s.nombre}</b> · {dos.format(s.importe)} € · {describirFrecuencia(s.frecuencia)} · {s.veces} veces</span>
+        <span className="acciones"><button type="button" className="boton" onClick={() => { setBase({ nombre: s.nombre, tipo: s.categoria === 'Suscripciones' ? 'suscripcion' : 'recibo', importe: s.importe, estimado: s.estimado,
+          frecuencia: s.frecuencia, inicio: s.proxima, categoria: s.categoria, clave_brujula: s.clave }); setHoja(null); }}>Añadir</button>
+          <button type="button" className="boton" onClick={() => ignorar(s)}>Ignorar</button></span></li>)}</ul>
+    </div>}
+    {pausados.length > 0 && <p className="nota" style={{ marginTop: 24 }}>En pausa: {pausados.map((e, i) => <span key={e.id}>{i ? ' · ' : ''}<button type="button" className="ir" onClick={() => setFicha(e.id)}>{e.nombre}</button></span>)}</p>}
+  </>;
+  const abierto = ficha && carga.estado === 'listo' ? carga.elementos.find((e) => e.id === ficha) : undefined;
   const sinSesion = !supabase || !uid;
   const mensaje = sinSesion ? 'Recibos lee lo que tienes en Kairós. Entra con tu cuenta para verlos.'
     : carga.estado === 'cargando' ? 'Cargando tus recibos…'
@@ -224,7 +258,14 @@ export function Recibos({ v, nuevo, onNuevo, Vista = RecibosVista, clase = 'vist
     {mensaje || carga.estado !== 'listo'
       ? <div className="vcab"><div><h1 id="h-recibos" tabIndex={-1}>Recibos</h1><p className="sub" role="status">{mensaje}</p></div>
         {!sinSesion && carga.estado === 'listo' && <div className="acciones"><button type="button" className="boton" onClick={() => setHoja(null)}><Icono id="i-mas"/>Añadir recibo</button></div>}</div>
-      : <Vista elementos={carga.elementos} cobros={carga.cobros} hoy={hoyLocal()} onEditar={setHoja} cobro={tarjeta}/>}
-    {hoja !== false && <HojaRecibo inicial={hoja} onGuardar={guardar} onBorrar={borrar} onCerrar={() => setHoja(false)}/>}
+      : <Vista elementos={carga.elementos.filter((e) => e.activo)} cobros={carga.cobros} hoy={hoyLocal()} onEditar={(e) => e ? setFicha(e.id) : setHoja(null)} cobro={<>{tarjeta}{extra}</>}/>}
+    {hoja !== false && <HojaRecibo inicial={hoja} base={hoja ? undefined : base} onGuardar={guardar} onBorrar={borrar} onCerrar={() => { setHoja(false); setBase(undefined); }}/>}
+    {abierto && hoja === false && <HojaFichaRecibo e={abierto} cobros={carga.estado === 'listo' ? carga.cobros : []} hoy={hoyLocal()} onCerrar={() => setFicha(null)} acciones={{
+      editar: () => setHoja(abierto),
+      marcar: (fecha, pagado) => void marcar(abierto, fecha, pagado),
+      activar: () => void guardar({ ...abierto, activo: !abierto.activo, actualizado: new Date().toISOString() }),
+      borrar: () => { setFicha(null); void borrar(abierto); },
+      deshacer: (c) => void deshacer(c),
+    }}/>}
   </section>;
 }

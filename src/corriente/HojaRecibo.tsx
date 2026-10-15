@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { CATEGORIAS, NOMBRE_TIPO, TIPOS, type Elemento, type Frecuencia, type Tipo, type Unidad } from '../recibos/elementos';
-import { esFecha, hoyLocal } from '../recibos/fechas';
+import { CATEGORIAS, costeAnual, describirFrecuencia, NOMBRE_TIPO, ocurrencias, TIPOS, type Cobro, type Elemento, type Frecuencia, type Tipo, type Unidad } from '../recibos/elementos';
+import { diferenciaDias, esFecha, hoyLocal, sumarDias, type Fecha } from '../recibos/fechas';
 import { leerImporte } from '../recibos/importe';
 import { Hoja } from './piezas';
 
@@ -19,21 +19,22 @@ const presetDe = (f: Frecuencia | null) => PRESETS.find((p) => p.id !== 'otra' &
 const CATEGORIA_POR_TIPO: Record<Tipo, string> = { suscripcion: 'Suscripciones', recibo: 'Vivienda', seguro: 'Otros', impuesto: 'Otros', vencimiento: 'Otros' };
 
 /** Alta, cambio y baja de un recibo de Kairós desde Corriente. Guardar y borrar los hace quien la abre. */
-export function HojaRecibo({ inicial, onGuardar, onBorrar, onCerrar }: {
-  inicial: Elemento | null; onGuardar: (e: Elemento) => Promise<string | null>; onBorrar: (e: Elemento) => Promise<string | null>; onCerrar: () => void;
+export function HojaRecibo({ inicial, base, onGuardar, onBorrar, onCerrar }: {
+  inicial: Elemento | null; base?: Partial<Elemento>; onGuardar: (e: Elemento) => Promise<string | null>; onBorrar: (e: Elemento) => Promise<string | null>; onCerrar: () => void;
 }) {
-  const [nombre, setNombre] = useState(inicial?.nombre ?? '');
-  const [tipo, setTipo] = useState<Tipo>(inicial?.tipo ?? 'suscripcion');
-  const [importe, setImporte] = useState(inicial?.importe != null ? String(inicial.importe).replace('.', ',') : '');
-  const [estimado, setEstimado] = useState(inicial?.estimado ?? false);
-  const [preset, setPreset] = useState(presetDe(inicial ? inicial.frecuencia : { unidad: 'mes', cada: 1 }));
-  const [cada, setCada] = useState(String(inicial?.frecuencia?.cada ?? 1));
-  const [unidad, setUnidad] = useState<Unidad>(inicial?.frecuencia?.unidad ?? 'mes');
-  const [inicio, setInicio] = useState(inicial?.inicio ?? hoyLocal());
-  const [permanencia, setPermanencia] = useState(inicial?.fin_permanencia ?? '');
-  const [categoria, setCategoria] = useState(inicial?.categoria ?? CATEGORIA_POR_TIPO.suscripcion);
-  const [elegida, setElegida] = useState(Boolean(inicial));
-  const [notas, setNotas] = useState(inicial?.notas ?? '');
+  const d = inicial ?? base; // base: un recibo sugerido a partir de los movimientos
+  const [nombre, setNombre] = useState(d?.nombre ?? '');
+  const [tipo, setTipo] = useState<Tipo>(d?.tipo ?? 'suscripcion');
+  const [importe, setImporte] = useState(d?.importe != null ? String(d.importe).replace('.', ',') : '');
+  const [estimado, setEstimado] = useState(d?.estimado ?? false);
+  const [preset, setPreset] = useState(presetDe(d ? d.frecuencia ?? null : { unidad: 'mes', cada: 1 }));
+  const [cada, setCada] = useState(String(d?.frecuencia?.cada ?? 1));
+  const [unidad, setUnidad] = useState<Unidad>(d?.frecuencia?.unidad ?? 'mes');
+  const [inicio, setInicio] = useState(d?.inicio ?? hoyLocal());
+  const [permanencia, setPermanencia] = useState(d?.fin_permanencia ?? '');
+  const [categoria, setCategoria] = useState(d?.categoria ?? CATEGORIA_POR_TIPO.suscripcion);
+  const [elegida, setElegida] = useState(Boolean(d?.categoria));
+  const [notas, setNotas] = useState(d?.notas ?? '');
   const [error, setError] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const terminar = async (accion: Promise<string | null>) => { setOcupado(true); const e = await accion; setOcupado(false); if (e) setError(e); else onCerrar(); };
@@ -56,7 +57,7 @@ export function HojaRecibo({ inicial, onGuardar, onBorrar, onCerrar }: {
     void terminar(onGuardar({
       id: inicial?.id ?? crypto.randomUUID(), nombre: limpio.slice(0, 80), tipo, importe: cantidad, estimado: cantidad != null && estimado,
       frecuencia, inicio, antelacion_dias: inicial?.antelacion_dias ?? null, fin_permanencia: permanencia || null, categoria,
-      notas: notas.trim().slice(0, 500), clave_brujula: inicial?.clave_brujula ?? null, activo: inicial?.activo ?? true, actualizado: new Date().toISOString(),
+      notas: notas.trim().slice(0, 500), clave_brujula: inicial?.clave_brujula ?? base?.clave_brujula ?? null, activo: inicial?.activo ?? true, actualizado: new Date().toISOString(),
     }));
   }
 
@@ -89,5 +90,44 @@ export function HojaRecibo({ inicial, onGuardar, onBorrar, onCerrar }: {
       <label className="campo"><span>Notas</span><textarea value={notas} onChange={(e) => setNotas(e.target.value)} maxLength={500} rows={2} placeholder="Se cancela desde la web, no desde la app…"/></label>
       <p className="ayuda">{preset === 'unica' ? '' : 'La fecha puede ser la del próximo cobro o cualquiera anterior; las demás se calculan. '}Se guarda también en Kairós.</p>
     </form>
+  </Hoja>;
+}
+
+const dos = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' as unknown as boolean });
+const media = (f: Fecha) => new Intl.DateTimeFormat('es-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${f}T12:00:00`)).replace(/\./g, '');
+
+/** La ficha de un recibo, como en Kairós: próximo cobro, «Ya pagado» o «No se cobró», historial con deshacer, pausar y borrar. */
+export function HojaFichaRecibo({ e, cobros, hoy, onCerrar, acciones }: {
+  e: Elemento; cobros: Cobro[]; hoy: Fecha; onCerrar: () => void;
+  acciones: { editar: () => void; marcar: (fecha: Fecha, pagado: boolean) => void; activar: () => void; borrar: () => void; deshacer: (c: Cobro) => void };
+}) {
+  const suyos = cobros.filter((c) => c.elemento_id === e.id);
+  const cerradas = new Set(suyos.map((c) => c.fecha_prevista));
+  const siguiente = e.activo ? ocurrencias(e, hoy, sumarDias(hoy, 3660)).find((f) => !cerradas.has(f)) : undefined;
+  const faltan = siguiente ? diferenciaDias(hoy, siguiente) : null;
+  const historial = [...suyos].sort((a, b) => b.fecha_prevista.localeCompare(a.fecha_prevista));
+  const hecho = e.importe == null ? 'Hecho' : 'Ya pagado';
+  return <Hoja titulo={e.nombre} abierta onCerrar={onCerrar}
+    pie={<><button type="button" className="boton" onClick={() => { if (confirm(`¿Borrar «${e.nombre}» y su historial de cobros? También desaparece de Kairós.`)) acciones.borrar(); }}>Borrar</button>
+      <button type="button" className="boton" onClick={acciones.activar}>{e.activo ? 'Pausar' : 'Reactivar'}</button>
+      <button type="button" className="boton" onClick={acciones.editar}>Editar</button></>}>
+    <div className="hoja-cuerpo">
+      <p className="ayuda">{NOMBRE_TIPO[e.tipo]} · {describirFrecuencia(e.frecuencia)} · {e.categoria}
+        {e.importe != null && <> · {e.estimado ? '~' : ''}{dos.format(e.importe)} €{e.frecuencia && <> ({dos.format(costeAnual(e) / 12)} € al mes, {dos.format(costeAnual(e))} € al año)</>}</>}</p>
+      {!e.activo && <p className="ayuda alerta">En pausa: no aparece en los próximos ni envía avisos.</p>}
+      {siguiente && faltan != null && <div className="grupo-hoja">
+        <p className="eti">{faltan < 0 ? `Pendiente desde hace ${-faltan} ${faltan === -1 ? 'día' : 'días'}` : faltan === 0 ? 'Es hoy' : faltan === 1 ? 'Falta 1 día' : `Faltan ${faltan} días`}</p>
+        <p>{e.importe == null ? 'Vence' : 'Cobro'} el {media(siguiente)}.</p>
+        <div className="acciones"><button type="button" className="boton lleno" onClick={() => acciones.marcar(siguiente, true)}>{hecho}</button>
+          {e.importe != null && <button type="button" className="boton" onClick={() => acciones.marcar(siguiente, false)}>No se cobró</button>}</div>
+      </div>}
+      {(e.fin_permanencia || e.notas) && <p className="ayuda">{e.fin_permanencia ? `Permanencia hasta el ${media(e.fin_permanencia)}. ` : ''}{e.notas}</p>}
+      <div className="grupo-hoja"><p className="eti">Historial</p>
+        {historial.length ? <ul className="pasos">{historial.slice(0, 24).map((c) => <li key={c.id} className="paso-fila">
+          <span>{media(c.fecha_prevista)} · {c.estado === 'omitido' ? 'No se cobró' : c.transaction_id ? 'Visto en tus movimientos' : 'Marcado a mano'}{c.importe_real != null ? ` · ${dos.format(Number(c.importe_real))} €` : ''}</span>
+          <button type="button" className="ir" onClick={() => acciones.deshacer(c)}>Deshacer</button></li>)}</ul>
+          : <p className="ayuda">Todavía no hay cobros registrados.</p>}
+      </div>
+    </div>
   </Hoja>;
 }
