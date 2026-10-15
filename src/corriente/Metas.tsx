@@ -4,7 +4,7 @@ import type { VistaNueva } from '../nuevo/Nuevo';
 import { hoyLocal, lunesDe, type Fecha } from '../metas/fechas';
 import { progreso, ritmo, TEXTO_RITMO, type Meta, type Paso, type Registro, type Revision } from '../metas/metas';
 import { cifra, detalleAhorro } from './datos';
-import { HojaAvance, HojaObjetivo, HojaRevision, type Eleccion } from './HojasMetas';
+import { HojaAvance, HojaFichaMeta, HojaMeta, HojaObjetivo, HojaRevision, type Eleccion } from './HojasMetas';
 
 const mesAño = (f: Fecha) => new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(new Date(`${f}T12:00:00`));
 const diaMes = (f: Fecha) => new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long' }).format(new Date(`${f}T12:00:00`));
@@ -16,7 +16,7 @@ const Puntos = ({ f, etiqueta }: { f: number; etiqueta: string }) =>
 /** Lo que se puede hacer desde la vista; sin sesión de Faro solo se editan los objetivos de Brújula. */
 export type Acciones = {
   objetivo: (g: Goal | null) => void;
-  faro?: { anotar: (m: Meta) => void; marcarHoy: (m: Meta) => void; paso: (p: Paso) => void; revisar: () => void; revisada: boolean };
+  faro?: { anotar: (m: Meta) => void; marcarHoy: (m: Meta) => void; paso: (p: Paso) => void; revisar: () => void; revisada: boolean; abrir: (m: Meta) => void; nueva: () => void };
 };
 
 /** Metas de ahorro (Brújula y Faro) y de vida (Faro). */
@@ -26,6 +26,8 @@ export function MetasVista({ goals, metas, pasos, registros, hoy, acciones }: { 
   // Una meta de dinero enlazada a un objetivo de Brújula es ese objetivo: se muestra una sola vez.
   const ahorroFaro = activas.filter((m) => m.progreso === 'dinero' && !brujula.some((g) => g.id === m.objetivo_brujula));
   const vida = activas.filter((m) => m.progreso !== 'dinero');
+  const otras = (metas ?? []).filter((m) => m.estado !== 'activa');
+  const titulo = (m: Meta) => faro ? <button type="button" className="meta-abrir" onClick={() => faro.abrir(m)}>{m.titulo}</button> : m.titulo;
   const nAhorro = brujula.length + ahorroFaro.length;
   const faro = acciones.faro;
   return <>
@@ -42,21 +44,21 @@ export function MetasVista({ goals, metas, pasos, registros, hoy, acciones }: { 
               <h3>{g.name}</h3><span className="imp">{cifra(g.saved_amount)} / {cifra(g.target_amount)} €</span>
               <Puntos f={f} etiqueta={`${Math.round(f * 100)} %`}/><small>{detalleAhorro(g, hoy)}</small></button></li>; })}
           {ahorroFaro.map((m) => { const p = progreso(m, pasos, registros, brujula, hoy), r = ritmo(m, p, hoy);
-            return <li className="ahorro" key={m.id}><h3>{m.titulo}</h3><span className="imp">{p.objetivo > 0 ? `${cifra(p.actual)} / ${cifra(p.objetivo)} €` : `${cifra(p.actual)} €`}</span>
+            return <li className="ahorro" key={m.id}><h3>{titulo(m)}</h3><span className="imp">{p.objetivo > 0 ? `${cifra(p.actual)} / ${cifra(p.objetivo)} €` : `${cifra(p.actual)} €`}</span>
               <Puntos f={p.fraccion} etiqueta={`${Math.round(p.fraccion * 100)} %`}/>
               <small>Desde Faro · {PLAZO(m)}{r ? ` · ${TEXTO_RITMO[r].toLowerCase()}` : ''}{faro && <> · <button type="button" className="ir" onClick={() => faro.anotar(m)}>Aportar</button></>}</small></li>; })}
         </ul> : <p className="nota">Aún no hay metas de ahorro. <button type="button" className="ir" onClick={() => acciones.objetivo(null)}>Añadir una</button></p>}
       </section>
       <section className="c6" aria-labelledby="h-vida">
-        <div className="cab"><h2 id="h-vida">De vida</h2></div>
+        <div className="cab"><h2 id="h-vida">De vida</h2>{faro && <button type="button" className="ir" onClick={faro.nueva}>Añadir</button>}</div>
         {!metas ? <p className="nota">Las metas de vida vienen de Faro. Entra con tu cuenta para verlas.</p>
-          : !vida.length ? <p className="nota">Aún no hay metas de vida. Se crean en Faro.</p>
+          : !vida.length ? <p className="nota">Aún no hay metas de vida.{faro && <> <button type="button" className="ir" onClick={faro.nueva}>Añadir una</button></>}</p>
           : <ul className="ahorros">{vida.map((m) => {
             const p = progreso(m, pasos, registros, brujula, hoy), r = ritmo(m, p, hoy);
             const lista = pasos.filter((x) => x.meta_id === m.id).sort((a, b) => a.orden - b.orden);
             const hechoHoy = registros.some((x) => x.meta_id === m.id && x.fecha === hoy);
             return <li className="meta" key={m.id}>
-              <div className="meta-cab"><h3>{m.titulo}</h3><span className="imp">{p.actual} / {p.objetivo}</span></div>
+              <div className="meta-cab"><h3>{titulo(m)}</h3><span className="imp">{p.actual} / {p.objetivo}</span></div>
               {m.progreso === 'numero' && <div className="marcas" style={{ '--n': Math.min(40, Math.max(1, p.objetivo)), '--k': Math.round(p.fraccion * Math.min(40, Math.max(1, p.objetivo))) } as CSSProperties} role="img" aria-label={p.texto}/>}
               {m.progreso === 'habito' && <div className="semana" role="group" aria-label={`${m.titulo}: ${p.texto}`}>{Array.from({ length: p.objetivo }, (_, i) =>
                 <button key={i} type="button" disabled={!faro} aria-pressed={i < p.actual} onClick={() => faro?.marcarHoy(m)}
@@ -65,6 +67,7 @@ export function MetasVista({ goals, metas, pasos, registros, hoy, acciones }: { 
               <small>{m.progreso === 'habito' && faro ? 'Toca para marcar hoy · ' : ''}{p.texto} · {PLAZO(m)}{r ? ` · ${TEXTO_RITMO[r].toLowerCase()}` : ''}
                 {faro && m.progreso === 'numero' && <> · <button type="button" className="ir" onClick={() => faro.anotar(m)}>Anotar avance</button></>}</small>
             </li>; })}</ul>}
+        {faro && otras.length > 0 && <p className="nota" style={{ marginTop: 18 }}>En pausa o terminadas: {otras.map((m, i) => <span key={m.id}>{i ? ' · ' : ''}<button type="button" className="ir" onClick={() => faro.abrir(m)}>{m.titulo}</button></span>)}</p>}
       </section>
       {faro && activas.length > 0 && <section className="c12 revision" aria-labelledby="h-rev">
         <p className="eti">Semana del {diaMes(lunesDe(hoy))} · revisión semanal</p>
@@ -85,7 +88,7 @@ export function Metas({ v, nuevo, onNuevo, Vista = MetasVista, clase = 'vista ma
   const uid = v.user?.id;
   const [carga, setCarga] = useState<Carga>(supabase && uid ? 'cargando' : null);
   const [vuelta, setVuelta] = useState(0);
-  const [hoja, setHoja] = useState<{ tipo: 'objetivo'; g: Goal | null } | { tipo: 'avance'; m: Meta } | { tipo: 'revision' } | null>(null);
+  const [hoja, setHoja] = useState<{ tipo: 'objetivo'; g: Goal | null } | { tipo: 'avance'; m: Meta } | { tipo: 'revision' } | { tipo: 'meta'; m: Meta | null } | { tipo: 'ficha'; id: string } | null>(null);
   const [aviso, setAviso] = useState('');
   const hoy = hoyLocal();
   useEffect(() => { if (nuevo) { setHoja({ tipo: 'objetivo', g: null }); onNuevo?.(); } }, [nuevo]);
@@ -109,6 +112,8 @@ export function Metas({ v, nuevo, onNuevo, Vista = MetasVista, clase = 'vista ma
     revisada: datos.revisiones.some((r) => r.semana === lunesDe(hoy)),
     anotar: (m: Meta) => setHoja({ tipo: 'avance', m }),
     revisar: () => setHoja({ tipo: 'revision' }),
+    abrir: (m: Meta) => setHoja({ tipo: 'ficha', id: m.id }),
+    nueva: () => setHoja({ tipo: 'meta', m: null }),
     paso: (p: Paso) => void escribir(sb.from('faro_pasos').update({ hecho: !p.hecho, fecha_hecho: p.hecho ? null : hoy, actualizado: ahora() }).eq('id', p.id)),
     marcarHoy: (m: Meta) => {
       const deHoy = datos.registros.find((x) => x.meta_id === m.id && x.fecha === hoy);
@@ -116,6 +121,11 @@ export function Metas({ v, nuevo, onNuevo, Vista = MetasVista, clase = 'vista ma
         : sb.from('faro_registros').insert({ id: crypto.randomUUID(), user_id: uid, meta_id: m.id, fecha: hoy, valor: 1, nota: '', actualizado: ahora() }));
     },
   } : undefined;
+  const guardarMeta = async ({ meta, pasos }: { meta: Meta; pasos: string[] }) => {
+    const f = await escribir(sb.from('faro_metas').upsert({ ...meta, user_id: uid })); if (f || !pasos.length) return f;
+    return escribir(sb.from('faro_pasos').insert(pasos.map((texto, orden) => ({ id: crypto.randomUUID(), user_id: uid, meta_id: meta.id, texto, hecho: false, fecha_hecho: null, orden, actualizado: ahora() }))));
+  };
+  const ficha = hoja?.tipo === 'ficha' ? datos?.metas.find((m) => m.id === hoja.id) : undefined;
   const guardarRevision = async ({ avances, frenos, elecciones }: { avances: string; frenos: string; elecciones: Eleccion[] }) => {
     if (!datos) return 'Faro no está disponible.';
     const focos: string[] = [], nuevos: Paso[] = [];
@@ -139,6 +149,18 @@ export function Metas({ v, nuevo, onNuevo, Vista = MetasVista, clase = 'vista ma
     {hoja?.tipo === 'objetivo' && <HojaObjetivo inicial={hoja.g} onGuardar={(g) => { v.saveGoal(g); return null; }} onBorrar={(g) => v.deleteGoal(g.id)} onCerrar={() => setHoja(null)}/>}
     {hoja?.tipo === 'avance' && <HojaAvance meta={hoja.m} hoy={hoy} onCerrar={() => setHoja(null)}
       onGuardar={({ valor, fecha, nota }) => escribir(sb.from('faro_registros').insert({ id: crypto.randomUUID(), user_id: uid, meta_id: hoja.m.id, fecha, valor, nota, actualizado: ahora() }))}/>}
+    {hoja?.tipo === 'meta' && <HojaMeta inicial={hoja.m} goals={v.goals} hoy={hoy} onGuardar={guardarMeta} onCerrar={() => setHoja(hoja.m ? { tipo: 'ficha', id: hoja.m.id } : null)}/>}
+    {ficha && datos && <HojaFichaMeta meta={ficha} pasos={datos.pasos} registros={datos.registros} goals={v.goals} hoy={hoy} onCerrar={() => setHoja(null)} acciones={{
+      editar: () => setHoja({ tipo: 'meta', m: ficha }),
+      estado: (estado) => void escribir(sb.from('faro_metas').update({ estado, actualizado: ahora() }).eq('id', ficha.id)),
+      borrar: () => { setHoja(null); void escribir(sb.from('faro_metas').delete().eq('id', ficha.id)); },
+      paso: (p) => faro!.paso(p),
+      nuevoPaso: (texto) => void escribir(sb.from('faro_pasos').insert({ id: crypto.randomUUID(), user_id: uid, meta_id: ficha.id, texto, hecho: false, fecha_hecho: null,
+        orden: Math.max(0, ...datos.pasos.filter((p) => p.meta_id === ficha.id).map((p) => p.orden + 1)), actualizado: ahora() })),
+      borrarPaso: (p) => void escribir(sb.from('faro_pasos').delete().eq('id', p.id)),
+      borrarRegistro: (r) => void escribir(sb.from('faro_registros').delete().eq('id', r.id)),
+      anotar: () => setHoja({ tipo: 'avance', m: ficha }),
+    }}/>}
     {hoja?.tipo === 'revision' && datos && <HojaRevision metas={datos.metas} pasos={datos.pasos} revisiones={datos.revisiones} hoy={hoy} onGuardar={guardarRevision} onCerrar={() => setHoja(null)}/>}
   </section>;
 }

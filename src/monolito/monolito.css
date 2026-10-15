@@ -365,3 +365,7 @@
 :root[data-tema="monolito"] .m-app .boton > svg{width:14px;height:14px}
 :root[data-tema="monolito"] .m-app .deposito-editar{text-align:left}
 :root[data-tema="monolito"] .m-app .habito button:disabled{cursor:default}
+:root[data-tema="monolito"] .m-app .meta-abrir{font:inherit;color:inherit;text-align:left}
+:root[data-tema="monolito"] .m-app .meta-abrir:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--gris-3)}
+:root[data-tema="monolito"] .m-app .paso-fila{display:flex;align-items:center;justify-content:space-between;gap:12px}
+:root[data-tema="monolito"] .m-app .grupo-hoja{display:grid;gap:12px}

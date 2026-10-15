@@ -1,8 +1,8 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import type { Goal } from '../data';
 import { decimal } from '../features/form';
-import { esFecha, lunesDe, type Fecha } from '../metas/fechas';
-import type { Meta, Paso, Revision } from '../metas/metas';
+import { esFecha, finDeAno, finDeTrimestre, lunesDe, type Fecha } from '../metas/fechas';
+import { NOMBRE_PROGRESO, progreso, TIPOS_PROGRESO, validarMeta, type EstadoMeta, type Meta, type Paso, type Registro, type Revision, type TipoProgreso } from '../metas/metas';
 import { leerImporte } from '../recibos/importe';
 import { Hoja } from './piezas';
 
@@ -107,5 +107,123 @@ export function HojaRevision({ metas, pasos, revisiones, hoy, onGuardar, onCerra
       })}
       <p className="ayuda">{previa ? 'Ya hiciste la revisión de esta semana: si guardas, se actualiza.' : 'Cinco minutos. Se guarda también en Faro.'}</p>
     </form>
+  </Hoja>;
+}
+
+const corta = (f: Fecha) => new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${f}T12:00:00`)).replace('.', '');
+const texto = (n: number | null | undefined) => (n == null ? '' : String(n).replace('.', ','));
+
+/** Alta y cambio de una meta de Faro, con las mismas opciones y validación que el formulario de Faro. */
+export function HojaMeta({ inicial, goals, hoy, onGuardar, onCerrar }: {
+  inicial: Meta | null; goals: Goal[]; hoy: Fecha; onGuardar: Guardar<{ meta: Meta; pasos: string[] }>; onCerrar: () => void;
+}) {
+  const [titulo, setTitulo] = useState(inicial?.titulo ?? ''), [motivo, setMotivo] = useState(inicial?.motivo ?? '');
+  const [tipo, setTipo] = useState<TipoProgreso>(inicial?.progreso ?? 'pasos');
+  const [objetivo, setObjetivo] = useState(texto(inicial?.objetivo)), [unidad, setUnidad] = useState(inicial?.unidad ?? '');
+  const [veces, setVeces] = useState(String(inicial?.progreso === 'habito' ? inicial.objetivo ?? 3 : 3));
+  const [enlace, setEnlace] = useState(inicial?.objetivo_brujula ?? '');
+  const [inicio, setInicio] = useState(inicial?.inicio ?? hoy), [limite, setLimite] = useState(inicial?.fecha_limite ?? '');
+  const [pasos, setPasos] = useState('');
+  const { error, setError, ocupado, enviar } = useEnvio(onCerrar);
+  const enlazado = goals.find((g) => g.id === enlace);
+  function guardar(e: FormEvent) {
+    e.preventDefault();
+    if (!esFecha(inicio)) return setError('La fecha de inicio no es válida.');
+    if (limite && !esFecha(limite)) return setError('El plazo no es válido.');
+    let cantidad: number | null = null;
+    if (tipo === 'habito') cantidad = Number(veces);
+    else if (tipo === 'numero' || (tipo === 'dinero' && !enlace)) {
+      cantidad = leerImporte(objetivo);
+      if (cantidad == null) return setError('Escribe una cantidad positiva, con dos decimales como mucho (por ejemplo, 100 o 1.500,50).');
+    }
+    const meta: Meta = { id: inicial?.id ?? crypto.randomUUID(), titulo: titulo.trim(), motivo: motivo.trim(), progreso: tipo, objetivo: cantidad,
+      unidad: tipo === 'numero' ? unidad.trim().slice(0, 20) : '', objetivo_brujula: tipo === 'dinero' && enlace ? enlace : null,
+      inicio, fecha_limite: limite || null, estado: inicial?.estado ?? 'activa', actualizado: new Date().toISOString() };
+    const fallo = validarMeta(meta);
+    if (fallo) return setError(fallo);
+    void enviar(() => onGuardar({ meta, pasos: pasos.split('\n').map((p) => p.trim()).filter(Boolean).map((p) => p.slice(0, 200)) }));
+  }
+  return <Hoja titulo={inicial ? 'Editar meta' : 'Nueva meta'} abierta onCerrar={onCerrar} pie={<Pie id="c-meta" ocupado={ocupado} onCerrar={onCerrar}/>}>
+    <form id="c-meta" className="hoja-cuerpo" onSubmit={guardar} noValidate>
+      {error && <p className="ayuda alerta" role="alert">{error}</p>}
+      <label className="campo"><span>¿Hacia dónde quieres ir?</span><input value={titulo} maxLength={80} required autoFocus={!inicial} placeholder="Correr una media maratón" onChange={(e) => setTitulo(e.target.value)}/></label>
+      <label className="campo"><span>¿Por qué te importa?</span><textarea value={motivo} maxLength={500} rows={2} placeholder="Lo leerás cuando cueste seguir." onChange={(e) => setMotivo(e.target.value)}/></label>
+      <div className="campo"><span>¿Cómo sabrás que avanzas?</span>
+        <div className="chips" role="group" aria-label="Tipo de progreso">{TIPOS_PROGRESO.map((t) =>
+          <button key={t} type="button" aria-pressed={tipo === t} onClick={() => setTipo(t)}>{NOMBRE_PROGRESO[t]}</button>)}</div></div>
+      {tipo === 'numero' && <div className="dos">
+        <label className="campo"><span>Quiero llegar a</span><input inputMode="decimal" value={objetivo} placeholder="100" onChange={(e) => setObjetivo(e.target.value)}/></label>
+        <label className="campo"><span>Unidad</span><input value={unidad} maxLength={20} placeholder="km, libros, clases…" onChange={(e) => setUnidad(e.target.value)}/></label>
+      </div>}
+      {tipo === 'dinero' && <>
+        {goals.length > 0 && <label className="campo"><span>Meta de ahorro de Brújula</span>
+          <select value={enlace} onChange={(e) => setEnlace(e.target.value)}>
+            <option value="">No enlazar: apunto las aportaciones aquí</option>
+            {goals.map((g) => <option key={g.id} value={g.id}>{g.name} ({Number(g.target_amount).toLocaleString('es-ES')} €)</option>)}
+          </select></label>}
+        {enlazado && <p className="ayuda">El progreso es el de esa meta de ahorro: {Number(enlazado.saved_amount).toLocaleString('es-ES')} de {Number(enlazado.target_amount).toLocaleString('es-ES')} €.</p>}
+        {!enlace && <label className="campo"><span>¿Cuánto necesitas? (€)</span><input inputMode="decimal" value={objetivo} placeholder="1.500" onChange={(e) => setObjetivo(e.target.value)}/></label>}
+      </>}
+      {tipo === 'habito' && <label className="campo"><span>Veces por semana</span><select value={veces} onChange={(e) => setVeces(e.target.value)}>
+        {[1, 2, 3, 4, 5, 6, 7].map((n) => <option key={n} value={n}>{n === 7 ? 'Todos los días' : `${n} ${n === 1 ? 'vez' : 'veces'}`}</option>)}</select></label>}
+      <div className="dos">
+        <label className="campo"><span>Empieza</span><input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)}/></label>
+        <label className="campo"><span>Plazo</span><input type="date" value={limite} min={inicio} onChange={(e) => setLimite(e.target.value)}/></label>
+      </div>
+      <div className="chips" role="group" aria-label="Plazo rápido">
+        <button type="button" aria-pressed={limite === finDeTrimestre(hoy)} onClick={() => setLimite(finDeTrimestre(hoy))}>Este trimestre</button>
+        <button type="button" aria-pressed={limite === finDeAno(hoy)} onClick={() => setLimite(finDeAno(hoy))}>Este año</button>
+        <button type="button" aria-pressed={!limite} onClick={() => setLimite('')}>Sin plazo</button>
+      </div>
+      {!inicial && <label className="campo"><span>Primeros pasos (uno por línea, opcional)</span><textarea value={pasos} rows={3} placeholder={'Buscar un plan de entrenamiento\nApuntarme a una carrera'} onChange={(e) => setPasos(e.target.value)}/></label>}
+    </form>
+  </Hoja>;
+}
+
+const ESTADO_TEXTO: Record<EstadoMeta, string> = { activa: 'Activa', pausada: 'En pausa', lograda: 'Lograda', abandonada: 'Abandonada' };
+
+/** Todo lo de una meta de Faro: pasos, anotaciones, estado, editar y borrar (la ficha de Faro, dentro de Brújula). */
+export function HojaFichaMeta({ meta, pasos, registros, goals, hoy, acciones, onCerrar }: {
+  meta: Meta; pasos: Paso[]; registros: Registro[]; goals: Goal[]; hoy: Fecha; onCerrar: () => void;
+  acciones: { editar: () => void; estado: (e: EstadoMeta) => void; borrar: () => void; paso: (p: Paso) => void; nuevoPaso: (texto: string) => void;
+    borrarPaso: (p: Paso) => void; borrarRegistro: (r: Registro) => void; anotar: () => void };
+}) {
+  const propios = pasos.filter((p) => p.meta_id === meta.id).sort((a, b) => a.orden - b.orden);
+  const suyos = registros.filter((r) => r.meta_id === meta.id).sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const brujula = goals.map((g) => ({ ...g, target_amount: Number(g.target_amount), saved_amount: Number(g.saved_amount) }));
+  const p = progreso(meta, pasos, registros, brujula, hoy);
+  const [nuevo, setNuevo] = useState('');
+  const anota = meta.progreso === 'numero' || meta.progreso === 'habito' || (meta.progreso === 'dinero' && !p.desdeBrujula);
+  const valor = (r: Registro) => meta.progreso === 'dinero' ? `${r.valor.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : meta.progreso === 'habito' ? 'Hecho' : `${String(r.valor).replace('.', ',')} ${meta.unidad}`.trim();
+  return <Hoja titulo={meta.titulo} abierta onCerrar={onCerrar}
+    pie={<><button type="button" className="boton" onClick={() => { if (confirm(`¿Borrar «${meta.titulo}» con sus pasos y anotaciones? También desaparece de Faro.`)) acciones.borrar(); }}>Borrar</button>
+      <button type="button" className="boton" onClick={acciones.editar}>Editar</button>
+      <button type="button" className="boton lleno" onClick={onCerrar}>Hecho</button></>}>
+    <div className="hoja-cuerpo">
+      <p className="ayuda">{ESTADO_TEXTO[meta.estado]} · {p.texto}{meta.fecha_limite ? ` · plazo ${corta(meta.fecha_limite)}` : ''}</p>
+      {meta.motivo && <p>«{meta.motivo}»</p>}
+      <div className="chips" role="group" aria-label="Estado de la meta">
+        {meta.estado !== 'activa' && <button type="button" onClick={() => acciones.estado('activa')}>Reanudar</button>}
+        {meta.estado === 'activa' && <button type="button" onClick={() => acciones.estado('pausada')}>Pausar</button>}
+        {meta.estado !== 'lograda' && <button type="button" onClick={() => acciones.estado('lograda')}>Marcar como lograda</button>}
+        {meta.estado !== 'abandonada' && <button type="button" onClick={() => acciones.estado('abandonada')}>Abandonar</button>}
+      </div>
+      <div className="grupo-hoja"><p className="eti">El camino</p>
+        {propios.length > 0 && <ul className="pasos">{propios.map((x) => <li key={x.id} className="paso-fila">
+          <label><input type="checkbox" checked={x.hecho} onChange={() => acciones.paso(x)}/><span>{x.texto}</span></label>
+          <button type="button" className="ir" onClick={() => acciones.borrarPaso(x)} aria-label={`Borrar el paso «${x.texto}»`}>Quitar</button></li>)}</ul>}
+        <form className="dos" onSubmit={(e) => { e.preventDefault(); const t = nuevo.trim().slice(0, 200); if (t) { acciones.nuevoPaso(t); setNuevo(''); } }}>
+          <label className="campo"><span className="sr">Nuevo paso</span><input maxLength={200} placeholder="Añadir un paso" value={nuevo} onChange={(e) => setNuevo(e.target.value)}/></label>
+          <button type="submit" className="boton">Añadir paso</button>
+        </form>
+      </div>
+      {anota && <div className="grupo-hoja"><p className="eti">{meta.progreso === 'habito' ? 'Días hechos' : meta.progreso === 'dinero' ? 'Aportaciones' : 'Avances'}</p>
+        {meta.progreso !== 'habito' && <button type="button" className="boton" onClick={acciones.anotar}>{meta.progreso === 'dinero' ? 'Aportar' : 'Anotar avance'}</button>}
+        {suyos.length ? <ul className="pasos">{suyos.slice(0, 30).map((r) => <li key={r.id} className="paso-fila">
+          <span>{valor(r)} · {corta(r.fecha)}{r.nota ? ` · ${r.nota}` : ''}</span>
+          <button type="button" className="ir" onClick={() => acciones.borrarRegistro(r)} aria-label={`Borrar la anotación del ${corta(r.fecha)}`}>Quitar</button></li>)}</ul>
+          : <p className="ayuda">Aún no hay anotaciones.</p>}
+      </div>}
+    </div>
   </Hoja>;
 }
