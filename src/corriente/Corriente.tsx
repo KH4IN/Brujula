@@ -5,6 +5,7 @@ import { corrienteDelMes, cifra, ritmos } from './datos';
 import { Icono, Hoja, Presupuestos } from './piezas';
 import { montarRumbo } from './rio';
 import { Cuentas } from './Cuentas';
+import { HojaAvisos } from './HojaAvisos';
 import { Movimientos } from './Movimientos';
 import { Metas } from './Metas';
 import { Recibos } from './Recibos';
@@ -90,23 +91,25 @@ export function HojaCuenta({ v, abierta, onCerrar, modulos, activar }: { v: Vist
     : v.syncState === 'syncing' ? 'Sincronizando…'
     : v.syncState === 'offline' ? `Sin conexión. ${v.pending} cambios pendientes.` : `${v.pending} cambios pendientes de sincronizar.`;
   const hacer = (f: () => void) => () => { onCerrar(); f(); };
+  const [avisos, setAvisos] = useState(false);
   const opcion = (icono: string, titulo: string, detalle: string, f: () => void) =>
     <button type="button" className="opcion" onClick={hacer(f)}><Icono id={icono}/><span><b>{titulo}</b><small>{detalle}</small></span><Icono id="i-der"/></button>;
-  return <Hoja titulo="Tu espacio" abierta={abierta} onCerrar={onCerrar}>
+  return <><Hoja titulo="Tu espacio" abierta={abierta} onCerrar={onCerrar}>
     <div className="hoja-cuerpo">
       <p className="ayuda" role="status">{v.user?.email ? `${v.user.email}. ` : ''}{estado}</p>
       <div className="opciones">
         {v.user
           ? <>{opcion('i-mov', 'Sincronizar ahora', 'Sube y trae los cambios de tus dispositivos', v.onSync)}{opcion('i-x', 'Cerrar sesión', 'Tus datos siguen en tu cuenta', v.onSignOut)}</>
           : v.configured && opcion('i-mov', 'Iniciar sesión', 'Para tener tus datos en todos tus dispositivos', v.onAuth)}
-        {opcion('i-rec', modulos.recibos ? 'Ocultar Recibos' : 'Activar Recibos', modulos.recibos ? 'Tus recibos siguen en Kairós' : 'Lo que pagas cada cierto tiempo, con Kairós', () => activar('recibos', !modulos.recibos))}
-        {opcion('i-meta', modulos.metas ? 'Ocultar Metas' : 'Activar Metas', modulos.metas ? 'Tus metas no se borran' : 'Ahorrar para algo y tus metas de Faro', () => activar('metas', !modulos.metas))}
+        {opcion('i-rec', modulos.recibos ? 'Ocultar Recibos' : 'Activar Recibos', modulos.recibos ? 'Tus recibos no se borran' : 'Lo que pagas cada cierto tiempo', () => activar('recibos', !modulos.recibos))}
+        {opcion('i-meta', modulos.metas ? 'Ocultar Metas' : 'Activar Metas', modulos.metas ? 'Tus metas no se borran' : 'Ahorrar para algo y tus metas de vida', () => activar('metas', !modulos.metas))}
+        {v.user && supabase && (modulos.recibos || modulos.metas) && opcion('i-campana', 'Avisos', 'Cuándo avisarte de recibos y de la revisión semanal', () => setAvisos(true))}
         {opcion('i-cue', 'Configuración', 'Tema y aspecto de Brújula', v.openSettings)}
         {opcion('i-rumbo', 'Guía de Brújula', 'Un recorrido por la app', v.openGuide)}
         {opcion('i-sube', 'Exportar movimientos', 'Un archivo CSV con los de este mes', v.exportCSV)}
       </div>
     </div>
-  </Hoja>;
+  </Hoja>{avisos && v.user && <HojaAvisos uid={v.user.id} correo={v.user.email ?? null} recibos={!!modulos.recibos} metas={!!modulos.metas} onCerrar={() => setAvisos(false)} onGuardado={() => v.notify('Avisos guardados')}/>}</>;
 }
 
 export type Modulo = 'recibos' | 'metas';
