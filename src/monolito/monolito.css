@@ -369,3 +369,32 @@
 :root[data-tema="monolito"] .m-app .meta-abrir:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--gris-3)}
 :root[data-tema="monolito"] .m-app .paso-fila{display:flex;align-items:center;justify-content:space-between;gap:12px}
 :root[data-tema="monolito"] .m-app .grupo-hoja{display:grid;gap:12px}
+/* B15: importar extracto */
+:root[data-tema="monolito"] .m-app .boton:disabled{opacity:.35;cursor:default;pointer-events:none}
+:root[data-tema="monolito"] .m-app .ayuda.alerta{color:var(--senal)}
+:root[data-tema="monolito"] .m-app .imp-archivo{position:relative;display:grid;grid-template-columns:21px minmax(0,1fr);gap:16px;align-items:center;padding:18px 16px;border:1px dashed var(--gris-3);border-radius:6px;cursor:pointer;transition:border-color .3s var(--ease)}
+:root[data-tema="monolito"] .m-app .imp-archivo:hover,:root[data-tema="monolito"] .m-app .imp-archivo:focus-within{border-color:var(--gris-1)}
+:root[data-tema="monolito"] .m-app .imp-archivo:focus-within{outline:2px solid var(--blanco);outline-offset:2px}
+:root[data-tema="monolito"] .m-app .imp-archivo > svg{width:21px;height:21px;color:var(--gris-1)}
+:root[data-tema="monolito"] .m-app .imp-archivo b{display:block;font:500 18px var(--sans);color:var(--blanco);overflow-wrap:anywhere}
+:root[data-tema="monolito"] .m-app .imp-archivo small{display:block;color:var(--gris-1);font:400 12px var(--mono);margin-top:4px}
+:root[data-tema="monolito"] .m-app .imp-archivo input{position:absolute;inset:0;opacity:0;cursor:pointer}
+:root[data-tema="monolito"] .m-app .imp-resumen{display:flex;flex-wrap:wrap;gap:6px 22px;color:var(--gris-1);font:400 12px var(--mono);text-transform:uppercase;letter-spacing:.06em;align-items:baseline}
+:root[data-tema="monolito"] .m-app .imp-resumen b{font:900 36px/1 var(--dot);font-variation-settings:"ROND" 100;color:var(--tinta);margin-right:6px}
+:root[data-tema="monolito"] .m-app .imp-resumen span:first-child b{color:var(--blanco)}
+:root[data-tema="monolito"] .m-app .imp-ajustes{border-top:1px solid var(--linea);padding-top:4px}
+:root[data-tema="monolito"] .m-app .imp-ajustes summary{cursor:pointer;padding:12px 0;font:500 14px var(--sans);color:var(--gris-1);list-style-position:inside}
+:root[data-tema="monolito"] .m-app .imp-ajustes summary:hover{color:var(--blanco)}
+:root[data-tema="monolito"] .m-app .imp-ajustes[open] summary{margin-bottom:8px}
+:root[data-tema="monolito"] .m-app .imp-columnas{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+:root[data-tema="monolito"] .m-app .imp-filas{list-style:none;margin:0;padding:0;border-top:1px solid var(--linea)}
+:root[data-tema="monolito"] .m-app .imp-filas li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:6px 14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--linea)}
+:root[data-tema="monolito"] .m-app .imp-filas li.fuera{opacity:.5}
+:root[data-tema="monolito"] .m-app .imp-filas input[type=checkbox]{accent-color:var(--blanco);width:18px;height:18px;margin:0}
+:root[data-tema="monolito"] .m-app .imp-texto b{display:block;font:500 15px/1.3 var(--sans);color:var(--blanco);overflow-wrap:anywhere}
+:root[data-tema="monolito"] .m-app .imp-texto small{display:block;font:400 13px/1.4 var(--sans);color:var(--gris-1);margin-top:3px}
+:root[data-tema="monolito"] .m-app .imp-importe{font:400 14px var(--mono);color:var(--tinta);white-space:nowrap;font-variant-numeric:tabular-nums}
+:root[data-tema="monolito"] .m-app .imp-importe.entra{color:var(--blanco)}
+:root[data-tema="monolito"] .m-app .imp-categoria{grid-column:2/-1;justify-self:start;width:min(100%,240px);height:32px;padding:0 12px;border-radius:16px;border:1px solid var(--linea-2);background:var(--negro);color:var(--gris-1);font:500 13px var(--sans);outline:none}
+:root[data-tema="monolito"] .m-app .imp-categoria:focus{border-color:var(--gris-2);color:var(--blanco)}
+:root[data-tema="monolito"] .m-app .imp-categoria:disabled{border-style:dashed}
