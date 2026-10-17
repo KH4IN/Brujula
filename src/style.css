@@ -215,3 +215,34 @@ html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
  @keyframes motion-enter{from{opacity:.65;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+/* El buscador ocupa su propia línea en el móvil para que no se corte el texto. */
+@media(max-width:560px){.toolbar .search{flex-basis:100%;max-width:none}}
+/* Tema clásico, modo día: textos secundarios con contraste AA (4,5:1); mismo tono, más oscuro. */
+:root[data-tema="clasico"]:not([data-theme="dark"]) .eyebrow,:root[data-tema="clasico"]:not([data-theme="dark"]) .section-kicker{color:#566c61}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .page-heading p,:root[data-tema="clasico"]:not([data-theme="dark"]) .card-heading p,:root[data-tema="clasico"]:not([data-theme="dark"]) .budget-summary p{color:#5f6b62}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .stat-top{color:#5c6b60}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .stat-foot{color:#5d6d62}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .stat-dark .stat-top{color:#bdd1bd}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .stat-dark .stat-foot{color:#afc5b3}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .donut-center small{color:#5b6b5c}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .budget-name em{color:#5d6b5f}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .budget-caption{color:#5d6b5d}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .transaction-info span{color:#5d6b5c}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .transaction-amount.positive{color:#477255}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .page-footer{color:#5e6d60}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .add-budget-tile span{color:#586d5c}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .wealth-strip small{color:#556d56}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .chart-period{color:#586d5e}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .daily-axis{color:#5e6d61}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .import-table td small{color:#5b6b5c}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .feature-intro p{color:#586e58}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .account-tile p,:root[data-tema="clasico"]:not([data-theme="dark"]) .goal-tile p{color:#576c5a}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .account-note{color:#5c6c60}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .investment-summary span{color:#586e5b}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .empty-investments strong,:root[data-tema="clasico"]:not([data-theme="dark"]) .empty-investments p{color:#5b6c5c}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .flow-card p{color:#596c5d}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .flow-ring small{color:#5b6d62}
+:root[data-tema="clasico"]:not([data-theme="dark"]) .dashboard-path .path-copy span{color:#576d5f}
+/* Modo noche: porcentajes de la leyenda y estado vacío de Inversiones, que quedaban oscuros sobre fondo oscuro. */
+:root[data-theme="dark"] .legend-item strong{color:#f0edf7}
+:root[data-theme="dark"] .empty-investments strong,:root[data-theme="dark"] .empty-investments p{color:#c9bed8}
