@@ -1,0 +1,25 @@
+/* Configuración en Corriente y Monolito (B17): la lista de temas con el aspecto de cada uno. */
+:root[data-tema="corriente"] .c-app .temas,:root[data-tema="monolito"] .m-app .temas{border:0;margin:0;padding:0;min-width:0;display:grid;gap:10px}
+:root[data-tema="corriente"] .c-app .temas legend,:root[data-tema="monolito"] .m-app .temas legend{padding:0;margin-bottom:12px}
+:root[data-tema="corriente"] .c-app .tema-op,:root[data-tema="monolito"] .m-app .tema-op{display:grid;grid-template-columns:62px minmax(0,1fr) 20px;gap:16px;align-items:center;cursor:pointer}
+:root[data-tema="corriente"] .c-app .tema-op input,:root[data-tema="monolito"] .m-app .tema-op input{order:3;width:18px;height:18px;margin:0}
+:root[data-tema="corriente"] .c-app .tema-op b,:root[data-tema="monolito"] .m-app .tema-op b{display:block}
+:root[data-tema="corriente"] .c-app .version-brujula,:root[data-tema="monolito"] .m-app .version-brujula{justify-self:center;min-height:44px;padding:0 14px;letter-spacing:.14em}
+
+:root[data-tema="corriente"] .c-app .tema-op{padding:14px 16px;border:1px solid var(--hilo);border-radius:16px;transition:border-color .3s var(--ease),background .3s var(--ease)}
+:root[data-tema="corriente"] .c-app .tema-op:hover{border-color:var(--perla-3)}
+:root[data-tema="corriente"] .c-app .tema-op:has(input:checked){border-color:var(--perla-2);background:var(--fondo-3)}
+:root[data-tema="corriente"] .c-app .tema-op:has(input:focus-visible){outline:2px solid var(--menta);outline-offset:2px}
+:root[data-tema="corriente"] .c-app .tema-op input{accent-color:var(--menta)}
+:root[data-tema="corriente"] .c-app .tema-op b{font:400 24px/1.1 var(--serif)}
+:root[data-tema="corriente"] .c-app .tema-op small{display:block;color:var(--perla-2);font-size:14px;margin-top:3px}
+:root[data-tema="corriente"] .c-app .version-brujula{font:500 11px var(--sans);color:var(--perla-3)}
+
+:root[data-tema="monolito"] .m-app .temas{gap:0}
+:root[data-tema="monolito"] .m-app .tema-op{padding:14px 4px;border-top:1px solid var(--linea)}
+:root[data-tema="monolito"] .m-app .tema-op:last-of-type{border-bottom:1px solid var(--linea)}
+:root[data-tema="monolito"] .m-app .tema-op:has(input:focus-visible){outline:2px solid var(--blanco);outline-offset:2px}
+:root[data-tema="monolito"] .m-app .tema-op input{accent-color:var(--blanco)}
+:root[data-tema="monolito"] .m-app .tema-op b{font:500 17px var(--sans);color:var(--blanco)}
+:root[data-tema="monolito"] .m-app .tema-op small{display:block;color:var(--gris-1);font-size:13px;margin-top:2px}
+:root[data-tema="monolito"] .m-app .version-brujula{font:400 11px var(--mono);color:var(--gris-2)}

@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { Moon, Sun, X } from 'lucide-react';
 import type { Tema } from '../nuevo/rumbo';
+import { Hoja } from '../corriente/piezas';
+import '../corriente/ajustes.css';
 
 const TOQUES_SECRETO = 7;
 
@@ -30,6 +32,24 @@ export function Configuracion({ tema, dark, clasicoDescubierto, onTema, onModo, 
     toques.current += 1;
     if (toques.current >= TOQUES_SECRETO) { onDescubrir(); setHallazgo(true); }
   }
+  const version = <button type="button" className="version-brujula" onClick={tocarVersion} aria-label="Versión de Brújula">BRÚJULA · 2026.09</button>;
+  if (tema === 'corriente' || tema === 'monolito') return <div className={tema === 'monolito' ? 'm-app' : 'c-app'}>
+    <Hoja titulo="Configuración" abierta onCerrar={onClose}>
+      <div className="hoja-cuerpo">
+        <fieldset className="temas">
+          <legend className="ayuda">Elige cómo quieres ver Brújula. Tus datos son los mismos en todos los temas.</legend>
+          {visibles.map((o) => <label key={o.valor} className="tema-op">
+            <input type="radio" name="tema" value={o.valor} checked={tema === o.valor} onChange={() => onTema(o.valor)}/>
+            <span className={`tema-muestra tema-muestra-${o.valor}`} aria-hidden="true"><i/><i/><i/></span>
+            <span><b>{o.titulo}</b><small>{o.detalle}</small></span>
+          </label>)}
+        </fieldset>
+        {hallazgo && <p className="ayuda" role="status">Has encontrado el diseño clásico, el primero de Brújula. Ya puedes elegirlo.</p>}
+        <p className="ayuda">Si tu dispositivo pide reducir el movimiento, Brújula lo respeta en cualquier tema.</p>
+        {version}
+      </div>
+    </Hoja>
+  </div>;
   return <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
     <div className="modal visual-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div className="modal-heading"><div><span className="section-kicker">TU EXPERIENCIA</span><h2 id="settings-title">Configuración</h2></div><button className="icon-button" aria-label="Cerrar configuración" onClick={onClose}><X size={20}/></button></div>
@@ -43,13 +63,13 @@ export function Configuracion({ tema, dark, clasicoDescubierto, onTema, onModo, 
         </label>)}
         {hallazgo && <p className="tema-hallazgo" role="status">Has encontrado el diseño clásico, el primero de Brújula. Ya puedes elegirlo.</p>}
       </fieldset>
-      {tema !== 'antiguo' && tema !== 'corriente' && tema !== 'monolito' && <fieldset className="visual-settings-options modo-opciones">
+      {tema !== 'antiguo' && <fieldset className="visual-settings-options modo-opciones">
         <legend>Modo</legend>
         <label className={!dark ? 'selected' : ''}><input type="radio" name="modo" checked={!dark} onChange={() => onModo(false)}/><span><strong><Sun size={15}/> Día</strong></span></label>
         <label className={dark ? 'selected' : ''}><input type="radio" name="modo" checked={dark} onChange={() => onModo(true)}/><span><strong><Moon size={15}/> Noche</strong></span></label>
       </fieldset>}
       <p className="visual-settings-note">Si tu dispositivo pide reducir el movimiento, Brújula lo respeta en cualquier tema.</p>
-      <button type="button" className="version-brujula" onClick={tocarVersion} aria-label="Versión de Brújula">BRÚJULA · 2026.09</button>
+      {version}
     </div>
   </div>;
 }
