@@ -20,8 +20,10 @@ function montarAfluentes(lienzo: HTMLElement, cuentas: Afluente[]) {
     const total = cuentas.reduce((a, c) => a + c.v, 0);
     // En móvil la cifra del patrimonio va arriba: los ríos empiezan debajo (en la maqueta se pisaban).
     const top = movil ? (lienzo.querySelector<HTMLElement>('.gran')?.offsetHeight ?? 0) + 40 : 0, h = H - top;
-    const tw = movil ? h * 0.3 : H * 0.36, k = tw / total;
-    const ym = top + h * 0.5, xs = movil ? W * 0.04 : W * 0.2, xc = movil ? W * 0.62 : W * 0.56, xe = movil ? W * 0.98 : W * 0.66;
+    // Una sola cuenta en móvil: un cauce más fino justo bajo la cifra, en vez de una franja ancha y un hueco.
+    const solo = movil && cuentas.length === 1;
+    const tw = solo ? Math.min(h * 0.3, 34) : movil ? h * 0.3 : H * 0.36, k = tw / total;
+    const ym = solo ? top + 56 : top + h * 0.5, xs = movil ? W * 0.04 : W * 0.2, xc = movil ? W * 0.62 : W * 0.56, xe = movil ? W * 0.98 : W * 0.66;
     const arr = top + h * (movil ? 0.12 : 0.1), aba = top + h * (movil ? 0.9 : 0.92);
     const paso = cuentas.length > 1 ? (aba - arr) / (cuentas.length - 1) : 0;
     let acc = ym - tw / 2;
@@ -138,7 +140,7 @@ export function Cuentas({ v }: { v: VistaNueva }) {
       <div><h1 id="h-cuentas" tabIndex={-1}>Cuentas</h1><p className="sub">{resumen}</p></div>
       <div className="acciones"><button type="button" className="boton" onClick={v.onTransfer}><Icono id="i-mov"/>Traspasar</button></div>
     </div>
-    <div className="lienzo afluentes" ref={lienzo} data-guide="t-cuentas">
+    <div className={`lienzo afluentes${afluentes.length === 1 ? ' solo' : ''}`} ref={lienzo} data-guide="t-cuentas">
       <canvas role="img" aria-label={`Patrimonio de ${cifra(v.wealth)} €: ${afluentes.map((c) => `${c.n} ${cifra(c.v)} €`).join(', ')}.`}/>
       <div className="etiquetas"/>
       <div className="gran"><p><span className="cifra">{cifra(v.wealth)}</span><span className="eur">€</span></p><small>de patrimonio</small></div>
