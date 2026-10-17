@@ -65,9 +65,9 @@ export function Movimientos({ v }: { v: VistaNueva }) {
     <div className="vcab">
       <div><h1 id="h-movimientos" tabIndex={-1}>Movimientos</h1>
         <p className="sub">{v.monthly.length} en {mes} · entran <span className="mono">{dos.format(v.income)} €</span> · salen <span className="mono">{dos.format(v.expenses)} €</span>.</p></div>
-      <div className="acciones"><button type="button" className="boton" onClick={v.openImport}><Glifo g="sube"/>Importar extracto</button></div>
+      <div className="acciones"><button type="button" className="boton" data-guide="t-importar" onClick={v.openImport}><Glifo g="sube"/>Importar extracto</button></div>
     </div>
-    {pulso.hoy > 0 && <section className="mod" aria-labelledby="h-pulso">
+    {pulso.hoy > 0 && <section className="mod" aria-labelledby="h-pulso" data-guide="t-movimientos">
       <div className="tit"><h2 id="h-pulso">Lo que sale cada día</h2><span className="escala">1 punto = 10 €</span></div>
       <div className="vis" ref={lienzo} style={{ marginTop: 22 }}>
         <svg role="img" aria-label={`Gasto diario de ${mes}${pulso.enCurso ? ` hasta hoy, día ${pulso.hoy}` : ''}: ${dos.format(v.expenses)} € en total.`}/>

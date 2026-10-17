@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Check, ChevronLeft, X } from 'lucide-react';
+import { Icono } from '../corriente/piezas';
 
 export type GuideSection='dashboard'|'accounts'|'transactions'|'analysis'|'budgets'|'goals'|'investments';
 export type GuideProgress={index:number;visited:string[];completed?:boolean};
@@ -15,55 +16,79 @@ export const GUIDE_STEPS:{id:string;section:GuideSection;target:string;title:str
   {id:'goals',section:'goals',target:'goal-intro',title:'Objetivos de ahorro',copy:'Marca una meta y actualiza tu progreso. El ahorro reservado no se suma dos veces al patrimonio.'},
   {id:'investments',section:'investments',target:'investment-intro',title:'Inversiones manuales',copy:'Registra cripto o ETF y sus precios cuando quieras; Brújula no consulta mercados por ti.'},
 ];
-export function validGuideProgress(value:unknown):GuideProgress|null{
+export type GuideStep=typeof GUIDE_STEPS[number];
+export function validGuideProgress(value:unknown,pasos:GuideStep[]=GUIDE_STEPS):GuideProgress|null{
   if(!value||typeof value!=='object')return null;
   const p=value as Partial<GuideProgress>;
-  if(typeof p.index!=='number'||!Number.isInteger(p.index)||p.index<0||p.index>=GUIDE_STEPS.length||!Array.isArray(p.visited))return null;
-  return {index:p.index!,visited:[...new Set(p.visited.filter((id):id is string=>typeof id==='string'&&GUIDE_STEPS.some(s=>s.id===id)))],completed:p.completed===true};
+  if(typeof p.index!=='number'||!Number.isInteger(p.index)||p.index<0||p.index>=pasos.length||!Array.isArray(p.visited))return null;
+  return {index:p.index!,visited:[...new Set(p.visited.filter((id):id is string=>typeof id==='string'&&pasos.some(s=>s.id===id)))],completed:p.completed===true};
 }
-export function initialGuideProgress(scope:string,remote:unknown):GuideProgress{
+export function initialGuideProgress(scope:string,remote:unknown,pasos:GuideStep[]=GUIDE_STEPS):GuideProgress{
   let local:GuideProgress|null=null;
-  try{local=validGuideProgress(JSON.parse(localStorage.getItem(`brujula.guide.v2.${scope}`)??'null'))}catch{/* Keep the tour available without storage. */}
-  const cloud=validGuideProgress(remote);
+  try{local=validGuideProgress(JSON.parse(localStorage.getItem(`brujula.guide.v2.${scope}`)??'null'),pasos)}catch{/* Keep the tour available without storage. */}
+  const cloud=validGuideProgress(remote,pasos);
   if(!local&&!cloud)return {index:0,visited:[]};
   const visited=[...new Set([...(local?.visited??[]),...(cloud?.visited??[])])];
-  const next=GUIDE_STEPS.findIndex(step=>!visited.includes(step.id));
+  const next=pasos.findIndex(step=>!visited.includes(step.id));
   const saved=local?.index??cloud?.index??0;
-  const index=visited.includes(GUIDE_STEPS[saved].id)?next:saved;
-  return {index:index<0?0:index,visited,completed:visited.length===GUIDE_STEPS.length};
+  const index=visited.includes(pasos[saved].id)?next:saved;
+  return {index:index<0?0:index,visited,completed:visited.length===pasos.length};
 }
 
-export function Guide({scope,remote,tab,ultra,nuevo=false,onNavigate,onSave,onClose}:{scope:string;remote:unknown;tab:GuideSection;ultra:boolean;nuevo?:boolean;onNavigate:(section:GuideSection)=>void;onSave:(progress:GuideProgress)=>void;onClose:()=>void}){
-  const [progress,setProgress]=useState(()=>initialGuideProgress(scope,remote));
+export function Guide({scope,remote,tab,ultra,nuevo=false,pasos=GUIDE_STEPS,clase,onNavigate,onSave,onClose}:{scope:string;remote:unknown;tab:GuideSection;ultra:boolean;nuevo?:boolean;pasos?:GuideStep[];clase?:string;onNavigate:(section:GuideSection)=>void;onSave:(progress:GuideProgress)=>void;onClose:()=>void}){
+  const [progress,setProgress]=useState(()=>initialGuideProgress(scope,remote,pasos));
   const [rect,setRect]=useState<DOMRect|null>(null);
   const requested=useRef<GuideSection|null>(null);
   const heading=useRef<HTMLHeadingElement|null>(null);
-  const step=GUIDE_STEPS[progress.index];
+  const step=pasos[progress.index];
   useEffect(()=>{onSave(progress)},[progress,onSave]);
   useEffect(()=>{heading.current?.focus({preventScroll:true})},[progress.index]);
   useEffect(()=>{if(tab!==step.section){requested.current=step.section;onNavigate(step.section)}},[progress.index]);
   useEffect(()=>{
     if(requested.current){if(tab===requested.current)requested.current=null;return}
     if(tab===step.section)return;
-    const next=GUIDE_STEPS.findIndex(s=>s.section===tab&&!progress.visited.includes(s.id));
-    const fallback=GUIDE_STEPS.findIndex(s=>s.section===tab);
+    const next=pasos.findIndex(s=>s.section===tab&&!progress.visited.includes(s.id));
+    const fallback=pasos.findIndex(s=>s.section===tab);
     if(next>=0||fallback>=0)setProgress(p=>({...p,index:next>=0?next:fallback}));
   },[tab]);
   useLayoutEffect(()=>{
-    const element=document.querySelector<HTMLElement>(`[data-guide="${step.target}"]`);
+    // El primero que se ve: en móvil y escritorio puede haber dos (p. ej. «Anotar»).
+    const element=[...document.querySelectorAll<HTMLElement>(`[data-guide="${step.target}"]`)].find(e=>e.getClientRects().length);
     if(!element){setRect(null);return}
-    element.classList.add('guide-highlight');
+    if(!clase)element.classList.add('guide-highlight');
     element.scrollIntoView({block:window.innerWidth<=750?'start':'center',behavior:'instant'});
     const update=()=>setRect(element.getBoundingClientRect());update();
     window.addEventListener('resize',update);window.addEventListener('scroll',update,true);
     return()=>{element.classList.remove('guide-highlight');window.removeEventListener('resize',update);window.removeEventListener('scroll',update,true)};
   },[progress.index,tab,ultra,nuevo]);
   useEffect(()=>{const handler=(event:KeyboardEvent)=>{if(event.key==='Escape')onClose()};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler)},[onClose]);
-  function next(){const visited=[...new Set([...progress.visited,step.id])];if(progress.index===GUIDE_STEPS.length-1){onSave({index:0,visited,completed:true});onClose();return}setProgress({index:progress.index+1,visited})}
+  function next(){const visited=[...new Set([...progress.visited,step.id])];if(progress.index===pasos.length-1){onSave({index:0,visited,completed:true});onClose();return}setProgress({index:progress.index+1,visited})}
   const place=rect&&window.innerWidth>750?{
     top:Math.max(90,Math.min(window.innerHeight-270,rect.bottom+12+245<window.innerHeight?rect.bottom+12:rect.top-255)),
     left:Math.max(16,Math.min(window.innerWidth-366,rect.left+Math.min(rect.width,180))),
   }:undefined;
+  if(clase){
+    // Corriente y Monolito: un foco recorta la sombra alrededor del elemento, sin tocar su posición.
+    const foco=rect?{top:rect.top-8,left:rect.left-8,width:rect.width+16,height:rect.height+16}:undefined;
+    const ultimo=progress.index===pasos.length-1;
+    // En escritorio, junto al elemento sin salirse; en móvil, abajo, o arriba si lo señalado está abajo.
+    const alto=340,escritorio=window.innerWidth>750;
+    const lugar=rect&&escritorio?{right:'auto',bottom:'auto',
+      top:Math.max(16,Math.min(window.innerHeight-alto-16,rect.bottom+16+alto<window.innerHeight?rect.bottom+16:rect.top-alto-16)),
+      left:Math.max(16,Math.min(window.innerWidth-376,rect.left+Math.min(rect.width,180)))}:undefined;
+    const arriba=!escritorio&&!!rect&&rect.top>window.innerHeight*.5;
+    return <div className={clase}>
+      <div className={`guia-foco${foco?'':' sin'}`} style={foco} aria-hidden="true"/>
+      <div className={`guia${arriba?' arriba':''}`} role="dialog" aria-modal="false" aria-labelledby="guide-title" style={lugar}>
+        <div className="guia-cab"><span className="guia-n">{progress.index+1} de {pasos.length}</span><button type="button" className="cerrar" aria-label="Pausar guía" onClick={onClose}><Icono id="i-x"/></button></div>
+        <h2 ref={heading} tabIndex={-1} id="guide-title">{step.title}</h2>
+        <p>{step.copy}</p>
+        <div className="guia-marcas" role="group" aria-label={`${progress.visited.length} de ${pasos.length} puntos vistos`}>{pasos.map((s,i)=><button key={s.id} type="button" aria-label={`${s.title}${progress.visited.includes(s.id)?', visto':''}`} aria-current={i===progress.index?'step':undefined} className={progress.visited.includes(s.id)?'visto':''} onClick={()=>setProgress(p=>({...p,index:i}))}/>)}</div>
+        <div className="guia-acciones"><button type="button" className="boton" aria-label="Punto anterior" disabled={progress.index===0} onClick={()=>setProgress(p=>({...p,index:p.index-1}))}><Icono id="i-izq"/></button><button type="button" className="boton lleno" onClick={next}>{ultimo?'Terminar':'Siguiente'}</button></div>
+        <button type="button" className="guia-luego" onClick={onClose}>Seguir otro día</button>
+      </div>
+    </div>;
+  }
   return <><div className="guide-shade" aria-hidden="true"/><div className="guide-coach" role="dialog" aria-modal="false" aria-labelledby="guide-title" style={place}>
     <div className="guide-top"><span className="section-kicker">RECORRIDO · {progress.index+1} / {GUIDE_STEPS.length}</span><button className="icon-button" aria-label="Pausar guía" onClick={onClose}><X size={18}/></button></div>
     <div className="guide-progress" aria-label={`${progress.visited.length} de ${GUIDE_STEPS.length} puntos vistos`}>{GUIDE_STEPS.map((s,i)=><button key={s.id} type="button" title={s.title} aria-label={`${s.title}${progress.visited.includes(s.id)?', visto':''}`} aria-current={i===progress.index?'step':undefined} className={`${i===progress.index?'current ':''}${progress.visited.includes(s.id)?'visited':''}`} onClick={()=>setProgress(p=>({...p,index:i}))}/>)}</div>

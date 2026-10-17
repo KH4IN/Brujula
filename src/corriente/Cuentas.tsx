@@ -138,7 +138,7 @@ export function Cuentas({ v }: { v: VistaNueva }) {
       <div><h1 id="h-cuentas" tabIndex={-1}>Cuentas</h1><p className="sub">{resumen}</p></div>
       <div className="acciones"><button type="button" className="boton" onClick={v.onTransfer}><Icono id="i-mov"/>Traspasar</button></div>
     </div>
-    <div className="lienzo afluentes" ref={lienzo}>
+    <div className="lienzo afluentes" ref={lienzo} data-guide="t-cuentas">
       <canvas role="img" aria-label={`Patrimonio de ${cifra(v.wealth)} €: ${afluentes.map((c) => `${c.n} ${cifra(c.v)} €`).join(', ')}.`}/>
       <div className="etiquetas"/>
       <div className="gran"><p><span className="cifra">{cifra(v.wealth)}</span><span className="eur">€</span></p><small>de patrimonio</small></div>

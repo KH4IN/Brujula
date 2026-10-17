@@ -11,6 +11,7 @@ import { colorFor, symbolFor } from './features/presentation';
 import { BudgetLine, Stat } from './features/overview';
 import { Empty, TransactionList } from './features/TransactionList';
 import { Guide, validGuideProgress, type GuideProgress, type GuideSection } from './features/Guide';
+import { PASOS_CORRIENTE, PASOS_MONOLITO } from './corriente/guia';
 import { MotionExperience } from './features/MotionExperience';
 import { Configuracion } from './features/Configuracion';
 import { Nuevo, type VistaNueva } from './nuevo/Nuevo';
@@ -232,7 +233,7 @@ export default function App(){
   function closeModal(){setModal(null);setNotice('')}
   function openBudget(category:Category='Alimentación',amount?:number){setBudgetForm({category,amount:amount===undefined?'':String(amount)});setModal('budget')}
   const overlays=<>
-    {guideOpen&&<Guide key={scope} scope={scope} ultra={ultra} nuevo={tema==='nuevo'} remote={user?.user_metadata?.brujula_guide_v2} tab={tab} onSave={saveGuide} onClose={closeGuide} onNavigate={(section:GuideSection)=>go(section)}/>}
+    {guideOpen&&<Guide key={scope} scope={scope} ultra={ultra} nuevo={tema==='nuevo'} remote={user?.user_metadata?.brujula_guide_v2} tab={tab} {...(tema==='corriente'?{pasos:PASOS_CORRIENTE,clase:'c-app'}:tema==='monolito'?{pasos:PASOS_MONOLITO,clase:'m-app'}:{})} onSave={saveGuide} onClose={closeGuide} onNavigate={(section:GuideSection)=>go(section)}/>}
     {settingsOpen&&<Configuracion tema={tema} dark={dark} clasicoDescubierto={clasicoDescubierto} onTema={setTema} onModo={setThemeMode} onDescubrir={descubrirClasico} onClose={()=>setSettingsOpen(false)}/>}
     {categoryDetail&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setCategoryDetail(null)}}><div className="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div className="modal-heading"><div><span className="section-kicker">DESGLOSE DEL MES</span><h2 id="detail-title">{categoryDetail}</h2></div><button className="icon-button" onClick={()=>setCategoryDetail(null)}><X size={20}/></button></div><strong className="detail-total">{money(spentFor(categoryDetail))}</strong><p className="feature-copy">{expenses?Math.round(spentFor(categoryDetail)/expenses*100):0}% de tus gastos de {monthLabel(month)} · {monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail).length} movimientos.</p><TransactionList accountLabels={accounts} items={monthly.filter(t=>t.kind==='expense'&&t.category===categoryDetail)} onEdit={t=>{setCategoryDetail(null);openTransaction(t)}} onDelete={deleteTransaction} onAdd={()=>{setCategoryDetail(null);openTransaction()}}/></div></div>}
     {importOpen&&(tema==='corriente'||tema==='monolito'?<HojaImportar clase={tema==='monolito'?'m-app':'c-app'} existing={items} accounts={accounts} onClose={()=>setImportOpen(false)} onConfirm={importRows}/>:<ImportDialog existing={items} accounts={accounts} onClose={()=>setImportOpen(false)} onConfirm={importRows}/>)}
