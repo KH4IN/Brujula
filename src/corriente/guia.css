@@ -1,0 +1,48 @@
+/* Guía en Corriente y Monolito (B16). Un foco recorta la sombra alrededor de lo que se explica;
+   la tarjeta usa la hoja de cada tema. En móvil va abajo; en escritorio, junto al elemento. */
+:root[data-tema="corriente"] .c-app .guia-foco,:root[data-tema="monolito"] .m-app .guia-foco{position:fixed;z-index:90;pointer-events:none;transition:top .45s var(--ease),left .45s var(--ease),width .45s var(--ease),height .45s var(--ease)}
+:root[data-tema="corriente"] .c-app .guia-foco.sin,:root[data-tema="monolito"] .m-app .guia-foco.sin{inset:0;box-shadow:none;outline:0;border-radius:0}
+:root[data-tema="corriente"] .c-app .guia,:root[data-tema="monolito"] .m-app .guia{position:fixed;z-index:91;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-height:min(52dvh,420px);overflow:auto}
+:root[data-tema="corriente"] .c-app .guia h2,:root[data-tema="monolito"] .m-app .guia h2{outline:none}
+:root[data-tema="corriente"] .c-app .guia-cab,:root[data-tema="monolito"] .m-app .guia-cab{display:flex;align-items:center;justify-content:space-between;margin:-6px -8px 4px 0}
+:root[data-tema="corriente"] .c-app .guia-marcas,:root[data-tema="monolito"] .m-app .guia-marcas{display:flex;flex-wrap:wrap;margin:16px 0 18px -4px}
+:root[data-tema="corriente"] .c-app .guia-marcas button,:root[data-tema="monolito"] .m-app .guia-marcas button{width:28px;height:24px;display:grid;place-items:center}
+:root[data-tema="corriente"] .c-app .guia-marcas button::before,:root[data-tema="monolito"] .m-app .guia-marcas button::before{content:"";display:block;transition:background .3s var(--ease),width .3s var(--ease)}
+:root[data-tema="corriente"] .c-app .guia-acciones,:root[data-tema="monolito"] .m-app .guia-acciones{display:flex;justify-content:space-between;gap:10px}
+:root[data-tema="corriente"] .c-app .guia-acciones .boton:first-child,:root[data-tema="monolito"] .m-app .guia-acciones .boton:first-child{width:42px;padding:0;justify-content:center}
+:root[data-tema="corriente"] .c-app .guia-acciones .boton:disabled,:root[data-tema="monolito"] .m-app .guia-acciones .boton:disabled{opacity:.35;cursor:default}
+:root[data-tema="corriente"] .c-app .guia-luego,:root[data-tema="monolito"] .m-app .guia-luego{display:block;margin:10px 0 0;min-height:32px;text-decoration:underline;text-underline-offset:4px}
+:root[data-tema="corriente"] .c-app .guia.arriba,:root[data-tema="monolito"] .m-app .guia.arriba{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto}
+@media (min-width:751px){
+  :root[data-tema="corriente"] .c-app .guia,:root[data-tema="monolito"] .m-app .guia{left:auto;right:28px;bottom:28px;width:360px;max-height:none}
+}
+@media (prefers-reduced-motion:reduce){
+  :root[data-tema="corriente"] .c-app .guia-foco,:root[data-tema="monolito"] .m-app .guia-foco{transition:none}
+}
+
+/* Corriente: perla sobre negro, serif para el título, el avance como trazos del río. */
+:root[data-tema="corriente"] .c-app .guia-foco{border-radius:18px;outline:1px solid var(--perla-3);outline-offset:0;box-shadow:0 0 0 200vmax rgba(9,9,10,.74)}
+:root[data-tema="corriente"] .c-app .guia-foco.sin{background:rgba(9,9,10,.74)}
+:root[data-tema="corriente"] .c-app .guia{padding:20px 22px 14px;background:var(--fondo-2);border:1px solid var(--hilo);border-radius:20px;box-shadow:0 24px 60px var(--sombra);color:var(--perla)}
+:root[data-tema="corriente"] .c-app .guia-n{font:500 13px var(--sans);color:var(--perla-3);font-variant-numeric:tabular-nums}
+:root[data-tema="corriente"] .c-app .guia h2{font:400 34px/1.05 var(--serif);letter-spacing:-.01em;margin:0 0 8px;text-wrap:balance}
+:root[data-tema="corriente"] .c-app .guia p{color:var(--perla-2);font-size:15px;line-height:1.5;margin:0}
+:root[data-tema="corriente"] .c-app .guia-marcas button::before{width:18px;height:2px;border-radius:1px;background:var(--hilo)}
+:root[data-tema="corriente"] .c-app .guia-marcas button.visto::before{background:var(--perla-3)}
+:root[data-tema="corriente"] .c-app .guia-marcas button[aria-current="step"]::before{width:26px;background:var(--menta)}
+:root[data-tema="corriente"] .c-app .guia-luego{font:500 13.5px var(--sans);color:var(--perla-3)}
+:root[data-tema="corriente"] .c-app .guia-luego:hover{color:var(--perla-2)}
+
+/* Monolito: negro y blanco; el avance son puntos encendidos o apagados. */
+:root[data-tema="monolito"] .m-app .guia-foco{border-radius:8px;outline:1px solid var(--blanco);box-shadow:0 0 0 200vmax rgba(0,0,0,.8)}
+:root[data-tema="monolito"] .m-app .guia-foco.sin{background:rgba(0,0,0,.8)}
+:root[data-tema="monolito"] .m-app .guia{padding:18px 20px 12px;background:var(--negro);border:1px solid var(--linea-2);border-radius:10px;box-shadow:0 24px 60px var(--sombra);color:var(--tinta)}
+:root[data-tema="monolito"] .m-app .guia-n{font:400 12px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--gris-1)}
+:root[data-tema="monolito"] .m-app .guia .cerrar svg,:root[data-tema="monolito"] .m-app .guia .boton svg{width:14px;height:14px}
+:root[data-tema="monolito"] .m-app .guia h2{font:600 24px/1.05 var(--sans);font-stretch:75%;text-transform:uppercase;letter-spacing:-.01em;color:var(--blanco);margin:2px 0 8px}
+:root[data-tema="monolito"] .m-app .guia p{color:var(--gris-1);font-size:14.5px;line-height:1.5;margin:0}
+:root[data-tema="monolito"] .m-app .guia-marcas button::before{width:8px;height:8px;border-radius:50%;background:var(--apagado)}
+:root[data-tema="monolito"] .m-app .guia-marcas button.visto::before{background:var(--gris-2)}
+:root[data-tema="monolito"] .m-app .guia-marcas button[aria-current="step"]::before{background:var(--blanco)}
+:root[data-tema="monolito"] .m-app .guia-luego{font:400 12px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--gris-1)}
+:root[data-tema="monolito"] .m-app .guia-luego:hover{color:var(--blanco)}

@@ -91,7 +91,7 @@ function Rumbo({ v, ir, modulos, activar }: { v: VistaNueva; ir: (d: Destino) =>
   const pasoAguja = Math.round(rumbo.grados / 5) % 72;
   return <section className="vista" id="rumbo" aria-labelledby="h-rumbo">
     <div className="rejilla">
-      <section className="mod m-cifra">
+      <section className="mod m-cifra" data-guide="t-rumbo">
         <div className="panel" ref={panel} role="img" aria-label={`${datos.faltan ? 'Faltan' : 'Se quedan'} ${cifra(datos.faltan || datos.quedan)} euros en ${mes}`}><span className="respaldo">{cifraTexto}</span></div>
         <div className="pie-cifra"><span>{datos.faltan ? 'Faltan' : 'Se quedan'} en {mes} · €</span><span>{cifra(datos.entran)} − {cifra(datos.salen)}</span></div>
         <h1 className="frase" id="h-rumbo" tabIndex={-1}>En {mes} entran <span className="num">{cifra(datos.entran)}</span><span className="eur"> €</span> y salen <span className="num">{cifra(datos.salen)}</span><span className="eur"> €</span>.</h1>
@@ -108,7 +108,7 @@ function Rumbo({ v, ir, modulos, activar }: { v: VistaNueva; ir: (d: Destino) =>
           <p className="escala" style={{ marginTop: 8 }}>1 punto = 1 % de lo que {datos.entran >= datos.salen ? 'entra' : 'sale'} · pasa por encima para ver cada grupo</p>
         </> : <p className="res" style={{ marginTop: 24 }}>Aún no hay movimientos en {mes}. Anota el primero y se encenderán los puntos.</p>}
       </section>
-      <section className="mod der m-dial" aria-label="Rumbo del mes" ref={dial}>
+      <section className="mod der m-dial" aria-label="Rumbo del mes" ref={dial} data-guide="t-aguja">
         <svg className="esfera" viewBox="0 0 300 300" aria-hidden="true" style={{ '--grados': `${rumbo.grados}deg` } as CSSProperties}>
           {Array.from({ length: 72 }, (_, i) => { const a = (i * 5 - 90) * Math.PI / 180, mayor = i % 18 === 0;
             return <circle key={i} cx={150 + 138 * Math.cos(a)} cy={150 + 138 * Math.sin(a)} r={mayor ? 3 : 1.9} className={i === 0 ? 'norte' : i === pasoAguja ? 'rumbo-punto' : mayor ? 'anillo mayor' : 'anillo'}/>; })}
@@ -122,7 +122,7 @@ function Rumbo({ v, ir, modulos, activar }: { v: VistaNueva; ir: (d: Destino) =>
         </svg>
         <div className="lectura"><span className="dot">{grados3(rumbo.grados)}</span><p><b>Rumbo {rumbo.zona === 'calma' ? 'en calma' : rumbo.zona}</b>{rumbo.texto.replace(/^Rumbo \w+: /, '').replace(/^./, (c) => c.toUpperCase())}</p></div>
       </section>
-      <nav className="mod" aria-labelledby="h-indice">
+      <nav className="mod" aria-labelledby="h-indice" data-guide="t-indice">
         <p className="eti" id="h-indice" style={{ marginBottom: 14 }}>El resto de {mes}</p>
         {linea('movimientos', 'mov', 'Movimientos', ultimo ? `${v.monthly.length} este mes · último: ${ultimo.description}.` : 'Ninguno este mes todavía.')}
         {modulos.recibos && linea('recibos', 'rec', 'Recibos', 'Lo que se cobra en los próximos 30 días.')}
@@ -185,7 +185,7 @@ export function Monolito({ v }: { v: VistaNueva }) {
       <aside className="riel" aria-label="Navegación principal">
         {marca}
         <nav className="nav">{visibles.map(([d, n, g]) => enlace(d, n, g))}</nav>
-        <button className="anotar" type="button" onClick={() => setQue(true)}><Glifo g="mas"/>Anotar</button>
+        <button className="anotar" type="button" data-guide="t-anotar" onClick={() => setQue(true)}><Glifo g="mas"/>Anotar</button>
         <div className="firma">BRÚJULA · KH</div>
       </aside>
       <main className="principal">
@@ -196,7 +196,7 @@ export function Monolito({ v }: { v: VistaNueva }) {
             <b>{mes} {y}</b>
             <button type="button" aria-label="Mes siguiente" onClick={() => v.shiftMonth(1)}><Glifo g="der"/></button>
           </div>
-          <div className="estado"><span className="sinc">{sinc}</span><button type="button" className="yo" aria-label="Tu espacio: cuenta y configuración" onClick={() => setCuenta(true)}>{v.user?.email?.charAt(0).toUpperCase() ?? 'T'}</button></div>
+          <div className="estado"><span className="sinc">{sinc}</span><button type="button" className="yo" data-guide="t-espacio" aria-label="Tu espacio: cuenta y configuración" onClick={() => setCuenta(true)}>{v.user?.email?.charAt(0).toUpperCase() ?? 'T'}</button></div>
         </header>
         <div key={`${destino}-${v.month}`}>
           {destino === 'rumbo' ? <Rumbo v={v} ir={ir} modulos={modulos} activar={activar}/>
@@ -207,7 +207,7 @@ export function Monolito({ v }: { v: VistaNueva }) {
       </main>
     </div>
     <nav className="muelle" aria-label="Destinos">{visibles.map(([d, n, g]) => enlace(d, n, g))}</nav>
-    <button className="fab" type="button" aria-label="Anotar" onClick={() => setQue(true)}><Glifo g="mas"/></button>
+    <button className="fab" type="button" data-guide="t-anotar" aria-label="Anotar" onClick={() => setQue(true)}><Glifo g="mas"/></button>
     <div className={`tostada${v.notice ? ' ver' : ''}`} role="status" aria-live="polite">{v.notice}</div>
     <HojaCuenta v={v} abierta={cuenta} onCerrar={() => setCuenta(false)} modulos={modulos} activar={activar}/>
     <Hoja titulo="¿Qué anotas?" abierta={que} onCerrar={() => setQue(false)}>

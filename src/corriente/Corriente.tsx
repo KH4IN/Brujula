@@ -11,6 +11,7 @@ import { Metas } from './Metas';
 import { Recibos } from './Recibos';
 import { ICONOS } from './iconos';
 import './corriente.css';
+import './guia.css';
 
 type Destino = 'rumbo' | 'movimientos' | 'recibos' | 'metas' | 'cuentas';
 const DESTINO: Record<Seccion, Exclude<Destino, 'recibos'>> = {
@@ -41,7 +42,7 @@ function Rumbo({ v, ir, modulos, activar }: { v: VistaNueva; ir: (d: Destino) =>
   const gastos = datos.rios.filter((r) => !r.ahorro);
   const etiqueta = `Corriente de ${mes}: entran ${cifra(datos.entran)} €. Salen ${cifra(datos.salen)} €: ${gastos.map((r) => `${r.nombre} ${cifra(r.v)} €`).join(', ')}. ${datos.faltan ? `Faltan ${cifra(datos.faltan)} €.` : `Se quedan ${cifra(datos.quedan)} €.`}`;
   return <section className="vista" id="rumbo" aria-labelledby="h-rumbo">
-    <div className={`corriente${datos.vacio ? ' vacia' : ''}`}>
+    <div className={`corriente${datos.vacio ? ' vacia' : ''}`} data-guide="t-rumbo">
       <h1 className="sr" id="h-rumbo" tabIndex={-1}>Rumbo de {mes}</h1>
       <p className="frase entran"><em>Entran</em><span className="cifra">{cifra(datos.entran)}</span><span className="eur">€</span></p>
       <p className="frase salen"><em>salen</em><span className="cifra">{cifra(datos.salen)}</span><span className="eur">€</span></p>
@@ -58,7 +59,7 @@ function Rumbo({ v, ir, modulos, activar }: { v: VistaNueva; ir: (d: Destino) =>
     </div>
     <div className="marco">
       <div className="rejilla">
-        <nav className="indice" aria-labelledby="h-indice">
+        <nav className="indice" aria-labelledby="h-indice" data-guide="t-indice">
           <h2 className="eti" id="h-indice">El resto de {mes}</h2>
           <a className="linea" href="#movimientos" onClick={(e) => { e.preventDefault(); ir('movimientos'); }}><span className="l-nom">Movimientos</span>
             <span className="l-dato">{ultimo ? <>{v.monthly.length} este mes. El último, {ultimo.description}, {fechaRelativa(ultimo.occurred_on)}.</> : 'Ninguno este mes todavía.'}</span><svg className="l-ir" aria-hidden="true"><use href="#i-ir"/></svg></a>
@@ -166,7 +167,7 @@ export function Corriente({ v }: { v: VistaNueva }) {
         <span><b>{mesLargo.charAt(0).toUpperCase() + mesLargo.slice(1)}</b> {y}</span>
         <button type="button" aria-label="Mes siguiente" onClick={() => v.shiftMonth(1)}><Icono id="i-der"/></button>
       </div>
-      <button type="button" className="yo" aria-label="Tu espacio: cuenta y configuración" onClick={() => setCuenta(true)}>{inicial}</button>
+      <button type="button" className="yo" data-guide="t-espacio" aria-label="Tu espacio: cuenta y configuración" onClick={() => setCuenta(true)}>{inicial}</button>
     </header>
     <main key={`${destino}-${m}`}>
       {destino === 'rumbo' && <Rumbo v={v} ir={ir} modulos={modulos} activar={activar}/>}
@@ -178,10 +179,10 @@ export function Corriente({ v }: { v: VistaNueva }) {
     <nav className="dock" aria-label="Destinos">
       {visibles.map(([d, n]) => enlace(d, n))}
       <span className="sep" aria-hidden="true"/>
-      <button type="button" className="anotar" onClick={() => setQue(true)}><Icono id="i-mas"/>Anotar</button>
+      <button type="button" className="anotar" data-guide="t-anotar" onClick={() => setQue(true)}><Icono id="i-mas"/>Anotar</button>
     </nav>
     <nav className="tabbar" aria-label="Destinos">{visibles.map(([d, n, i]) => enlace(d, n, i))}</nav>
-    <button type="button" className="fab" aria-label="Anotar" onClick={() => setQue(true)}><Icono id="i-mas"/></button>
+    <button type="button" className="fab" data-guide="t-anotar" aria-label="Anotar" onClick={() => setQue(true)}><Icono id="i-mas"/></button>
     <div className={`tostada${v.notice ? ' ver' : ''}`} role="status" aria-live="polite">{v.notice}</div>
     <HojaCuenta v={v} abierta={cuenta} onCerrar={() => setCuenta(false)} modulos={modulos} activar={activar}/>
     <Hoja titulo="¿Qué anotas?" abierta={que} onCerrar={() => setQue(false)}>

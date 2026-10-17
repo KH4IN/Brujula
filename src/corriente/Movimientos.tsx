@@ -85,11 +85,11 @@ export function Movimientos({ v }: { v: VistaNueva }) {
     <div className="vcab">
       <div><h1 id="h-movimientos" tabIndex={-1}>Movimientos</h1>
         <p className="sub">{n} en {mes}. Entran <span className="cifra">{dos.format(v.income)} €</span> y salen <span className="cifra">{dos.format(v.expenses)} €</span>.</p></div>
-      <div className="acciones"><button type="button" className="boton" onClick={v.openImport}><Icono id="i-sube"/>Importar extracto</button></div>
+      <div className="acciones"><button type="button" className="boton" data-guide="t-importar" onClick={v.openImport}><Icono id="i-sube"/>Importar extracto</button></div>
     </div>
     {pulso.hoy > 0 && <>
       <p className="eti">Lo que sale cada día</p>
-      <div className="lienzo pulso" ref={lienzo}>
+      <div className="lienzo pulso" ref={lienzo} data-guide="t-movimientos">
         <canvas role="img" aria-label={`Gasto diario de ${mes}${pulso.enCurso ? ` hasta hoy, día ${pulso.hoy}` : ''}: ${dos.format(v.expenses)} € en total.`}/>
         <div className="etiquetas"/>
         <div className="aviso" role="status" aria-live="polite"><p className="n"/><p className="v"/><p className="d"/><p className="d coral" hidden/></div>

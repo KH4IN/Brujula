@@ -64,7 +64,7 @@ export function Cuentas({ v }: { v: VistaNueva }) {
       <div><h1 id="h-cuentas" tabIndex={-1}>Cuentas</h1><p className="sub">{nC} {nC === 1 ? 'cuenta' : 'cuentas'}{nI ? ` y ${nI} ${nI === 1 ? 'inversión' : 'inversiones'}` : ''} {nC + nI === 1 ? 'forma' : 'forman'} tu patrimonio.</p></div>
       <div className="acciones"><button type="button" className="boton" onClick={v.onTransfer}><Glifo g="mov"/>Traspasar</button></div>
     </div>
-    <section className="mod" aria-labelledby="h-patri">
+    <section className="mod" aria-labelledby="h-patri" data-guide="t-cuentas">
       <div className="tit"><h2 id="h-patri">Patrimonio</h2><span className="escala">1 punto = {cifra(unidad)} €</span></div>
       <div className="patri" style={{ marginTop: 14 }}><p className={`dot${v.wealth < 0 ? ' senal' : ''}`}>{cifra(v.wealth)}<small>€</small></p></div>
       {partes.length > 0 && <>
