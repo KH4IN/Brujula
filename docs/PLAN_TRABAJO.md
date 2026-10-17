@@ -92,6 +92,9 @@ absorbe). Dentro de Brújula, en `staging` y sin tocar producción ni el servido
   revisión de metas (las funciones de avisos del servidor ya leen esos ajustes).
 - [x] **B13. Avisos en el móvil desde Brújula** ([#105](https://github.com/KH4IN/Brujula/pull/105), en `staging`). Primera fase de los avisos unificados, sin tocar el servidor; las fases 2 y 3 están en [`docs/avisos/PLAN.md`](avisos/PLAN.md).
 - [x] **B14. Fases 2 y 3 de los avisos unificados** (aprobadas el 16-10). Son PR en Kairós y Faro, sin unir: los textos de los avisos, la franja «ahora vive en Brújula» y la redirección (en borrador). El orden para desplegar está en `docs/avisos/PLAN.md`.
+- [x] **B15. Importar extracto en Corriente y Monolito** ([#108](https://github.com/KH4IN/Brujula/pull/108), a `staging`). Hoja del tema en lugar del diálogo antiguo; la lógica se comparte (`useImportar`).
+- [x] **B16. Guía propia de Corriente y Monolito** ([#109](https://github.com/KH4IN/Brujula/pull/109), a `staging`). Pasos que señalan lo que se ve en cada tema.
+- [x] **B17. Configuración en Corriente y Monolito** ([#110](https://github.com/KH4IN/Brujula/pull/110), a `staging`). Falta el inicio de sesión, que espera tu aprobación porque toca el acceso.
 
 Detalles de interfaz aprobados el 14-10 (botón de modo del tema antiguo, contrastes y buscador): [#87](https://github.com/KH4IN/Brujula/pull/87).
 
