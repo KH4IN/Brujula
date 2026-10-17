@@ -12,6 +12,7 @@ import { Recibos } from './Recibos';
 import { ICONOS } from './iconos';
 import './corriente.css';
 import './guia.css';
+import './acceso.css';
 
 type Destino = 'rumbo' | 'movimientos' | 'recibos' | 'metas' | 'cuentas';
 const DESTINO: Record<Seccion, Exclude<Destino, 'recibos'>> = {

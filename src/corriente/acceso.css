@@ -1,0 +1,59 @@
+/* Inicio de sesión en Corriente y Monolito (B19). Solo aspecto: Auth.tsx y su lógica no cambian.
+   Como hace el tema nuevo, se reviste el marcado de siempre: una hoja del tema, sin el panel de bienvenida. */
+:root[data-tema="corriente"] .auth-overlay,:root[data-tema="monolito"] .auth-overlay{padding:16px;place-items:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+:root[data-tema="corriente"] .auth-overlay .auth-page,:root[data-tema="monolito"] .auth-overlay .auth-page{display:block;width:min(440px,100%);height:auto;min-height:0;border-radius:24px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+:root[data-tema="corriente"] .auth-decor,:root[data-tema="monolito"] .auth-decor,
+:root[data-tema="corriente"] .auth-box .section-kicker,:root[data-tema="monolito"] .auth-box .section-kicker,
+:root[data-tema="corriente"] .auth-mobile-brand,:root[data-tema="monolito"] .auth-mobile-brand{display:none}
+:root[data-tema="corriente"] .auth-overlay .auth-panel,:root[data-tema="monolito"] .auth-overlay .auth-panel{min-height:0;padding:30px 28px 26px;background:transparent;display:block}
+:root[data-tema="corriente"] .auth-box,:root[data-tema="monolito"] .auth-box{width:100%}
+:root[data-tema="corriente"] .auth-box form,:root[data-tema="monolito"] .auth-box form{gap:16px}
+:root[data-tema="corriente"] .auth-box label,:root[data-tema="monolito"] .auth-box label{gap:8px}
+:root[data-tema="corriente"] .auth-box input,:root[data-tema="monolito"] .auth-box input{height:46px;padding:0 14px;font-size:16px;outline:none}
+:root[data-tema="corriente"] .auth-box .form-submit,:root[data-tema="monolito"] .auth-box .form-submit{width:100%;height:46px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;margin-top:4px}
+:root[data-tema="corriente"] .auth-box .form-submit:disabled,:root[data-tema="monolito"] .auth-box .form-submit:disabled{opacity:.5}
+:root[data-tema="corriente"] .auth-toggle,:root[data-tema="monolito"] .auth-toggle{background:transparent;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px;margin-top:18px}
+:root[data-tema="corriente"] .auth-toggle button,:root[data-tema="monolito"] .auth-toggle button{min-height:40px;text-decoration:underline;text-underline-offset:4px;font-weight:500}
+:root[data-tema="corriente"] .auth-methods,:root[data-tema="monolito"] .auth-methods{gap:8px;padding:0;background:transparent;margin:18px 0}
+:root[data-tema="corriente"] .auth-methods button,:root[data-tema="monolito"] .auth-methods button{height:38px;padding:0 16px;border-radius:999px;flex:0 0 auto;box-shadow:none}
+:root[data-tema="corriente"] .auth-box .notice,:root[data-tema="monolito"] .auth-box .notice{background:transparent;border:0;padding:0;font-size:14px}
+
+/* Corriente */
+:root[data-tema="corriente"] .auth-overlay{background:rgba(9,9,10,.78)}
+:root[data-tema="corriente"] .auth-overlay .auth-page{background:var(--fondo-2);border:1px solid var(--hilo);color:var(--perla);font-family:var(--sans)}
+:root[data-tema="corriente"] .auth-close{background:transparent;color:var(--perla-2);border-radius:50%}
+:root[data-tema="corriente"] .auth-close:hover{background:var(--fondo-3);color:var(--perla)}
+:root[data-tema="corriente"] .auth-box h2{font:400 42px/1 var(--serif);letter-spacing:-.01em;color:var(--perla);margin:0 40px 10px 0}
+:root[data-tema="corriente"] .auth-box p{color:var(--perla-2);font-size:15px;line-height:1.5}
+:root[data-tema="corriente"] .auth-box>p{margin:0 0 22px}
+:root[data-tema="corriente"] .auth-box label{font:500 13px var(--sans);color:var(--perla-2)}
+:root[data-tema="corriente"] .auth-box input{border:1px solid var(--hilo);border-radius:12px;background:var(--fondo-3);color:var(--perla)}
+:root[data-tema="corriente"] .auth-box input:focus{border-color:var(--perla-3);outline:none}
+:root[data-tema="corriente"] .auth-box input::placeholder{color:var(--perla-3)}
+:root[data-tema="corriente"] .auth-box .form-submit{background:var(--perla);color:var(--fondo);border:1px solid var(--perla);font:500 15px var(--sans)}
+:root[data-tema="corriente"] .auth-methods button{border:1px solid var(--hilo);background:transparent;color:var(--perla-2);font:500 13.5px var(--sans)}
+:root[data-tema="corriente"] .auth-methods button.active{background:var(--perla);color:var(--fondo);border-color:var(--perla)}
+:root[data-tema="corriente"] .auth-toggle button{color:var(--perla-2);font-size:13.5px}
+:root[data-tema="corriente"] .auth-toggle button:hover{color:var(--perla)}
+:root[data-tema="corriente"] .auth-box .notice{color:var(--coral)}
+:root[data-tema="corriente"] .auth-box .form-hint,:root[data-tema="corriente"] .auth-box strong{color:var(--perla)}
+
+/* Monolito */
+:root[data-tema="monolito"] .auth-overlay{background:rgba(0,0,0,.82)}
+:root[data-tema="monolito"] .auth-overlay .auth-page{background:var(--negro);border:1px solid var(--linea-2);border-radius:10px;color:var(--tinta);font-family:var(--sans)}
+:root[data-tema="monolito"] .auth-close{background:transparent;color:var(--gris-1);border-radius:50%}
+:root[data-tema="monolito"] .auth-close:hover{background:var(--linea);color:var(--blanco)}
+:root[data-tema="monolito"] .auth-box h2{font:600 30px/1.02 var(--sans);font-stretch:75%;text-transform:uppercase;letter-spacing:-.01em;color:var(--blanco);margin:0 40px 10px 0}
+:root[data-tema="monolito"] .auth-box p{color:var(--gris-1);font-size:14.5px;line-height:1.5}
+:root[data-tema="monolito"] .auth-box>p{margin:0 0 22px}
+:root[data-tema="monolito"] .auth-box label{font:400 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--gris-1)}
+:root[data-tema="monolito"] .auth-box input{border:1px solid var(--linea-2);border-radius:6px;background:var(--negro);color:var(--blanco);font-family:var(--sans);text-transform:none;letter-spacing:0}
+:root[data-tema="monolito"] .auth-box input:focus{border-color:var(--gris-2);outline:none}
+:root[data-tema="monolito"] .auth-box input::placeholder{color:var(--gris-3)}
+:root[data-tema="monolito"] .auth-box .form-submit{background:var(--blanco);color:var(--negro);border:1px solid var(--blanco);border-radius:21px;font:500 14px var(--mono)}
+:root[data-tema="monolito"] .auth-methods button{border:1px solid var(--linea-2);background:transparent;color:var(--gris-1);font:400 12px var(--mono);text-transform:uppercase;letter-spacing:.06em;border-radius:21px}
+:root[data-tema="monolito"] .auth-methods button.active{background:var(--blanco);color:var(--negro);border-color:var(--blanco)}
+:root[data-tema="monolito"] .auth-toggle button{color:var(--gris-1);font:400 12px var(--mono);text-transform:uppercase;letter-spacing:.06em}
+:root[data-tema="monolito"] .auth-toggle button:hover{color:var(--blanco)}
+:root[data-tema="monolito"] .auth-box .notice{color:var(--senal)}
+:root[data-tema="monolito"] .auth-box .form-hint,:root[data-tema="monolito"] .auth-box strong{color:var(--blanco)}
