@@ -20,7 +20,10 @@ function montarPulso(lienzo: HTMLElement, mes: string, p: ReturnType<typeof puls
     const xd = (d: number) => x0 + (d - 1) * dx, xh = xd(HOY);
     const ym = H * 0.42, wmax = H * (movil ? 0.5 : 0.56);
     // El día más caro (el alquiler, casi siempre) se ve más ancho, pero no aplasta el resto del mes.
-    const raiz = p.gasto.map(Math.sqrt), orden = [...raiz.slice(0, HOY)].sort((a, b) => b - a), mx = Math.max(orden[1] ?? orden[0] ?? 1, 1);
+    // Suavizado de ±2 días: con gastos en pocos días el ancho saltaba de golpe y el cauce se rompía en palitos.
+    const bruto = p.gasto.map(Math.sqrt), PESO = [1, 2, 3, 2, 1];
+    const raiz = bruto.map((_, i) => { let s = 0, w = 0; for (let k = -2; k <= 2; k++) { const j = i + k; if (j >= 0 && j < HOY) { s += bruto[j] * PESO[k + 2]; w += PESO[k + 2]; } } return w ? s / w : 0; });
+    const orden = [...raiz.slice(0, HOY)].sort((a, b) => b - a), mx = Math.max(orden[1] ?? orden[0] ?? 1, 1);
     const ancho = (d: number) => 3 + Math.min(1.12, raiz[clamp(d, 1, HOY) - 1] / mx) * (wmax - 3);
     const WD = lineal(W, (x) => {
       const t = clamp((x - x0) / dx + 1, 1, HOY), d0 = Math.floor(t), f = smooth(t - d0);
